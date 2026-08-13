@@ -202,6 +202,16 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public BookingOrderRef findOrderByOrderNo(String orderNo) {
+        return mapper.findOrderByOrderNo(orderNo);
+    }
+
+    @Override
+    public List<BookingOrderRef> listOrdersByCustomerId(long customerId) {
+        return mapper.listOrdersByCustomerId(customerId);
+    }
+
+    @Override
     public int deleteOccupancyForLockedHold(long holdId) {
         return mapper.deleteOccupancyForLockedTherapist(holdId) + mapper.deleteOccupancyForLockedBed(holdId);
     }

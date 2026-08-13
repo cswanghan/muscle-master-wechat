@@ -26,6 +26,14 @@ public interface CatalogRepository {
 
     List<CatalogModels.ScheduleTemplate> listTemplates();
 
+    default Optional<CatalogModels.Room> findRoom(long id) {
+        return Optional.empty();
+    }
+
+    default Optional<CatalogModels.Bed> findBed(long id) {
+        return Optional.empty();
+    }
+
     /** True when inventory has generated any slot for the date. */
     default boolean hasSlotsOn(LocalDate date) {
         return false;

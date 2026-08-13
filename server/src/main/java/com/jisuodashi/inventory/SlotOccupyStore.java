@@ -83,6 +83,10 @@ public interface SlotOccupyStore extends DelayedJobStore {
     /** C6: customer's orders, newest id first (snowflake ≈ created_at). */
     List<BookingOrderRef> listOrdersByCustomer(long customerId);
 
+    BookingOrderRef findOrderByOrderNo(String orderNo);
+
+    List<BookingOrderRef> listOrdersByCustomerId(long customerId);
+
     /** Occupancy whose slot row is still LOCKED for this hold. */
     int deleteOccupancyForLockedHold(long holdId);
 

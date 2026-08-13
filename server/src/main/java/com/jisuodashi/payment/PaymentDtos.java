@@ -25,6 +25,16 @@ public final class PaymentDtos {
     ) {
     }
 
+    public record NativePayResponse(
+            String orderId,
+            String paymentNo,
+            String status,
+            long amountFen,
+            boolean reused,
+            String codeUrl
+    ) {
+    }
+
     public record PaymentView(
             String paymentNo,
             String status,

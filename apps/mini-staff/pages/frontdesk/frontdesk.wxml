@@ -1,0 +1,40 @@
+<view class="desk">
+  <view class="bar">
+    <view>
+      <view class="title">门店前台</view>
+      <view class="sub">iPad 横屏 · 15px / 48px · {{staffName}}</view>
+    </view>
+    <button class="btn" bindtap="onLogin">登录前台</button>
+  </view>
+  <view wx:if="{{error}}" class="err">{{error}}</view>
+  <view class="grid">
+    <view class="card">
+      <view class="h2">到店核销</view>
+      <input class="field" placeholder="单号或手机" value="{{keyword}}" bindinput="onKeyword"/>
+      <button class="btn ghost" bindtap="onLookup">查找</button>
+      <view wx:for="{{hits}}" wx:key="orderId" class="hit">
+        <view>
+          <view class="strong">{{item.orderNo}}</view>
+          <view class="meta">{{item.customerMask}} · {{item.roomName}} {{item.bedName}}</view>
+        </view>
+        <button class="btn" data-id="{{item.orderId}}" data-orderno="{{item.orderNo}}" bindtap="onCheckIn">核销</button>
+      </view>
+      <view wx:if="{{checkInText}}" class="ok">{{checkInText}}</view>
+    </view>
+    <view class="card">
+      <view class="h2">散客开单</view>
+      <input class="field" placeholder="11 位手机" value="{{phone}}" bindinput="onPhone"/>
+      <input class="field" placeholder="称呼" value="{{customerName}}" bindinput="onName"/>
+      <view class="channels">
+        <view class="chip {{payChannel==='CASH'?'on':''}}" data-channel="CASH" bindtap="onChannel">现金</view>
+        <view class="chip {{payChannel==='WECHAT'?'on':''}}" data-channel="WECHAT" bindtap="onChannel">微信码</view>
+      </view>
+      <view class="chip {{alreadyInStore?'on':''}}" bindtap="onToggleAlready">已在店</view>
+      <button class="btn" bindtap="onWalkIn">开单收款</button>
+      <view wx:if="{{walkText}}" class="ok">{{walkText}}</view>
+      <canvas wx:if="{{codeUrl}}" canvas-id="native-qr" class="qr-canvas"></canvas>
+      <view wx:if="{{!qrReady && codeUrl}}" class="qr"></view>
+      <view wx:if="{{pollStatus}}" class="meta">轮询 {{pollStatus}}</view>
+    </view>
+  </view>
+</view>

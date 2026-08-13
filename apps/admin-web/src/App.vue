@@ -9,6 +9,7 @@
       <nav class="nav">
         <router-link to="/health">健康</router-link>
         <router-link to="/catalog">目录</router-link>
+        <router-link to="/frontdesk">前台</router-link>
       </nav>
     </el-header>
     <el-main class="main">

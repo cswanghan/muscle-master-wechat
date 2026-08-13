@@ -397,6 +397,30 @@ public interface InventoryOccupyMapper {
             """)
     List<BookingOrderRef> listOrdersByCustomer(@Param("customerId") long customerId);
 
+    @Select("""
+            SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
+                   status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
+                   customer_id AS customerId, therapist_id AS therapistId
+              FROM booking_order
+             WHERE order_no = #{orderNo}
+             LIMIT 1
+            """)
+    BookingOrderRef findOrderByOrderNo(@Param("orderNo") String orderNo);
+
+    @Select("""
+            SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
+                   status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
+                   customer_id AS customerId, therapist_id AS therapistId
+              FROM booking_order
+             WHERE customer_id = #{customerId}
+             ORDER BY service_date DESC, start_slot_no ASC
+            """)
+    List<BookingOrderRef> listOrdersByCustomerId(@Param("customerId") long customerId);
+
     @Delete("""
             DELETE o FROM slot_occupancy o
              INNER JOIN therapist_slot ts

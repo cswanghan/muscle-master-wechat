@@ -1,7 +1,9 @@
 {
   "pages": [
     "pages/today/today",
-    "pages/service/service"
+    "pages/service/service",
+    "pages/frontdesk/frontdesk",
+    "pages/index/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1E5C4A",

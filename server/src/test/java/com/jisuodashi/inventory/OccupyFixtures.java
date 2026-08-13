@@ -68,4 +68,12 @@ public final class OccupyFixtures {
     public static LockNewCommand cmd(String requestId, long therapistId, int startSlotNo) {
         return new LockNewCommand(requestId, CUSTOMER, STORE, therapistId, P60, TODAY, startSlotNo, "MINI_C");
     }
+
+    public static void seedDay(InMemorySlotOccupyStore store, LocalDate date) {
+        for (long therapist : new long[] {T1, T2, T3}) {
+            store.seedTherapistSlots(therapist, STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+        }
+        store.seedBedSlots(BED1, STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+        store.seedBedSlots(BED2, STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+    }
 }

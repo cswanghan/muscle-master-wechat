@@ -8,7 +8,14 @@ public interface WeChatPayClient {
     record Prepay(String prepayId) {
     }
 
+    record NativePrepay(String codeUrl, String prepayId) {
+    }
+
     Prepay jsapiPrepay(String paymentNo, long amountFen, String description);
+
+    NativePrepay nativePrepay(String paymentNo, long amountFen, String description);
+
+    String nativeCodeUrl(String paymentNo);
 
     Map<String, String> resign(String prepayId);
 

@@ -27,6 +27,8 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     private final List<CatalogModels.Symptom> symptoms;
     private final List<CatalogModels.SymptomProject> symptomProjects;
     private final List<CatalogModels.ScheduleTemplate> templates;
+    private final List<CatalogModels.Room> rooms;
+    private final List<CatalogModels.Bed> beds;
 
     public InMemoryCatalogRepository() {
         stores = List.of(new CatalogModels.Store(
@@ -99,6 +101,16 @@ public class InMemoryCatalogRepository implements CatalogRepository {
             }
         }
         templates = List.copyOf(tpls);
+
+        rooms = List.of(new CatalogModels.Room(
+                3_100_000_000_000_000_101L, DemoCatalogIds.STORE, "一号房", 1, 1));
+        beds = List.of(
+                new CatalogModels.Bed(
+                        3_100_000_000_000_000_201L, DemoCatalogIds.STORE,
+                        3_100_000_000_000_000_101L, "1号床", 1, 1),
+                new CatalogModels.Bed(
+                        3_100_000_000_000_000_202L, DemoCatalogIds.STORE,
+                        3_100_000_000_000_000_101L, "2号床", 2, 1));
     }
 
     @Override
@@ -149,5 +161,15 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     @Override
     public List<CatalogModels.ScheduleTemplate> listTemplates() {
         return templates;
+    }
+
+    @Override
+    public Optional<CatalogModels.Room> findRoom(long id) {
+        return rooms.stream().filter(r -> r.id() == id).findFirst();
+    }
+
+    @Override
+    public Optional<CatalogModels.Bed> findBed(long id) {
+        return beds.stream().filter(b -> b.id() == id).findFirst();
     }
 }

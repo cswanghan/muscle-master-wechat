@@ -63,6 +63,12 @@ public final class CatalogModels {
     public record SymptomProject(long symptomId, long projectId) {
     }
 
+    public record Room(long id, long storeId, String name, int sortNo, int status) {
+    }
+
+    public record Bed(long id, long storeId, long roomId, String name, int sortNo, int status) {
+    }
+
     public record ScheduleTemplate(
             long therapistId,
             long storeId,
