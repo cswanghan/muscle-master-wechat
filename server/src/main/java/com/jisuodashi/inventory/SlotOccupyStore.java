@@ -257,7 +257,7 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     int freeRescheduleSlots(List<RescheduleSlotKey> release, long orderId, LocalDateTime now);
 
-    int reholdRescheduleKeep(List<RescheduleSlotKey> keep, long orderId, long newHold, LocalDateTime now);
+    int reholdRescheduleKeep(List<RescheduleAcquire> keep, long orderId, long newHold, LocalDateTime now);
 
     int updateOrderForReschedule(
             long orderId,
@@ -274,6 +274,8 @@ public interface SlotOccupyStore extends DelayedJobStore {
     int updateProjectItemWindow(long orderId, int startSlotNo, int endSlotNo);
 
     void insertOrderChangeLog(OrderChangeLogInsert row);
+
+    OrderItemInsert findProjectItem(long orderId);
 
     record RescheduleSlotKey(String resourceType, long resourceId, LocalDate slotDate, int slotNo)
             implements Comparable<RescheduleSlotKey> {
@@ -301,7 +303,8 @@ public interface SlotOccupyStore extends DelayedJobStore {
             LocalDate slotDate,
             int slotNo,
             String status,
-            Long orderId
+            Long orderId,
+            Long storeId
     ) {
         RescheduleSlotKey key() {
             return new RescheduleSlotKey(resourceType, resourceId, slotDate, slotNo);

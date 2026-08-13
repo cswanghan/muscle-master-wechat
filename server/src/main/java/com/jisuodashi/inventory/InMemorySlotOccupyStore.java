@@ -964,7 +964,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
             if (slot != null) {
                 rows.add(new RescheduleSlotRow(
                         key.resourceType(), key.resourceId(), key.slotDate(), key.slotNo(),
-                        slot.status, slot.orderId));
+                        slot.status, slot.orderId, slot.storeId));
             }
         }
         return rows;
@@ -1043,18 +1043,20 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
-    public int reholdRescheduleKeep(List<RescheduleSlotKey> keep, long orderId, long newHold, LocalDateTime now) {
+    public int reholdRescheduleKeep(List<RescheduleAcquire> keep, long orderId, long newHold, LocalDateTime now) {
         if (keep == null || keep.isEmpty()) {
             return 0;
         }
         Work w = requireWork();
         int n = 0;
         List<Runnable> undo = new ArrayList<>();
-        for (RescheduleSlotKey key : keep) {
+        for (RescheduleAcquire item : keep) {
+            RescheduleSlotKey key = item.key();
             MutableSlot slot = slotOf(key);
             if (slot != null && slot.orderId != null && slot.orderId == orderId) {
                 Snapshot snap = slot.snapshot();
                 slot.holdId = newHold;
+                slot.status = item.destStatus();
                 undo.add(() -> slot.restore(snap));
                 n++;
             }
@@ -1146,6 +1148,14 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
                 changeLogs.remove(row);
             }
         });
+    }
+
+    @Override
+    public synchronized OrderItemInsert findProjectItem(long orderId) {
+        return orderItems.stream()
+                .filter(item -> item.orderId() == orderId && "PROJECT".equals(item.itemType()))
+                .findFirst()
+                .orElse(null);
     }
 
     private MutableSlot slotOf(RescheduleSlotKey key) {

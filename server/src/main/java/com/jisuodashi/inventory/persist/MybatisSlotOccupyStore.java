@@ -5,6 +5,7 @@ import com.jisuodashi.inventory.DuplicateOccupancyException;
 import com.jisuodashi.inventory.ResourceType;
 import com.jisuodashi.inventory.SlotOccupyStore;
 import com.jisuodashi.inventory.SlotOccupyStore.OrderChangeLogInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.RescheduleAcquire;
 import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotKey;
 import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotRow;
@@ -415,15 +416,18 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
-    public int reholdRescheduleKeep(List<RescheduleSlotKey> keep, long orderId, long newHold, LocalDateTime now) {
+    public int reholdRescheduleKeep(List<RescheduleAcquire> keep, long orderId, long newHold, LocalDateTime now) {
         if (keep == null || keep.isEmpty()) {
             return 0;
         }
         int n = 0;
-        for (RescheduleSlotKey key : keep) {
+        for (RescheduleAcquire item : keep) {
+            RescheduleSlotKey key = item.key();
             n += ResourceType.THERAPIST.equals(key.resourceType())
-                    ? mapper.reholdTherapistSlot(key.resourceId(), key.slotDate(), key.slotNo(), orderId, newHold, now)
-                    : mapper.reholdBedSlot(key.resourceId(), key.slotDate(), key.slotNo(), orderId, newHold, now);
+                    ? mapper.reholdTherapistSlot(
+                    key.resourceId(), key.slotDate(), key.slotNo(), orderId, newHold, item.destStatus(), now)
+                    : mapper.reholdBedSlot(
+                    key.resourceId(), key.slotDate(), key.slotNo(), orderId, newHold, item.destStatus(), now);
             mapper.reholdOccupancyKey(
                     key.resourceType(), key.resourceId(), key.slotDate(), key.slotNo(), orderId, newHold);
         }
@@ -457,6 +461,11 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
         mapper.insertOrderChangeLog(
                 row.id(), row.orderId(), row.changeType(), row.beforeJson(), row.afterJson(),
                 row.operatorId(), row.createdAt());
+    }
+
+    @Override
+    public OrderItemInsert findProjectItem(long orderId) {
+        return mapper.findProjectItem(orderId);
     }
 
     /** slot_no values are ints; safe to interpolate into IN (...). */

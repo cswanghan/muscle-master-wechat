@@ -44,20 +44,37 @@ class RescheduleServiceTest {
         assertThat(store.occupancies.keySet()).doesNotHaveDuplicates();
         assertThat(store.delayedJobs).hasSize(1);
 
+        assertPaidWindow(store, T1, moved.bedId(), TODAY, START_2000, orderId, moved.holdId());
         assertSlot(store.therapistSlot(T1, TODAY, 78), SlotStatus.FREE, null, null);
         assertSlot(store.therapistSlot(T1, TODAY, 79), SlotStatus.FREE, null, null);
-        assertSlot(store.therapistSlot(T1, TODAY, 80), SlotStatus.BOOKED, orderId, moved.holdId());
-        assertSlot(store.therapistSlot(T1, TODAY, 83), SlotStatus.BOOKED, orderId, moved.holdId());
-        assertSlot(store.therapistSlot(T1, TODAY, 84), SlotStatus.BUFFER, orderId, moved.holdId());
         assertSlot(store.bedSlot(moved.bedId(), TODAY, 78), SlotStatus.FREE, null, null);
-        assertSlot(store.bedSlot(moved.bedId(), TODAY, 84), SlotStatus.BUFFER, orderId, moved.holdId());
+        assertSlot(store.bedSlot(moved.bedId(), TODAY, 79), SlotStatus.FREE, null, null);
         assertThat(store.changeLogs).hasSize(1);
         assertThat(store.changeLogs.getFirst().changeType()).isEqualTo(SlotOccupyService.CHANGE_RESCHEDULE);
 
+        store.setOrderStatus(orderId, "CHECKED_IN");
         RescheduleResult replay = service.reschedule(cmd("rs-shift-1", orderId, TODAY, START_2000, T1));
         assertThat(replay.replay()).isTrue();
         assertThat(replay.holdId()).isEqualTo(moved.holdId());
         assertThat(store.occupancyCount()).isEqualTo(occBefore);
+    }
+
+    @Test
+    void shiftEarlierRemapsKeepTailToBuffer() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService service = OccupyFixtures.service(store);
+        long orderId = bookPaid(store, service, "rs-back", T1, START_2000);
+
+        RescheduleResult moved = service.reschedule(cmd("rs-back-1", orderId, TODAY, START_1930, T1));
+
+        assertThat(moved.startSlotNo()).isEqualTo(START_1930);
+        assertThat(moved.acquireCount()).isEqualTo(4);
+        assertThat(moved.releaseCount()).isEqualTo(4);
+        assertThat(moved.keepCount()).isEqualTo(6);
+        assertPaidWindow(store, T1, moved.bedId(), TODAY, START_1930, orderId, moved.holdId());
+        assertSlot(store.therapistSlot(T1, TODAY, 83), SlotStatus.FREE, null, null);
+        assertSlot(store.therapistSlot(T1, TODAY, 84), SlotStatus.FREE, null, null);
+        assertSlot(store.bedSlot(moved.bedId(), TODAY, 82), SlotStatus.BUFFER, orderId, moved.holdId());
     }
 
     @Test
@@ -142,6 +159,58 @@ class RescheduleServiceTest {
         assertThat(store.findOrderById(pending.orderId()).startSlotNo()).isEqualTo(START_1930);
     }
 
+    @Test
+    void otherStoreTherapistSlotsRejected() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService service = OccupyFixtures.service(store);
+        long orderId = bookPaid(store, service, "rs-store", T1, START_1930);
+        long oldHold = store.findOrderById(orderId).holdId();
+        store.seedTherapistSlots(T2, 9_999_000_000_000_001L, TODAY, START_1600, START_1600 + 5, SlotStatus.FREE);
+
+        assertThatThrownBy(() -> service.reschedule(cmd("rs-store-1", orderId, TODAY, START_1600, T2)))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getCode())
+                .isEqualTo(ErrorCodes.ILLEGAL_TRANSITION);
+        assertThat(store.findOrderById(orderId).holdId()).isEqualTo(oldHold);
+        assertThat(store.findOrderById(orderId).therapistId()).isEqualTo(T1);
+        assertThat(store.findOrderById(orderId).startSlotNo()).isEqualTo(START_1930);
+    }
+
+    @Test
+    void priceMismatchRejected() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService service = OccupyFixtures.service(store);
+        long orderId = bookPaid(store, service, "rs-price", T1, START_1930);
+        store.seedSlotOverride(T1, TODAY, START_2000, 1L);
+        long oldHold = store.findOrderById(orderId).holdId();
+
+        assertThatThrownBy(() -> service.reschedule(cmd("rs-price-1", orderId, TODAY, START_2000, T1)))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getCode())
+                .isEqualTo(ErrorCodes.ILLEGAL_TRANSITION);
+        assertThat(store.findOrderById(orderId).holdId()).isEqualTo(oldHold);
+        assertThat(store.findOrderById(orderId).startSlotNo()).isEqualTo(START_1930);
+        assertSlot(store.therapistSlot(T1, TODAY, 82), SlotStatus.BUFFER, orderId, oldHold);
+    }
+
+    @Test
+    void originalBedBusyFallsBackUnderLock() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService service = OccupyFixtures.service(store);
+        long orderId = bookPaid(store, service, "rs-bed-fb", T1, START_1930);
+        assertThat(store.findOrderById(orderId).bedId()).isEqualTo(BED1);
+        store.bedSlot(BED1, TODAY, 83).status = SlotStatus.BOOKED;
+        store.bedSlot(BED1, TODAY, 84).status = SlotStatus.BOOKED;
+
+        RescheduleResult moved = service.reschedule(cmd("rs-bed-fb-1", orderId, TODAY, START_2000, T1));
+
+        assertThat(moved.bedId()).isEqualTo(BED2);
+        assertPaidWindow(store, T1, BED2, TODAY, START_2000, orderId, moved.holdId());
+        assertSlot(store.bedSlot(BED1, TODAY, 78), SlotStatus.FREE, null, null);
+        assertThat(store.slotPinAttempts).contains(InMemorySlotOccupyStore.bkey(BED1, TODAY, 83));
+        assertThat(store.slotPinAttempts).contains(InMemorySlotOccupyStore.bkey(BED2, TODAY, 80));
+    }
+
     private static long bookPaid(
             InMemorySlotOccupyStore store, SlotOccupyService service, String requestId, long therapist, int start) {
         LockNewResult locked = service.lockNew(OccupyFixtures.cmd(requestId, therapist, start));
@@ -152,6 +221,17 @@ class RescheduleServiceTest {
 
     private static RescheduleCommand cmd(String requestId, long orderId, LocalDate date, int start, long therapistId) {
         return new RescheduleCommand(requestId, orderId, date, start, therapistId, 1L);
+    }
+
+    private static void assertPaidWindow(
+            InMemorySlotOccupyStore store, long therapistId, long bedId, LocalDate date,
+            int start, long orderId, long holdId) {
+        for (int slot = start; slot < start + 4; slot++) {
+            assertSlot(store.therapistSlot(therapistId, date, slot), SlotStatus.BOOKED, orderId, holdId);
+            assertSlot(store.bedSlot(bedId, date, slot), SlotStatus.BOOKED, orderId, holdId);
+        }
+        assertSlot(store.therapistSlot(therapistId, date, start + 4), SlotStatus.BUFFER, orderId, holdId);
+        assertSlot(store.bedSlot(bedId, date, start + 4), SlotStatus.BUFFER, orderId, holdId);
     }
 
     private static void assertSlot(MutableSlot slot, String status, Long orderId, Long holdId) {

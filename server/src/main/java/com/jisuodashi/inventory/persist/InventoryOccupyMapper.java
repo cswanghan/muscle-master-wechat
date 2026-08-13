@@ -727,7 +727,7 @@ public interface InventoryOccupyMapper {
 
     @Select("""
             SELECT 'THERAPIST' AS resourceType, therapist_id AS resourceId, slot_date AS slotDate,
-                   slot_no AS slotNo, status, order_id AS orderId
+                   slot_no AS slotNo, status, order_id AS orderId, store_id AS storeId
               FROM therapist_slot
              WHERE therapist_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
              FOR UPDATE
@@ -739,7 +739,7 @@ public interface InventoryOccupyMapper {
 
     @Select("""
             SELECT 'BED' AS resourceType, bed_id AS resourceId, slot_date AS slotDate,
-                   slot_no AS slotNo, status, order_id AS orderId
+                   slot_no AS slotNo, status, order_id AS orderId, store_id AS storeId
               FROM bed_slot
              WHERE bed_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
              FOR UPDATE
@@ -823,7 +823,7 @@ public interface InventoryOccupyMapper {
 
     @Update("""
             UPDATE therapist_slot
-               SET hold_id = #{holdId}, updated_at = #{now}
+               SET hold_id = #{holdId}, status = #{status}, updated_at = #{now}
              WHERE therapist_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
                AND order_id = #{orderId}
             """)
@@ -833,11 +833,12 @@ public interface InventoryOccupyMapper {
             @Param("slotNo") int slotNo,
             @Param("orderId") long orderId,
             @Param("holdId") long holdId,
+            @Param("status") String status,
             @Param("now") LocalDateTime now);
 
     @Update("""
             UPDATE bed_slot
-               SET hold_id = #{holdId}, updated_at = #{now}
+               SET hold_id = #{holdId}, status = #{status}, updated_at = #{now}
              WHERE bed_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
                AND order_id = #{orderId}
             """)
@@ -847,6 +848,7 @@ public interface InventoryOccupyMapper {
             @Param("slotNo") int slotNo,
             @Param("orderId") long orderId,
             @Param("holdId") long holdId,
+            @Param("status") String status,
             @Param("now") LocalDateTime now);
 
     @Update("""
@@ -912,4 +914,16 @@ public interface InventoryOccupyMapper {
             @Param("afterJson") String afterJson,
             @Param("operatorId") Long operatorId,
             @Param("createdAt") LocalDateTime createdAt);
+
+    @Select("""
+            SELECT id, order_id AS orderId, item_type AS itemType, project_id AS projectId,
+                   project_name AS projectName, duration_minutes AS durationMinutes,
+                   buffer_minutes AS bufferMinutes, quantity, unit_price_fen AS unitPriceFen,
+                   amount_fen AS amountFen, start_slot_no AS startSlotNo, end_slot_no AS endSlotNo,
+                   created_at AS createdAt
+              FROM order_item
+             WHERE order_id = #{orderId} AND item_type = 'PROJECT'
+             LIMIT 1
+            """)
+    SlotOccupyStore.OrderItemInsert findProjectItem(@Param("orderId") long orderId);
 }

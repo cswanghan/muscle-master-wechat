@@ -157,8 +157,9 @@ class RescheduleReportTest {
                     </div>
                     <div class="callout">
                       <strong>§2.4.4</strong>
-                      <div>交集只 UPDATE <code>hold_id</code>，禁止 INSERT keep。目标忙 40901/40902；
-                      非 BOOKED 40904。同店同项目同价。优先原床。</div>
+                      <div>交集只 UPDATE <code>hold_id</code> + 按新序列重标 BOOKED/BUFFER，禁止 INSERT keep。
+                      目标忙 40901/40902；非 BOOKED / 跨店 slot / 不同价 40904。
+                      同店看 <code>therapist_slot.store_id</code>。优先原床，FOR UPDATE 逐床试。</div>
                     </div>
                     <h2>iPad 前台 1024（改约）</h2>
                     <div class="ipad" id="ipad-desk">
