@@ -1,5 +1,6 @@
 package com.jisuodashi.inventory;
 
+import com.jisuodashi.catalog.DemoCatalogIds;
 import com.jisuodashi.inventory.DelayedJobStore.DelayedJobRow;
 import com.jisuodashi.inventory.SlotOccupyStore.BedRef;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderInsert;
@@ -13,6 +14,9 @@ import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
+import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,16 +30,31 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * In-memory CAS + ordered row locks. H2 cannot run V1 MySQL DDL, so lockNew is tested here.
+ * In-memory CAS + ordered row locks. H2 cannot run V1 MySQL DDL, so lockNew
+ * is tested here. {@code dev} profile exposes the same store so POST /c/bookings
+ * can call lockNew without MySQL.
  */
-final class InMemorySlotOccupyStore implements SlotOccupyStore {
+@Repository
+@Profile("dev")
+public class InMemorySlotOccupyStore implements SlotOccupyStore {
+
+    static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
+    static final int OPEN_SLOT = 40;
+    static final int CLOSE_SLOT = 88;
+    static final long ROOM = 3_100_000_000_000_000_101L;
+    static final long BED1 = 3_100_000_000_000_000_201L;
+    static final long BED2 = 3_100_000_000_000_000_202L;
 
     final Map<Long, ProjectRef> projects = new ConcurrentHashMap<>();
     final Map<Long, TherapistRef> therapists = new ConcurrentHashMap<>();
     final Map<Long, BedRef> beds = new ConcurrentHashMap<>();
     final Map<String, MutableSlot> therapistSlots = new ConcurrentHashMap<>();
     final Map<String, MutableSlot> bedSlots = new ConcurrentHashMap<>();
-    final Map<String, OccupancyInsert> occupancies = new ConcurrentHashMap<>();
+    public final Map<String, OccupancyInsert> occupancies = new ConcurrentHashMap<>();
+
+    public int occupancyCount() {
+        return occupancies.size();
+    }
     final Map<String, IdemState> idempotency = new ConcurrentHashMap<>();
     final Map<Long, BookingOrderInsert> orders = new ConcurrentHashMap<>();
     final Map<String, BookingOrderInsert> ordersByRequest = new ConcurrentHashMap<>();
@@ -59,29 +78,91 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
     private final ConcurrentHashMap<String, ReentrantLock> rowLocks = new ConcurrentHashMap<>();
     private final ThreadLocal<Work> work = new ThreadLocal<>();
 
+    @PostConstruct
+    void initDemo() {
+        seedDemoCatalog();
+        seedDemoCalendar();
+    }
+
+    public void resetDemoCalendar() {
+        occupancies.clear();
+        orders.clear();
+        ordersByRequest.clear();
+        orderItems.clear();
+        delayedJobs.clear();
+        jobs.clear();
+        orderStatuses.clear();
+        addOnHolds.clear();
+        idempotency.clear();
+        slotPinAttempts.clear();
+        occupancyInserts.set(0);
+        bedOccupancyInserts.set(0);
+        therapistSlots.clear();
+        bedSlots.clear();
+        seedDemoCalendar();
+    }
+
+    void seedDemoCatalog() {
+        seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P60, "全身推拿放松", 60, 15, 19800));
+        seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P45, "肩颈专项疏通", 45, 15, 12800));
+        seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P90, "腰背深层理筋", 90, 15, 26800));
+        seedTherapist(new TherapistRef(DemoCatalogIds.THERAPIST_LIN, DemoCatalogIds.STORE));
+        seedTherapist(new TherapistRef(DemoCatalogIds.THERAPIST_CHEN, DemoCatalogIds.STORE));
+        seedTherapist(new TherapistRef(DemoCatalogIds.THERAPIST_ZHOU, DemoCatalogIds.STORE));
+        seedBed(new BedRef(BED1, DemoCatalogIds.STORE, ROOM, 1));
+        seedBed(new BedRef(BED2, DemoCatalogIds.STORE, ROOM, 2));
+    }
+
+    void seedDemoCalendar() {
+        for (int day = 0; day < 15; day++) {
+            LocalDate date = DEMO_DATE.plusDays(day);
+            for (long therapist : new long[] {
+                    DemoCatalogIds.THERAPIST_LIN, DemoCatalogIds.THERAPIST_CHEN, DemoCatalogIds.THERAPIST_ZHOU}) {
+                seedTherapistSlots(therapist, DemoCatalogIds.STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+            }
+            seedBedSlots(BED1, DemoCatalogIds.STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+            seedBedSlots(BED2, DemoCatalogIds.STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+        }
+    }
+
     @Override
     public void beginWork() {
+        Work w = work.get();
+        if (w != null) {
+            w.depth++;
+            return;
+        }
         work.set(new Work());
     }
 
     @Override
     public void commitWork() {
         Work w = work.get();
-        if (w != null) {
-            w.unlockAll();
+        if (w == null) {
+            return;
         }
+        if (w.depth > 0) {
+            w.depth--;
+            return;
+        }
+        w.unlockAll();
         work.remove();
     }
 
     @Override
     public void rollbackWork() {
         Work w = work.get();
-        if (w != null) {
-            for (int i = w.undos.size() - 1; i >= 0; i--) {
-                w.undos.get(i).run();
-            }
-            w.unlockAll();
+        if (w == null) {
+            return;
         }
+        if (w.depth > 0) {
+            w.depth--;
+            return;
+        }
+        for (int i = w.undos.size() - 1; i >= 0; i--) {
+            w.undos.get(i).run();
+        }
+        w.unlockAll();
         work.remove();
     }
 
@@ -555,6 +636,91 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public int casOrderStatus(long orderId, String expectedStatus, String toStatus, LocalDateTime now) {
+        Work w = requireWork();
+        lockRow("O|id|" + orderId, w);
+        BookingOrderInsert row = orders.get(orderId);
+        if (row == null) {
+            return 0;
+        }
+        String current = orderStatuses.getOrDefault(orderId, row.status());
+        if (!expectedStatus.equals(current)) {
+            return 0;
+        }
+        orderStatuses.put(orderId, toStatus);
+        w.undos.add(() -> {
+            if (expectedStatus.equals(row.status())) {
+                orderStatuses.remove(orderId);
+            } else {
+                orderStatuses.put(orderId, expectedStatus);
+            }
+        });
+        return 1;
+    }
+
+    @Override
+    public int deleteOccupancyFromSlot(long orderId, int fromSlotNo) {
+        Work w = requireWork();
+        List<Map.Entry<String, OccupancyInsert>> removed = new ArrayList<>();
+        occupancies.entrySet().removeIf(e -> {
+            OccupancyInsert row = e.getValue();
+            if (row.orderId() != orderId || row.slotNo() < fromSlotNo) {
+                return false;
+            }
+            removed.add(e);
+            return true;
+        });
+        w.undos.add(() -> {
+            for (Map.Entry<String, OccupancyInsert> e : removed) {
+                occupancies.putIfAbsent(e.getKey(), e.getValue());
+            }
+        });
+        return removed.size();
+    }
+
+    @Override
+    public int freeOrderTherapistSlotsFrom(long orderId, int fromSlotNo, LocalDateTime now) {
+        return freeOrderSlotsFrom(therapistSlots, orderId, fromSlotNo);
+    }
+
+    @Override
+    public int freeOrderBedSlotsFrom(long orderId, int fromSlotNo, LocalDateTime now) {
+        return freeOrderSlotsFrom(bedSlots, orderId, fromSlotNo);
+    }
+
+    private int freeOrderSlotsFrom(Map<String, MutableSlot> slots, long orderId, int fromSlotNo) {
+        Work w = requireWork();
+        int n = 0;
+        for (MutableSlot slot : slots.values()) {
+            if (slot.orderId != null && slot.orderId == orderId
+                    && slot.slotNo >= fromSlotNo
+                    && (SlotStatus.LOCKED.equals(slot.status)
+                    || SlotStatus.BOOKED.equals(slot.status)
+                    || SlotStatus.BUFFER.equals(slot.status))) {
+                Snapshot snap = slot.snapshot();
+                slot.status = SlotStatus.FREE;
+                slot.orderId = null;
+                slot.holdId = null;
+                slot.lockExpireAt = null;
+                w.undos.add(() -> slot.restore(snap));
+                n++;
+            }
+        }
+        return n;
+    }
+
+    @Override
+    public int clearAddOnHold(long orderId, LocalDateTime now) {
+        Long prev = addOnHolds.remove(orderId);
+        requireWork().undos.add(() -> {
+            if (prev != null) {
+                addOnHolds.put(orderId, prev);
+            }
+        });
+        return prev == null ? 0 : 1;
+    }
+
+    @Override
     public SlotHoldMeta findHoldSlotMeta(long holdId) {
         for (MutableSlot slot : therapistSlots.values()) {
             if (slot.holdId != null && slot.holdId == holdId) {
@@ -626,7 +792,7 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
         return jobs.get(id);
     }
 
-    MutableJob jobByHold(long holdId) {
+    public MutableJob jobByHold(long holdId) {
         String biz = "hold:" + holdId;
         return jobs.values().stream()
                 .filter(j -> biz.equals(j.bizKey))
@@ -697,7 +863,7 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
         }
     }
 
-    MutableSlot therapistSlot(long therapistId, LocalDate date, int slotNo) {
+    public MutableSlot therapistSlot(long therapistId, LocalDate date, int slotNo) {
         return therapistSlots.get(tkey(therapistId, date, slotNo));
     }
 
@@ -746,12 +912,12 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
         return w;
     }
 
-    static final class MutableSlot {
+    public static final class MutableSlot {
         final long resourceId;
         final long storeId;
         final LocalDate date;
         final int slotNo;
-        volatile String status;
+        public volatile String status;
         volatile Long orderId;
         volatile Long holdId;
         volatile LocalDateTime lockExpireAt;
@@ -779,13 +945,13 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
     private record Snapshot(String status, Long orderId, Long holdId, LocalDateTime lockExpireAt) {
     }
 
-    static final class MutableJob {
+    public static final class MutableJob {
         final long id;
         final String jobType;
         final String bizKey;
         final String payload;
         volatile LocalDateTime runAt;
-        volatile String status;
+        public volatile String status;
         volatile String lockedBy;
         volatile LocalDateTime lockedAt;
         volatile LocalDateTime leaseUntil;
@@ -843,6 +1009,7 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
     private static final class Work {
         final List<Runnable> undos = new ArrayList<>();
         final List<ReentrantLock> locks = new ArrayList<>();
+        int depth;
 
         void unlockAll() {
             for (int i = locks.size() - 1; i >= 0; i--) {

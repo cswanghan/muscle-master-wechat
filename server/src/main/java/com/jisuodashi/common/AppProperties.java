@@ -255,9 +255,19 @@ public class AppProperties {
 
     public static class Booking {
         private final Captcha captcha = new Captcha();
+        /** C-end free cancel window before start (D18). */
+        private int cancelFreeMinutes = 120;
 
         public Captcha getCaptcha() {
             return captcha;
+        }
+
+        public int getCancelFreeMinutes() {
+            return cancelFreeMinutes;
+        }
+
+        public void setCancelFreeMinutes(int cancelFreeMinutes) {
+            this.cancelFreeMinutes = cancelFreeMinutes;
         }
 
         public static class Captcha {

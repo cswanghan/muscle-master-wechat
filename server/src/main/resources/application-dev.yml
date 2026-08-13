@@ -45,6 +45,7 @@ app:
   booking:
     captcha:
       enabled: false
+    cancel-free-minutes: 120
   internal:
     force-release:
       enabled: false

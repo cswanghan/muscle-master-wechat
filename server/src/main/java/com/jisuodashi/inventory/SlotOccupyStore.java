@@ -97,6 +97,17 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     int markReleaseLockJobDone(long holdId, LocalDateTime now);
 
+    /** CAS: only when current status matches. Used solely by {@code OrderStateMachine.fire}. */
+    int casOrderStatus(long orderId, String expectedStatus, String toStatus, LocalDateTime now);
+
+    int deleteOccupancyFromSlot(long orderId, int fromSlotNo);
+
+    int freeOrderTherapistSlotsFrom(long orderId, int fromSlotNo, LocalDateTime now);
+
+    int freeOrderBedSlotsFrom(long orderId, int fromSlotNo, LocalDateTime now);
+
+    int clearAddOnHold(long orderId, LocalDateTime now);
+
     SlotHoldMeta findHoldSlotMeta(long holdId);
 
     record ProjectRef(long id, String name, int durationMinutes, int bufferMinutes, long priceFen) {

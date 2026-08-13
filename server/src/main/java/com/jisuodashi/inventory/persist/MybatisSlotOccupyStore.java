@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
+@org.springframework.context.annotation.Profile("!dev")
 public class MybatisSlotOccupyStore implements SlotOccupyStore {
 
     private final InventoryOccupyMapper mapper;
@@ -233,6 +234,31 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     @Override
     public int markReleaseLockJobDone(long holdId, LocalDateTime now) {
         return mapper.markReleaseLockJobDone("hold:" + holdId, now);
+    }
+
+    @Override
+    public int casOrderStatus(long orderId, String expectedStatus, String toStatus, LocalDateTime now) {
+        return mapper.casOrderStatus(orderId, expectedStatus, toStatus, now);
+    }
+
+    @Override
+    public int deleteOccupancyFromSlot(long orderId, int fromSlotNo) {
+        return mapper.deleteOccupancyFromSlot(orderId, fromSlotNo);
+    }
+
+    @Override
+    public int freeOrderTherapistSlotsFrom(long orderId, int fromSlotNo, LocalDateTime now) {
+        return mapper.freeOrderTherapistSlotsFrom(orderId, fromSlotNo, now);
+    }
+
+    @Override
+    public int freeOrderBedSlotsFrom(long orderId, int fromSlotNo, LocalDateTime now) {
+        return mapper.freeOrderBedSlotsFrom(orderId, fromSlotNo, now);
+    }
+
+    @Override
+    public int clearAddOnHold(long orderId, LocalDateTime now) {
+        return mapper.clearAddOnHold(orderId, now);
     }
 
     @Override

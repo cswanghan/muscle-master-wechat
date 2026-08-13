@@ -10,11 +10,11 @@ import java.time.LocalTime;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** V3 demo IDs + 10:00–22:00 FREE calendar for lockNew tests. */
-final class OccupyFixtures {
+public final class OccupyFixtures {
 
-    static final long STORE = DemoFixtures.STORE;
+    public static final long STORE = DemoFixtures.STORE;
     static final long ROOM = 3_100_000_000_000_000_101L;
-    static final long T1 = DemoFixtures.T1;
+    public static final long T1 = DemoFixtures.T1;
     static final long T2 = DemoFixtures.T2;
     static final long T3 = DemoFixtures.T3;
     static final long BED1 = DemoFixtures.BED1;
@@ -24,13 +24,13 @@ final class OccupyFixtures {
     static final LocalDate TODAY = DemoFixtures.TODAY;
     static final int OPEN_SLOT = 40;
     static final int CLOSE_SLOT = 88;
-    static final int START_1930 = 78;
+    public static final int START_1930 = 78;
     static final int START_2000 = 80;
 
     private OccupyFixtures() {
     }
 
-    static InMemorySlotOccupyStore demoStore() {
+    public static InMemorySlotOccupyStore demoStore() {
         return demoStore(2);
     }
 
@@ -54,7 +54,7 @@ final class OccupyFixtures {
         return store;
     }
 
-    static SlotOccupyService service(InMemorySlotOccupyStore store) {
+    public static SlotOccupyService service(InMemorySlotOccupyStore store) {
         return service(store, new InMemoryTherapistDayLock());
     }
 
@@ -65,7 +65,7 @@ final class OccupyFixtures {
         return new SlotOccupyService(store, dayLock, ids::incrementAndGet, clock);
     }
 
-    static LockNewCommand cmd(String requestId, long therapistId, int startSlotNo) {
+    public static LockNewCommand cmd(String requestId, long therapistId, int startSlotNo) {
         return new LockNewCommand(requestId, CUSTOMER, STORE, therapistId, P60, TODAY, startSlotNo, "MINI_C");
     }
 }

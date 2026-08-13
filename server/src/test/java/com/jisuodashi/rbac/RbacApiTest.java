@@ -4,6 +4,7 @@ import com.jisuodashi.auth.DemoStaffIds;
 import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.JwtService;
 import com.jisuodashi.auth.TokenType;
+import com.jisuodashi.catalog.DemoCatalogIds;
 import com.jisuodashi.frontdesk.DeskNoteService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,12 +75,23 @@ class RbacApiTest {
         assertThat(context.getBean(CaptchaFilter.class)).isNotNull();
         assertThat(context.getBean(com.jisuodashi.common.AppProperties.class)
                 .getBooking().getCaptcha().isEnabled()).isFalse();
+        String customer = jwt.issue(JwtPrincipal.customer(8_100_000_000_000_000_001L)).token();
         ResponseEntity<Map<String, Object>> res = rest.exchange(
-                "/api/v1/c/bookings", HttpMethod.POST, json(Map.of("x", 1), null), MAP);
+                "/api/v1/c/bookings",
+                HttpMethod.POST,
+                json(Map.of(
+                        "requestId", "rbac-captcha-off",
+                        "storeId", String.valueOf(DemoCatalogIds.STORE),
+                        "therapistId", String.valueOf(DemoCatalogIds.THERAPIST_CHEN),
+                        "projectId", String.valueOf(DemoCatalogIds.PROJECT_P60),
+                        "date", "2026-08-14",
+                        "startSlotNo", 56
+                ), customer),
+                MAP);
         assertThat(res.getStatusCode().value()).isNotEqualTo(400);
-        if (res.getBody() != null) {
-            assertThat(res.getBody().get("code")).isNotEqualTo(40001);
-        }
+        assertThat(res.getBody()).isNotNull();
+        assertThat(res.getBody().get("code")).isNotEqualTo(40001);
+        assertThat(String.valueOf(res.getBody().get("message"))).doesNotContain("缺少验证码");
     }
 
     @Test

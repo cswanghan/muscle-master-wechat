@@ -53,10 +53,11 @@ import java.util.function.Supplier;
  * Lock order is therapist then beds: therapist-day Redis already serializes the
  * same therapist; beds are walked by sort_no, id. Unpaid dest is LOCKED.
  * <p>
- * Law A (D25): {@link #releaseLock} / {@link #forceFreeByHold} MUST NOT
+ * Law A (D25): {@link #releaseLock} / {@link #forceFreeByHold} /
+ * {@link #releaseUnconsumed} / {@link #releaseAddOnHold} MUST NOT
  * {@code fire()} the order state machine. They join the caller TX.
  * {@code ReleaseLock} frees LOCKED rows when the order is PENDING_PAY or
- * CLOSED (fire already wrote the target). Never BOOKED / IN_SERVICE.
+ * CLOSED (caller already wrote the target). Never BOOKED / IN_SERVICE.
  */
 @Service
 public class SlotOccupyService {
@@ -204,6 +205,21 @@ public class SlotOccupyService {
      */
     public ConfirmPaidResult confirmPaidSlots(long orderId) {
         return inStoreTx(() -> doConfirmPaidSlots(orderId));
+    }
+
+    /**
+     * Refund / no-show / abort. Already-consumed slots ({@code slot_no < from})
+     * stay BOOKED. Must not {@code fire()}.
+     */
+    public ReleaseResult releaseUnconsumed(long orderId, int fromSlotNo) {
+        return inStoreTx(() -> doReleaseUnconsumed(orderId, fromSlotNo));
+    }
+
+    /**
+     * Unpaid add-on hold timeout. Must not {@code fire()}.
+     */
+    public ReleaseResult releaseAddOnHold(long addHoldId) {
+        return inStoreTx(() -> doReleaseAddOnHold(addHoldId));
     }
 
     /**
@@ -466,6 +482,35 @@ public class SlotOccupyService {
                 ? ReleaseResult.IDEMPOTENT
                 : freedOutcome;
         return new ReleaseResult(holdId, outcome, occ, therapist, bed);
+    }
+
+    private ReleaseResult doReleaseUnconsumed(long orderId, int fromSlotNo) {
+        BookingOrderRef order = store.lockOrderById(orderId);
+        if (order == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        int occ = store.deleteOccupancyFromSlot(orderId, fromSlotNo);
+        LocalDateTime now = clock.now();
+        int therapist = store.freeOrderTherapistSlotsFrom(orderId, fromSlotNo, now);
+        int bed = store.freeOrderBedSlotsFrom(orderId, fromSlotNo, now);
+        evictAvail(order.storeId(), order.serviceDate());
+        String outcome = (occ == 0 && therapist == 0 && bed == 0)
+                ? ReleaseResult.IDEMPOTENT
+                : ReleaseResult.FREED;
+        return new ReleaseResult(order.holdId(), outcome, occ, therapist, bed);
+    }
+
+    private ReleaseResult doReleaseAddOnHold(long addHoldId) {
+        BookingOrderRef order = store.findOrderByAddOnHoldId(addHoldId);
+        if (order != null) {
+            store.lockOrderById(order.id());
+        }
+        ReleaseResult freed = freeLockedHold(addHoldId, ReleaseResult.FREED);
+        if (order != null) {
+            store.clearAddOnHold(order.id(), clock.now());
+            evictAvail(order.storeId(), order.serviceDate());
+        }
+        return freed;
     }
 
     private ConfirmPaidResult doConfirmPaidSlots(long orderId) {

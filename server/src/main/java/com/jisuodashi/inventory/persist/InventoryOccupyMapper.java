@@ -526,4 +526,58 @@ public interface InventoryOccupyMapper {
             @Param("status") String status,
             @Param("lastError") String lastError,
             @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE booking_order
+               SET status = #{toStatus},
+                   version = version + 1,
+                   updated_at = #{now},
+                   paid_at = CASE WHEN #{toStatus} = 'BOOKED' AND paid_at IS NULL THEN #{now} ELSE paid_at END,
+                   checked_in_at = CASE WHEN #{toStatus} = 'CHECKED_IN' AND checked_in_at IS NULL THEN #{now} ELSE checked_in_at END,
+                   service_started_at = CASE WHEN #{toStatus} = 'IN_SERVICE' AND service_started_at IS NULL THEN #{now} ELSE service_started_at END,
+                   service_ended_at = CASE WHEN #{toStatus} IN ('COMPLETED','REVIEWED') AND service_ended_at IS NULL THEN #{now} ELSE service_ended_at END
+             WHERE id = #{orderId} AND status = #{expectedStatus}
+            """)
+    int casOrderStatus(
+            @Param("orderId") long orderId,
+            @Param("expectedStatus") String expectedStatus,
+            @Param("toStatus") String toStatus,
+            @Param("now") LocalDateTime now);
+
+    @Delete("""
+            DELETE FROM slot_occupancy
+             WHERE order_id = #{orderId} AND slot_no >= #{fromSlotNo}
+            """)
+    int deleteOccupancyFromSlot(@Param("orderId") long orderId, @Param("fromSlotNo") int fromSlotNo);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE order_id = #{orderId} AND slot_no >= #{fromSlotNo}
+               AND status IN ('LOCKED','BOOKED','BUFFER')
+            """)
+    int freeOrderTherapistSlotsFrom(
+            @Param("orderId") long orderId,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE order_id = #{orderId} AND slot_no >= #{fromSlotNo}
+               AND status IN ('LOCKED','BOOKED','BUFFER')
+            """)
+    int freeOrderBedSlotsFrom(
+            @Param("orderId") long orderId,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE booking_order
+               SET add_on_hold_id = NULL, updated_at = #{now}
+             WHERE id = #{orderId}
+            """)
+    int clearAddOnHold(@Param("orderId") long orderId, @Param("now") LocalDateTime now);
 }

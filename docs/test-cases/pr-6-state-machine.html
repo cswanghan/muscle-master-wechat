@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR6 订单状态机 · 闭合转移表</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; opacity:.85; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:28px 40px 48px; }
+    h2 { font-size:16px; color:var(--brand); margin:24px 0 10px; }
+    table { width:100%; border-collapse:collapse; background:#fff;
+            box-shadow:0 1px 3px rgba(20,53,44,.06); }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    tr.ok td:last-child { color:#1E5C4A; font-weight:700; }
+    tr.bad td:last-child { color:#c0392b; font-weight:700; }
+    .callout { background:#fff; border-left:4px solid #1E5C4A; padding:12px 16px;
+               margin:16px 0; }
+    .warn { border-left-color:#e85d4c; }
+    .diagram { background:#fff; padding:20px 16px 8px; border-radius:8px;
+               box-shadow:0 1px 3px rgba(20,53,44,.06); overflow-x:auto; }
+    .row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+           margin-bottom:8px; align-items:center; }
+    .st { min-width:110px; text-align:center; padding:10px 8px; border-radius:8px;
+          font-size:12px; font-weight:700; border:2px solid var(--brand); background:#e8f1ed; }
+    .st.start { background:#1E5C4A; color:#fff; }
+    .st.end { background:#2fbf71; color:#062014; border-color:#2fbf71; }
+    .st.bad { background:#fdecea; border-color:#e85d4c; color:#8a2418; }
+    .st.closed { background:#dfe6e3; border-color:#8aa197; }
+    .arr { font-size:11px; color:#4a6a5f; text-align:center; min-width:90px; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+    footer { padding:0 40px 32px; color:#6b7c75; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PR6 · 闭合订单状态机 + POST /c/bookings</h1>
+    <p>表驱动 fire(from,event) · 未列出 40904 · Law A：fire 调 Release*，Release* 禁止 fire</p>
+    <span class="badge ">ALL PASS · 26 / 26</span>
+  </header>
+  <main>
+    <div class="diagram">
+      <div class="row">
+        <div class="st start">lockNew</div>
+        <div class="arr">→</div>
+        <div class="st">PENDING_PAY</div>
+        <div class="arr">PAY_SUCCESS</div>
+        <div class="st">BOOKED</div>
+        <div class="arr">CHECK_IN</div>
+        <div class="st">CHECKED_IN</div>
+      </div>
+      <div class="row">
+        <div class="arr">PAY_TIMEOUT / USER_CANCEL</div>
+        <div class="st closed">CLOSED</div>
+        <div class="arr">START_SERVICE</div>
+        <div class="st">IN_SERVICE</div>
+        <div class="arr">COMPLETE_SERVICE</div>
+        <div class="st end">COMPLETED</div>
+      </div>
+      <div class="row">
+        <div class="st">BOOKED</div>
+        <div class="arr">MARK_NO_SHOW</div>
+        <div class="st closed">NO_SHOW</div>
+        <div class="arr">CANCEL / REFUND</div>
+        <div class="st closed">CANCELLED</div>
+        <div class="arr">ABORT</div>
+        <div class="st bad">ABNORMAL</div>
+      </div>
+      <div class="row">
+        <div class="arr">RESOLVE_COMPLETE</div>
+        <div class="st end">COMPLETED</div>
+        <div class="arr">RESOLVE_CANCEL</div>
+        <div class="st closed">CANCELLED</div>
+        <div class="arr">REVIEW (P1)</div>
+        <div class="st end">REVIEWED</div>
+      </div>
+    </div>
+    <div class="callout">
+      <strong>Law A / D25</strong>
+      <div><code>fire()</code> 先 CAS 写目标状态，再调 <code>Release*</code> / <code>confirmPaidSlots</code>。
+      <code>Release*</code> 禁止再 <code>fire</code>。未列出的 <code>(from,event)</code> → <code>40904</code>。</div>
+    </div>
+    <div class="callout">
+      <strong>转移表穷举</strong>
+      <div>列出 22 条合法转移全部命中；未列出 148 对全部 40904（148）。</div>
+    </div>
+    <h2>验收项</h2>
+    <table>
+      <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>TABLE</td><td>CHECKED_IN + REFUND → CANCELLED</td><td>[REFUND, RELEASE_UNCONSUMED_START]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>COMPLETED + REFUND → COMPLETED</td><td>[REFUND]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>BOOKED + REFUND → CANCELLED</td><td>[REFUND, RELEASE_UNCONSUMED_START]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>BOOKED + MARK_NO_SHOW → NO_SHOW</td><td>[RELEASE_UNCONSUMED_START, NO_SHOW_COUNT]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>IN_SERVICE + SWAP_THERAPIST → IN_SERVICE</td><td>[SWAP_THERAPIST]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>BOOKED + RESCHEDULE → BOOKED</td><td>[RESCHEDULE]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>ABNORMAL + RESOLVE_CANCEL → CANCELLED</td><td>[RELEASE_UNCONSUMED_NOW]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>IN_SERVICE + COMPLETE_SERVICE → COMPLETED</td><td>[ENDED_AT]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CHECKED_IN + START_SERVICE → IN_SERVICE</td><td>[SERVICE_RECORD]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CHECKED_IN + SWAP_THERAPIST → CHECKED_IN</td><td>[SWAP_THERAPIST]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>PENDING_PAY + PAY_SUCCESS → BOOKED</td><td>[CONFIRM_PAID]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>BOOKED + CANCEL → CANCELLED</td><td>[REFUND, RELEASE_UNCONSUMED_START]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>BOOKED + CHECK_IN → CHECKED_IN</td><td>[CHECKED_IN_AT]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CANCELLED + MARK_NO_SHOW → NO_SHOW</td><td>[NO_SHOW_COUNT]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>PENDING_PAY + PAY_TIMEOUT → CLOSED</td><td>[RELEASE_LOCK]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>IN_SERVICE + REFUND → CANCELLED</td><td>[REFUND, RELEASE_UNCONSUMED_NOW]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>IN_SERVICE + ADD_ON → IN_SERVICE</td><td>[NONE]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>PENDING_PAY + USER_CANCEL → CLOSED</td><td>[RELEASE_LOCK]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>IN_SERVICE + ADD_ON_PAY_TIMEOUT → IN_SERVICE</td><td>[RELEASE_ADDON]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>IN_SERVICE + ABORT → ABNORMAL</td><td>[RELEASE_UNCONSUMED_NOW]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>ABNORMAL + RESOLVE_COMPLETE → COMPLETED</td><td>[NONE]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>COMPLETED + REVIEW → REVIEWED</td><td>[NONE]</td><td>PASS</td></tr>
+<tr class='ok'><td>CLOSED</td><td>未列出 (from,event) 全部 40904</td><td>illegal=148 40904=148</td><td>PASS</td></tr>
+<tr class='ok'><td>SIDE</td><td>PENDING_PAY + PAY_SUCCESS → BOOKED + confirmPaidSlots</td><td>status=BOOKED job=DONE</td><td>PASS</td></tr>
+<tr class='ok'><td>LAW A</td><td>fire 写 CLOSED 后 ReleaseLock；ReleaseLock 不再 fire</td><td>to=CLOSED</td><td>PASS</td></tr>
+<tr class='ok'><td>ARCH</td><td>order 包无 setStatus</td><td>CAS via fire() only</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>Generated by OrderStateMachineReportTest · D8 闭合表 · D25 Law A</footer>
+</body>
+</html>
