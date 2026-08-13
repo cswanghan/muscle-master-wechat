@@ -108,12 +108,9 @@ public final class AvailabilityDay {
 
     /**
      * Calendar color. Occupancy on a FREE row is treated as LOCKED (not a start).
-     * BUFFER paints as BOOKED so C3 stays on the four states.
+     * BUFFER stays BUFFER — dashed-gray 不可约, never 已预约 BOOKED (§2.2).
      */
     public static String blockState(String status, boolean occupied) {
-        if (SlotStatus.BUFFER.equals(status)) {
-            return SlotStatus.BOOKED;
-        }
         if (SlotStatus.FREE.equals(status) && occupied) {
             return SlotStatus.LOCKED;
         }

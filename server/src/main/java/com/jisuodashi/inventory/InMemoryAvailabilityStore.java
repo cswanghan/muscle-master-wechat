@@ -88,7 +88,7 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         bedSlots.put(bkey(bedId, date, slotNo), new BedSlotView(bedId, slotNo, status));
     }
 
-    /** 林晓 REST+LOCKED, 周可 BOOKED, 陈默 FREE — four colors, starts only on FREE. */
+    /** 林晓 REST+LOCKED, 周可 BOOKED+BUFFER, 陈默 FREE — starts only on FREE. */
     public final void seedFourStatesDemo() {
         therapistSlots.clear();
         bedSlots.clear();
@@ -104,7 +104,8 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         seedTherapistSlots(t2, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
 
         seedTherapistSlots(t3, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
-        seedTherapistSlots(t3, DEMO_DATE, 40, 45, SlotStatus.BOOKED);
+        seedTherapistSlots(t3, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
+        seedTherapistSlots(t3, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
         seedOccupancy(ResourceType.THERAPIST, t3, DEMO_DATE, 40, 45);
 
         seedBedSlots(BED1, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
@@ -112,7 +113,8 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         seedOccupancy(ResourceType.BED, BED1, DEMO_DATE, 78, 83);
 
         seedBedSlots(BED2, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
-        seedBedSlots(BED2, DEMO_DATE, 40, 45, SlotStatus.BOOKED);
+        seedBedSlots(BED2, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
+        seedBedSlots(BED2, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
         seedOccupancy(ResourceType.BED, BED2, DEMO_DATE, 40, 45);
     }
 

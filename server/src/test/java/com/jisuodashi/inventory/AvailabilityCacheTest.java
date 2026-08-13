@@ -11,6 +11,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -121,6 +123,39 @@ class AvailabilityCacheTest {
         svc.invalidate(STORE, DAY);
         List<Integer> fresh = starts(svc);
         assertThat(fresh).doesNotContain(78);
+    }
+
+    @Test
+    void invalidateBumpsGenerationAndDropsInFlightPut() throws Exception {
+        AvailabilityCache cache = new AvailabilityCache(Duration.ofSeconds(30), Clock.systemUTC());
+        CountDownLatch loading = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AvailabilityDay stale = emptyDay();
+        Thread inflight = new Thread(() -> cache.get(STORE, DAY, () -> {
+            loading.countDown();
+            try {
+                if (!release.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("release timeout");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+            }
+            return stale;
+        }));
+        inflight.start();
+        assertThat(loading.await(5, TimeUnit.SECONDS)).isTrue();
+        long before = cache.generation(STORE, DAY);
+        cache.invalidate(STORE, DAY);
+        assertThat(cache.generation(STORE, DAY)).isGreaterThan(before);
+        release.countDown();
+        inflight.join(5_000);
+        assertThat(cache.contains(STORE, DAY)).isFalse();
+
+        AvailabilityDay next = emptyDay();
+        AvailabilityDay got = cache.get(STORE, DAY, () -> next);
+        assertThat(got).isSameAs(next);
+        assertThat(cache.contains(STORE, DAY)).isTrue();
     }
 
     private static List<Integer> starts(AvailabilityService svc) {

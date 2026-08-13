@@ -91,8 +91,13 @@ class AvailabilityApiTest {
                 .orElseThrow();
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> zhouBlocks = (List<Map<String, Object>>) zhou.get("blocks");
-        assertThat(zhouBlocks).extracting(b -> b.get("state")).contains(SlotStatus.BOOKED);
-        assertThat(starts(zhou).stream().map(s -> s.get("slotNo"))).doesNotContain(40);
+        assertThat(zhouBlocks).extracting(b -> b.get("state"))
+                .contains(SlotStatus.BOOKED, SlotStatus.BUFFER);
+        assertThat(zhouBlocks.stream()
+                .filter(b -> Integer.valueOf(44).equals(b.get("slotNo")))
+                .map(b -> b.get("state")))
+                .containsExactly(SlotStatus.BUFFER);
+        assertThat(starts(zhou).stream().map(s -> s.get("slotNo"))).doesNotContain(40, 44);
     }
 
     @Test

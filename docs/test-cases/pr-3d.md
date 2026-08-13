@@ -1,6 +1,6 @@
 # PR3d 测试用例 — feat(inventory): availability cache and busy-or-occupancy
 
-环境：macOS aarch64，`JAVA_HOME=/opt/homebrew/opt/openjdk@21`（21.0.12），Maven 3.9.16。无 Docker。H2 **不能**执行 V1 MySQL DDL，可约查询用内存仓；`dev` 的 `InMemoryAvailabilityStore` 预置 2026-08-14 四态日。缓存 30s、键 `storeId+date`（内存）；`lockNew` / `onRelease` 写成功后失效。
+环境：macOS aarch64，`JAVA_HOME=/opt/homebrew/opt/openjdk@21`（21.0.12），Maven 3.9.16。无 Docker。H2 **不能**执行 V1 MySQL DDL，可约查询用内存仓；`dev` 的 `InMemoryAvailabilityStore` 预置 2026-08-14 日（FREE/LOCKED/BOOKED/BUFFER/REST）。缓存 30s、键 `storeId+date`（内存，invalidate 升 generation 防 in-flight 回写）；`lockNew` / `onRelease` 写成功后失效。
 
 ## TC-3d-01 可约起点 = N 连格技师闲 ∧ 某床闲
 
@@ -11,8 +11,8 @@
 ## TC-3d-02 `starts[]` 只含 FREE 可约，不列 LOCKED/BOOKED
 
 - **步骤**：`lockedAndBookedAreNeverStarts` + `GET …&includeBusy=1`。
-- **预期**：LOCKED / BOOKED / REST 只出现在 `blocks[]`（色块）；`starts` 无 `state` 字段。周可 10:00 BOOKED，最早起点 45（11:15）。
-- **实际结果**：PASS。`AvailabilityApiTest.includeBusyShowsFourStatesAndLockedIsNotAStart`。
+- **预期**：LOCKED / BOOKED / BUFFER / REST 只出现在 `blocks[]`；`starts` 无 `state`。周可 10:00 BOOKED、11:00 BUFFER（虚线灰不可约，≠ 已预约），最早起点 45。
+- **实际结果**：PASS。`lockedAndBookedAreNeverStarts` + `bufferIsDashedGrayNotBookedAndNotAStart`。
 
 ## TC-3d-03 busy-or-occupancy：status≠FREE **或** 有 occupancy 即忙
 
@@ -27,8 +27,9 @@
   2. 改格但不 `invalidate` → 仍返回旧 `starts`。
   3. `lockNew` / `onRelease` 后缓存 miss。
   4. 时钟 +31s 自动过期。
-- **预期**：TTL 30s；键不含 project/therapist；`SlotOccupyService.lockNew` 的 `finally` 与 `onRelease` 都 `DEL cache:avail:{storeId}:{date}:*`（内存 + Redis scan）。
-- **实际结果**：PASS。`AvailabilityCacheTest` 3/3；`AvailabilityApiTest.queryStartsAreBookableOnlyAndCacheHitsStoreDate` 第二次 `hits++`。
+  5. miss 加载中途 `invalidate`：in-flight 结果不得 `put` 回缓存。
+- **预期**：TTL 30s；键不含 project/therapist；invalidate 先 bump generation 再 `remove`；`lockNew` / `onRelease` 都失效。
+- **实际结果**：PASS。`AvailabilityCacheTest` 4/4（含 `invalidateBumpsGenerationAndDropsInFlightPut`）。
 
 ## TC-3d-05 定价 D13
 
@@ -45,7 +46,7 @@
 ## TC-3d-07 四态日历截图
 
 - **步骤**：`AvailabilityReportTest` 写 [pr-3d-availability.html](pr-3d-availability.html)；Chrome headless 截图。
-- **预期**：林晓 FREE / REST / LOCKED + 20:45 起点；周可 10:00 BOOKED；`starts` 只落在 FREE。JSON 含 `priceFen`。
+- **预期**：林晓 FREE / REST / LOCKED + 20:45 起点；周可 BOOKED + BUFFER 虚线灰；`starts` 只落在 FREE。JSON 含 `priceFen`。
 - **实际结果**：PASS。
 
 ![availability calendar + JSON](screenshots/pr-3d-availability.png)
@@ -54,4 +55,4 @@
 
 - **步骤**：`export JAVA_HOME=/opt/homebrew/opt/openjdk@21; export PATH="$JAVA_HOME/bin:$PATH"`；`mvn -f server/pom.xml test`。
 - **预期**：生成 / lockNew / 登录 / 目录 / RBAC / schema 仍过。
-- **实际结果**：PASS。Surefire：`Tests run: 135, Failures: 0, Errors: 0, Skipped: 0`。
+- **实际结果**：PASS。Surefire：`Tests run: 137, Failures: 0, Errors: 0, Skipped: 0`。

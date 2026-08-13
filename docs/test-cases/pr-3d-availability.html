@@ -29,6 +29,8 @@
     td.locked { background:#f3d27a; }
     td.booked { background:#e8a0a0; }
     td.rest { background:#d9d4cc; }
+    td.buffer { background:repeating-linear-gradient(135deg,#d9d4cc 0 4px,#ece8e2 4px 8px);
+                color:#6b7c75; }
     td.start { box-shadow:inset 0 0 0 2px #1E5C4A; font-weight:700; color:#1E5C4A; }
     .legend span { display:inline-block; padding:4px 10px; margin-right:8px;
                    border-radius:4px; font-size:12px; }
@@ -36,6 +38,7 @@
     .legend .locked { background:#f3d27a; }
     .legend .booked { background:#e8a0a0; }
     .legend .rest { background:#d9d4cc; }
+    .legend .buffer { background:repeating-linear-gradient(135deg,#d9d4cc 0 4px,#ece8e2 4px 8px); }
     .legend .start { box-shadow:inset 0 0 0 2px #1E5C4A; }
     pre { background:#12352c; color:#d9efe4; padding:16px 18px; border-radius:8px;
           overflow:auto; font-size:11px; line-height:1.45; max-height:360px; }
@@ -46,7 +49,7 @@
   <header>
     <h1>GET /api/v1/c/availability · starts only FREE</h1>
     <p>store+date 30s cache · busy = status≠FREE <em>or</em> occupancy · D13 priceFen</p>
-    <span class="badge">PASS · occupySlots=5 · 林晓 starts=23 · four states on calendar</span>
+    <span class="badge">PASS · occupySlots=5 · 林晓 starts=23 · BUFFER dashed-gray ≠ BOOKED</span>
   </header>
   <main>
     <div class="meta">
@@ -58,11 +61,12 @@
     <p class="legend">
       <span class="free">FREE</span>
       <span class="locked">LOCKED</span>
-      <span class="booked">BOOKED</span>
+      <span class="booked">BOOKED 已预约</span>
+      <span class="buffer">BUFFER 不可约</span>
       <span class="rest">REST</span>
       <span class="start">▶ start (bookable only)</span>
     </p>
-    <h2>C3 四态色块 · starts 只落在 FREE</h2>
+    <h2>C3 色块 · starts 只落在 FREE · BUFFER 虚线灰不可约</h2>
     <table class="cal">
       <thead>
         <tr><th>技师</th><th colspan='4'>10</th><th colspan='4'>11</th><th colspan='4'>12</th><th colspan='4'>13</th><th colspan='4'>14</th><th colspan='4'>15</th><th colspan='4'>16</th><th colspan='4'>17</th><th colspan='4'>18</th><th colspan='4'>19</th><th colspan='4'>20</th><th colspan='4'>21</th></tr>
@@ -70,7 +74,7 @@
       <tbody>
 <tr><th>林晓<br/><span class='sub'>SENIOR · 23 starts</span></th><td class='free start' title='40 FREE'>▶</td><td class='free start' title='41 FREE'>▶</td><td class='free start' title='42 FREE'>▶</td><td class='free start' title='43 FREE'>▶</td><td class='free start' title='44 FREE'>▶</td><td class='free start' title='45 FREE'>▶</td><td class='free start' title='46 FREE'>▶</td><td class='free start' title='47 FREE'>▶</td><td class='free start' title='48 FREE'>▶</td><td class='free start' title='49 FREE'>▶</td><td class='free start' title='50 FREE'>▶</td><td class='free start' title='51 FREE'>▶</td><td class='free' title='52 FREE'></td><td class='free' title='53 FREE'></td><td class='free' title='54 FREE'></td><td class='free' title='55 FREE'></td><td class='rest' title='56 REST'></td><td class='rest' title='57 REST'></td><td class='rest' title='58 REST'></td><td class='rest' title='59 REST'></td><td class='rest' title='60 REST'></td><td class='rest' title='61 REST'></td><td class='rest' title='62 REST'></td><td class='rest' title='63 REST'></td><td class='free start' title='64 FREE'>▶</td><td class='free start' title='65 FREE'>▶</td><td class='free start' title='66 FREE'>▶</td><td class='free start' title='67 FREE'>▶</td><td class='free start' title='68 FREE'>▶</td><td class='free start' title='69 FREE'>▶</td><td class='free start' title='70 FREE'>▶</td><td class='free start' title='71 FREE'>▶</td><td class='free start' title='72 FREE'>▶</td><td class='free start' title='73 FREE'>▶</td><td class='free' title='74 FREE'></td><td class='free' title='75 FREE'></td><td class='free' title='76 FREE'></td><td class='free' title='77 FREE'></td><td class='locked' title='78 LOCKED'></td><td class='locked' title='79 LOCKED'></td><td class='locked' title='80 LOCKED'></td><td class='locked' title='81 LOCKED'></td><td class='locked' title='82 LOCKED'></td><td class='free start' title='83 FREE'>▶</td><td class='free' title='84 FREE'></td><td class='free' title='85 FREE'></td><td class='free' title='86 FREE'></td><td class='free' title='87 FREE'></td></tr>
 <tr><th>陈默<br/><span class='sub'>MIDDLE · 44 starts</span></th><td class='free start' title='40 FREE'>▶</td><td class='free start' title='41 FREE'>▶</td><td class='free start' title='42 FREE'>▶</td><td class='free start' title='43 FREE'>▶</td><td class='free start' title='44 FREE'>▶</td><td class='free start' title='45 FREE'>▶</td><td class='free start' title='46 FREE'>▶</td><td class='free start' title='47 FREE'>▶</td><td class='free start' title='48 FREE'>▶</td><td class='free start' title='49 FREE'>▶</td><td class='free start' title='50 FREE'>▶</td><td class='free start' title='51 FREE'>▶</td><td class='free start' title='52 FREE'>▶</td><td class='free start' title='53 FREE'>▶</td><td class='free start' title='54 FREE'>▶</td><td class='free start' title='55 FREE'>▶</td><td class='free start' title='56 FREE'>▶</td><td class='free start' title='57 FREE'>▶</td><td class='free start' title='58 FREE'>▶</td><td class='free start' title='59 FREE'>▶</td><td class='free start' title='60 FREE'>▶</td><td class='free start' title='61 FREE'>▶</td><td class='free start' title='62 FREE'>▶</td><td class='free start' title='63 FREE'>▶</td><td class='free start' title='64 FREE'>▶</td><td class='free start' title='65 FREE'>▶</td><td class='free start' title='66 FREE'>▶</td><td class='free start' title='67 FREE'>▶</td><td class='free start' title='68 FREE'>▶</td><td class='free start' title='69 FREE'>▶</td><td class='free start' title='70 FREE'>▶</td><td class='free start' title='71 FREE'>▶</td><td class='free start' title='72 FREE'>▶</td><td class='free start' title='73 FREE'>▶</td><td class='free start' title='74 FREE'>▶</td><td class='free start' title='75 FREE'>▶</td><td class='free start' title='76 FREE'>▶</td><td class='free start' title='77 FREE'>▶</td><td class='free start' title='78 FREE'>▶</td><td class='free start' title='79 FREE'>▶</td><td class='free start' title='80 FREE'>▶</td><td class='free start' title='81 FREE'>▶</td><td class='free start' title='82 FREE'>▶</td><td class='free start' title='83 FREE'>▶</td><td class='free' title='84 FREE'></td><td class='free' title='85 FREE'></td><td class='free' title='86 FREE'></td><td class='free' title='87 FREE'></td></tr>
-<tr><th>周可<br/><span class='sub'>JUNIOR · 39 starts</span></th><td class='booked' title='40 BOOKED'></td><td class='booked' title='41 BOOKED'></td><td class='booked' title='42 BOOKED'></td><td class='booked' title='43 BOOKED'></td><td class='booked' title='44 BOOKED'></td><td class='free start' title='45 FREE'>▶</td><td class='free start' title='46 FREE'>▶</td><td class='free start' title='47 FREE'>▶</td><td class='free start' title='48 FREE'>▶</td><td class='free start' title='49 FREE'>▶</td><td class='free start' title='50 FREE'>▶</td><td class='free start' title='51 FREE'>▶</td><td class='free start' title='52 FREE'>▶</td><td class='free start' title='53 FREE'>▶</td><td class='free start' title='54 FREE'>▶</td><td class='free start' title='55 FREE'>▶</td><td class='free start' title='56 FREE'>▶</td><td class='free start' title='57 FREE'>▶</td><td class='free start' title='58 FREE'>▶</td><td class='free start' title='59 FREE'>▶</td><td class='free start' title='60 FREE'>▶</td><td class='free start' title='61 FREE'>▶</td><td class='free start' title='62 FREE'>▶</td><td class='free start' title='63 FREE'>▶</td><td class='free start' title='64 FREE'>▶</td><td class='free start' title='65 FREE'>▶</td><td class='free start' title='66 FREE'>▶</td><td class='free start' title='67 FREE'>▶</td><td class='free start' title='68 FREE'>▶</td><td class='free start' title='69 FREE'>▶</td><td class='free start' title='70 FREE'>▶</td><td class='free start' title='71 FREE'>▶</td><td class='free start' title='72 FREE'>▶</td><td class='free start' title='73 FREE'>▶</td><td class='free start' title='74 FREE'>▶</td><td class='free start' title='75 FREE'>▶</td><td class='free start' title='76 FREE'>▶</td><td class='free start' title='77 FREE'>▶</td><td class='free start' title='78 FREE'>▶</td><td class='free start' title='79 FREE'>▶</td><td class='free start' title='80 FREE'>▶</td><td class='free start' title='81 FREE'>▶</td><td class='free start' title='82 FREE'>▶</td><td class='free start' title='83 FREE'>▶</td><td class='free' title='84 FREE'></td><td class='free' title='85 FREE'></td><td class='free' title='86 FREE'></td><td class='free' title='87 FREE'></td></tr>
+<tr><th>周可<br/><span class='sub'>JUNIOR · 39 starts</span></th><td class='booked' title='40 BOOKED'></td><td class='booked' title='41 BOOKED'></td><td class='booked' title='42 BOOKED'></td><td class='booked' title='43 BOOKED'></td><td class='buffer' title='44 BUFFER'></td><td class='free start' title='45 FREE'>▶</td><td class='free start' title='46 FREE'>▶</td><td class='free start' title='47 FREE'>▶</td><td class='free start' title='48 FREE'>▶</td><td class='free start' title='49 FREE'>▶</td><td class='free start' title='50 FREE'>▶</td><td class='free start' title='51 FREE'>▶</td><td class='free start' title='52 FREE'>▶</td><td class='free start' title='53 FREE'>▶</td><td class='free start' title='54 FREE'>▶</td><td class='free start' title='55 FREE'>▶</td><td class='free start' title='56 FREE'>▶</td><td class='free start' title='57 FREE'>▶</td><td class='free start' title='58 FREE'>▶</td><td class='free start' title='59 FREE'>▶</td><td class='free start' title='60 FREE'>▶</td><td class='free start' title='61 FREE'>▶</td><td class='free start' title='62 FREE'>▶</td><td class='free start' title='63 FREE'>▶</td><td class='free start' title='64 FREE'>▶</td><td class='free start' title='65 FREE'>▶</td><td class='free start' title='66 FREE'>▶</td><td class='free start' title='67 FREE'>▶</td><td class='free start' title='68 FREE'>▶</td><td class='free start' title='69 FREE'>▶</td><td class='free start' title='70 FREE'>▶</td><td class='free start' title='71 FREE'>▶</td><td class='free start' title='72 FREE'>▶</td><td class='free start' title='73 FREE'>▶</td><td class='free start' title='74 FREE'>▶</td><td class='free start' title='75 FREE'>▶</td><td class='free start' title='76 FREE'>▶</td><td class='free start' title='77 FREE'>▶</td><td class='free start' title='78 FREE'>▶</td><td class='free start' title='79 FREE'>▶</td><td class='free start' title='80 FREE'>▶</td><td class='free start' title='81 FREE'>▶</td><td class='free start' title='82 FREE'>▶</td><td class='free start' title='83 FREE'>▶</td><td class='free' title='84 FREE'></td><td class='free' title='85 FREE'></td><td class='free' title='86 FREE'></td><td class='free' title='87 FREE'></td></tr>
       </tbody>
     </table>
     <h2>availability JSON</h2>
@@ -927,7 +931,7 @@
     }, {
       "slotNo" : 44,
       "start" : "11:00",
-      "state" : "BOOKED"
+      "state" : "BUFFER"
     }, {
       "slotNo" : 45,
       "start" : "11:15",
@@ -1104,6 +1108,6 @@
   } ]
 }</pre>
   </main>
-  <footer>Generated by AvailabilityReportTest. LOCKED/BOOKED/REST are colors, never starts.</footer>
+  <footer>Generated by AvailabilityReportTest. LOCKED/BOOKED/BUFFER/REST are colors, never starts.</footer>
 </body>
 </html>

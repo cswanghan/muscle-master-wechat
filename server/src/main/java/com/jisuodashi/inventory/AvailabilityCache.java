@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
@@ -30,6 +31,7 @@ public class AvailabilityCache {
     private final Clock clock;
     private final StringRedisTemplate redis;
     private final ConcurrentHashMap<String, Entry> map = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicLong> generations = new ConcurrentHashMap<>();
     private final LongAdder hits = new LongAdder();
     private final LongAdder misses = new LongAdder();
 
@@ -61,15 +63,32 @@ public class AvailabilityCache {
             return hit.value;
         }
         misses.increment();
+        long stamp = generationOf(key);
         AvailabilityDay loaded = loader.get();
-        map.put(key, new Entry(loaded, now + ttl.toMillis()));
+        // Invalidate during load: do not put the pre-write snapshot back.
+        map.compute(key, (k, existing) -> {
+            if (generationOf(k) != stamp) {
+                return existing;
+            }
+            return new Entry(loaded, clock.millis() + ttl.toMillis());
+        });
         return loaded;
     }
 
     /** Drop this store+date (all project/therapist views share the key). */
     public void invalidate(long storeId, LocalDate date) {
-        map.remove(key(storeId, date));
+        String key = key(storeId, date);
+        generations.computeIfAbsent(key, k -> new AtomicLong()).incrementAndGet();
+        map.remove(key);
         evictRedis(storeId, date);
+    }
+
+    long generation(long storeId, LocalDate date) {
+        return generationOf(key(storeId, date));
+    }
+
+    private long generationOf(String key) {
+        return generations.computeIfAbsent(key, k -> new AtomicLong()).get();
     }
 
     public boolean contains(long storeId, LocalDate date) {

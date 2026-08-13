@@ -54,6 +54,7 @@ class AvailabilityServiceTest {
         AvailabilityDtos.Therapist zhou = therapist(res, T3);
         assertThat(zhou.starts().stream().map(AvailabilityDtos.Start::slotNo)).doesNotContain(40, 41, 42, 43, 44);
         assertThat(stateAt(zhou, 40)).isEqualTo(SlotStatus.BOOKED);
+        assertThat(stateAt(zhou, 44)).isEqualTo(SlotStatus.BUFFER);
         assertThat(zhou.starts().getFirst().slotNo()).isEqualTo(45);
 
         AvailabilityDtos.Therapist lin = therapist(res, T1);
@@ -102,6 +103,24 @@ class AvailabilityServiceTest {
         assertThat(after.therapists().getFirst().starts())
                 .extracting(AvailabilityDtos.Start::slotNo)
                 .containsExactly(78);
+    }
+
+    @Test
+    void bufferIsDashedGrayNotBookedAndNotAStart() {
+        InMemoryAvailabilityStore store = InMemoryAvailabilityStore.blank();
+        store.seedTherapistSlots(T1, DAY, 40, 88, SlotStatus.FREE);
+        store.seedTherapistSlots(T1, DAY, 40, 44, SlotStatus.BOOKED);
+        store.seedTherapistSlots(T1, DAY, 44, 45, SlotStatus.BUFFER);
+        store.seedBedSlots(BED1, DAY, 40, 88, SlotStatus.FREE);
+        store.seedOccupancy(ResourceType.THERAPIST, T1, DAY, 40, 45);
+
+        AvailabilityDtos.Availability res = service(store).query(STORE, DAY, P60, T1, true);
+        AvailabilityDtos.Therapist lin = res.therapists().getFirst();
+        assertThat(stateAt(lin, 43)).isEqualTo(SlotStatus.BOOKED);
+        assertThat(stateAt(lin, 44)).isEqualTo(SlotStatus.BUFFER);
+        assertThat(stateAt(lin, 44)).isNotEqualTo(SlotStatus.BOOKED);
+        assertThat(lin.starts().stream().map(AvailabilityDtos.Start::slotNo)).doesNotContain(40, 44);
+        assertThat(lin.starts().getFirst().slotNo()).isEqualTo(45);
     }
 
     @Test
