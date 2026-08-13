@@ -1,5 +1,6 @@
 package com.jisuodashi.inventory.persist;
 
+import com.jisuodashi.inventory.DelayedJobStore.DelayedJobRow;
 import com.jisuodashi.inventory.DuplicateOccupancyException;
 import com.jisuodashi.inventory.SlotOccupyStore;
 import org.springframework.dao.DuplicateKeyException;
@@ -166,6 +167,93 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     public void insertDelayedJob(DelayedJobInsert row) {
         mapper.insertDelayedJob(
                 row.id(), row.jobType(), row.bizKey(), row.payload(), row.runAt(), row.status(), row.createdAt());
+    }
+
+    @Override
+    public BookingOrderRef findOrderByHoldId(long holdId) {
+        return mapper.findOrderByHoldId(holdId);
+    }
+
+    @Override
+    public BookingOrderRef findOrderByAddOnHoldId(long holdId) {
+        return mapper.findOrderByAddOnHoldId(holdId);
+    }
+
+    @Override
+    public BookingOrderRef lockOrderByHoldId(long holdId) {
+        return mapper.lockOrderByHoldId(holdId);
+    }
+
+    @Override
+    public BookingOrderRef lockOrderById(long orderId) {
+        return mapper.lockOrderById(orderId);
+    }
+
+    @Override
+    public int deleteOccupancyForLockedHold(long holdId) {
+        return mapper.deleteOccupancyForLockedTherapist(holdId) + mapper.deleteOccupancyForLockedBed(holdId);
+    }
+
+    @Override
+    public int deleteOccupancyByHold(long holdId) {
+        return mapper.deleteOccupancyByHold(holdId);
+    }
+
+    @Override
+    public int freeLockedTherapistSlots(long holdId, LocalDateTime now) {
+        return mapper.freeLockedTherapistSlots(holdId, now);
+    }
+
+    @Override
+    public int freeLockedBedSlots(long holdId, LocalDateTime now) {
+        return mapper.freeLockedBedSlots(holdId, now);
+    }
+
+    @Override
+    public List<Long> findExpiredLockedHoldIds(LocalDateTime now, int limit) {
+        List<Long> ids = mapper.findExpiredLockedHoldIds(now, limit);
+        return ids == null ? List.of() : ids;
+    }
+
+    @Override
+    public int confirmPaidTherapistSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now) {
+        return mapper.confirmPaidTherapistSlots(orderId, holdId, serviceEndSlotNo, now);
+    }
+
+    @Override
+    public int confirmPaidBedSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now) {
+        return mapper.confirmPaidBedSlots(orderId, holdId, serviceEndSlotNo, now);
+    }
+
+    @Override
+    public int markReleaseLockJobDone(long holdId, LocalDateTime now) {
+        return mapper.markReleaseLockJobDone("hold:" + holdId, now);
+    }
+
+    @Override
+    public SlotHoldMeta findHoldSlotMeta(long holdId) {
+        SlotHoldMeta meta = mapper.findTherapistHoldMeta(holdId);
+        return meta != null ? meta : mapper.findBedHoldMeta(holdId);
+    }
+
+    @Override
+    public List<Long> claimDueJobs(String instanceId, LocalDateTime now, int leaseSeconds, int limit) {
+        List<Long> ids = mapper.findClaimableJobIds(now, limit);
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        mapper.markJobsRunning(csvLongs(ids), instanceId, now, now.plusSeconds(leaseSeconds));
+        return List.copyOf(ids);
+    }
+
+    @Override
+    public DelayedJobRow findJob(long id) {
+        return mapper.findJob(id);
+    }
+
+    @Override
+    public int completeJob(long id, String status, String lastError, LocalDateTime now) {
+        return mapper.completeJob(id, status, lastError, now);
     }
 
     /** slot_no values are ints; safe to interpolate into IN (...). */

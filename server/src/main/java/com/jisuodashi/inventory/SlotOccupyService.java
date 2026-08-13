@@ -13,6 +13,7 @@ import com.jisuodashi.inventory.SlotOccupyStore.BedRef;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.inventory.SlotOccupyStore.DelayedJobInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.SlotHoldMeta;
 import com.jisuodashi.inventory.SlotOccupyStore.IdemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.IdemRow;
 import com.jisuodashi.inventory.SlotOccupyStore.OccupancyInsert;
@@ -48,13 +49,18 @@ import java.util.function.Supplier;
  * <p>
  * Lock order is therapist then beds: therapist-day Redis already serializes the
  * same therapist; beds are walked by sort_no, id. Unpaid dest is LOCKED.
+ * <p>
+ * Law A (D25): {@link #releaseLock} / {@link #forceFreeByHold} MUST NOT
+ * {@code fire()} the order state machine. They join the caller TX.
  */
 @Service
 public class SlotOccupyService {
 
     public static final String SCOPE_BOOKING = "booking";
     public static final String JOB_RELEASE_LOCK = "RELEASE_LOCK";
+    public static final String JOB_RELEASE_ADDON = "RELEASE_ADDON";
     public static final String ORDER_PENDING_PAY = "PENDING_PAY";
+    public static final int SCAN_BATCH = 500;
     public static final String ITEM_PROJECT = "PROJECT";
     public static final int LOCK_MINUTES = 15;
     public static final int IDEMPOTENT_TAKEOVER_SECONDS = 30;
@@ -126,6 +132,62 @@ public class SlotOccupyService {
             dayLock.release(cmd.therapistId(), cmd.date(), token);
             evictAvail(cmd.storeId(), cmd.date());
         }
+    }
+
+    /**
+     * Free LOCKED slots for an unpaid hold. No {@code fire()}.
+     * Missing order → orphan {@link #forceFreeByHold}. Non-PENDING_PAY → no-op.
+     */
+    public ReleaseResult releaseLock(long holdId) {
+        return inStoreTx(() -> doReleaseLock(holdId));
+    }
+
+    /**
+     * FORCE free LOCKED slots for this hold (orphans / rollback drill).
+     * Deletes occupancy then LOCKED→FREE. Does not {@code fire()}.
+     */
+    public ReleaseResult forceFreeByHold(long holdId) {
+        return inStoreTx(() -> doForceFreeByHold(holdId));
+    }
+
+    /**
+     * PAY_SUCCESS sibling: promote LOCKED service slots to BOOKED, last B to
+     * BUFFER, clear {@code lock_expire_at}, mark {@code RELEASE_LOCK} DONE.
+     */
+    public ConfirmPaidResult confirmPaidSlots(long orderId) {
+        return inStoreTx(() -> doConfirmPaidSlots(orderId));
+    }
+
+    /**
+     * Dual-table expired LOCKED scan. Orphan → forceFree; PENDING_PAY →
+     * ReleaseLock; add-on / paid → skip (fire comes in PR6/7).
+     */
+    public SlotScanResult scanExpiredLocks() {
+        List<Long> holds = store.findExpiredLockedHoldIds(clock.now(), SCAN_BATCH);
+        int orphans = 0;
+        int pending = 0;
+        int stale = 0;
+        int addon = 0;
+        for (long holdId : holds) {
+            BookingOrderRef byHold = store.findOrderByHoldId(holdId);
+            BookingOrderRef byAddon = store.findOrderByAddOnHoldId(holdId);
+            if (byHold == null && byAddon == null) {
+                forceFreeByHold(holdId);
+                orphans++;
+            } else if (byAddon != null && byAddon.addOnHoldId() != null && byAddon.addOnHoldId() == holdId) {
+                addon++;
+            } else if (byHold != null && ORDER_PENDING_PAY.equals(byHold.status())) {
+                ReleaseResult r = releaseLock(holdId);
+                if (r.skipped()) {
+                    stale++;
+                } else {
+                    pending++;
+                }
+            } else {
+                stale++;
+            }
+        }
+        return new SlotScanResult(List.copyOf(holds), orphans, pending, stale, addon);
     }
 
     private LockNewResult doLockNew(LockNewCommand cmd) {
@@ -295,14 +357,92 @@ public class SlotOccupyService {
         store.finishIdempotent(scope, requestId, version, toJson(body), clock.now());
     }
 
-    private LockNewResult inTx(Supplier<LockNewResult> work) {
+    private ReleaseResult doReleaseLock(long holdId) {
+        BookingOrderRef order = store.lockOrderByHoldId(holdId);
+        if (order == null) {
+            ReleaseResult orphan = doForceFreeByHold(holdId);
+            String outcome = ReleaseResult.IDEMPOTENT.equals(orphan.outcome())
+                    ? ReleaseResult.IDEMPOTENT
+                    : ReleaseResult.ORPHAN_FREED;
+            return new ReleaseResult(
+                    holdId, outcome,
+                    orphan.occupancyDeleted(), orphan.therapistFreed(), orphan.bedFreed());
+        }
+        if (!ORDER_PENDING_PAY.equals(order.status())) {
+            return new ReleaseResult(holdId, ReleaseResult.SKIPPED_NOT_PENDING, 0, 0, 0);
+        }
+        return freeLockedHold(holdId, ReleaseResult.FREED);
+    }
+
+    private ReleaseResult doForceFreeByHold(long holdId) {
+        SlotHoldMeta meta = store.findHoldSlotMeta(holdId);
+        int occ = store.deleteOccupancyByHold(holdId);
+        LocalDateTime now = clock.now();
+        int therapist = store.freeLockedTherapistSlots(holdId, now);
+        int bed = store.freeLockedBedSlots(holdId, now);
+        evictMeta(meta);
+        String outcome = (occ == 0 && therapist == 0 && bed == 0)
+                ? ReleaseResult.IDEMPOTENT
+                : ReleaseResult.ORPHAN_FREED;
+        return new ReleaseResult(holdId, outcome, occ, therapist, bed);
+    }
+
+    private ReleaseResult freeLockedHold(long holdId, String freedOutcome) {
+        SlotHoldMeta meta = store.findHoldSlotMeta(holdId);
+        int occ = store.deleteOccupancyForLockedHold(holdId);
+        LocalDateTime now = clock.now();
+        int therapist = store.freeLockedTherapistSlots(holdId, now);
+        int bed = store.freeLockedBedSlots(holdId, now);
+        evictMeta(meta);
+        String outcome = (occ == 0 && therapist == 0 && bed == 0)
+                ? ReleaseResult.IDEMPOTENT
+                : freedOutcome;
+        return new ReleaseResult(holdId, outcome, occ, therapist, bed);
+    }
+
+    private ConfirmPaidResult doConfirmPaidSlots(long orderId) {
+        BookingOrderRef order = store.lockOrderById(orderId);
+        if (order == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        int serviceEnd = order.startSlotNo()
+                + (order.endSlotNo() - order.startSlotNo() - order.bufferSlots());
+        LocalDateTime now = clock.now();
+        int therapist = store.confirmPaidTherapistSlots(order.id(), order.holdId(), serviceEnd, now);
+        int bed = store.confirmPaidBedSlots(order.id(), order.holdId(), serviceEnd, now);
+        int jobs = store.markReleaseLockJobDone(order.holdId(), now);
+        evictAvail(order.storeId(), order.serviceDate());
+        return new ConfirmPaidResult(order.id(), order.holdId(), therapist, bed, jobs);
+    }
+
+    private <T> T inStoreTx(Supplier<T> work) {
+        return retryDeadlock(() -> inTx(() -> {
+            store.beginWork();
+            try {
+                T result = work.get();
+                store.commitWork();
+                return result;
+            } catch (RuntimeException ex) {
+                store.rollbackWork();
+                throw ex;
+            }
+        }));
+    }
+
+    private void evictMeta(SlotHoldMeta meta) {
+        if (meta != null) {
+            evictAvail(meta.storeId(), meta.slotDate());
+        }
+    }
+
+    private <T> T inTx(Supplier<T> work) {
         if (tx == null) {
             return work.get();
         }
         return tx.execute(status -> work.get());
     }
 
-    private LockNewResult retryDeadlock(Supplier<LockNewResult> work) {
+    private <T> T retryDeadlock(Supplier<T> work) {
         RuntimeException last = null;
         for (int attempt = 1; attempt <= DEADLOCK_RETRIES; attempt++) {
             try {

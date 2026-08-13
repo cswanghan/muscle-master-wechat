@@ -1,0 +1,16 @@
+package com.jisuodashi.inventory;
+
+import java.util.List;
+
+/** Dual-table expired LOCKED scan. Jobs/API fire later; this PR only frees orphans / PENDING_PAY. */
+public record SlotScanResult(
+        List<Long> holdIds,
+        int orphansFreed,
+        int pendingReleased,
+        int stalePaid,
+        int addonSkipped
+) {
+    public int holdsSeen() {
+        return holdIds.size();
+    }
+}

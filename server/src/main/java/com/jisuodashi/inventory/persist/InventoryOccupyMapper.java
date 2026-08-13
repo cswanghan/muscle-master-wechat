@@ -1,9 +1,11 @@
 package com.jisuodashi.inventory.persist;
 
+import com.jisuodashi.inventory.DelayedJobStore;
 import com.jisuodashi.inventory.SlotOccupyStore.BedRef;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.inventory.SlotOccupyStore.IdemRow;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
+import com.jisuodashi.inventory.SlotOccupyStore.SlotHoldMeta;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
 import org.apache.ibatis.annotations.Delete;
@@ -88,7 +90,8 @@ public interface InventoryOccupyMapper {
     @Select("""
             SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
-                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
               FROM booking_order
              WHERE request_id = #{requestId}
             """)
@@ -320,4 +323,197 @@ public interface InventoryOccupyMapper {
             @Param("runAt") LocalDateTime runAt,
             @Param("status") String status,
             @Param("createdAt") LocalDateTime createdAt);
+
+    @Select("""
+            SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
+                   status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+              FROM booking_order
+             WHERE hold_id = #{holdId}
+             LIMIT 1
+            """)
+    BookingOrderRef findOrderByHoldId(@Param("holdId") long holdId);
+
+    @Select("""
+            SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
+                   status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+              FROM booking_order
+             WHERE add_on_hold_id = #{holdId}
+             LIMIT 1
+            """)
+    BookingOrderRef findOrderByAddOnHoldId(@Param("holdId") long holdId);
+
+    @Select("""
+            SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
+                   status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+              FROM booking_order
+             WHERE hold_id = #{holdId}
+             LIMIT 1
+             FOR UPDATE
+            """)
+    BookingOrderRef lockOrderByHoldId(@Param("holdId") long holdId);
+
+    @Select("""
+            SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
+                   status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+              FROM booking_order
+             WHERE id = #{id}
+             FOR UPDATE
+            """)
+    BookingOrderRef lockOrderById(@Param("id") long id);
+
+    @Delete("""
+            DELETE o FROM slot_occupancy o
+             INNER JOIN therapist_slot ts
+                ON o.resource_type = 'THERAPIST' AND o.resource_id = ts.therapist_id
+               AND o.slot_date = ts.slot_date AND o.slot_no = ts.slot_no
+             WHERE o.hold_id = #{holdId} AND ts.hold_id = #{holdId} AND ts.status = 'LOCKED'
+            """)
+    int deleteOccupancyForLockedTherapist(@Param("holdId") long holdId);
+
+    @Delete("""
+            DELETE o FROM slot_occupancy o
+             INNER JOIN bed_slot bs
+                ON o.resource_type = 'BED' AND o.resource_id = bs.bed_id
+               AND o.slot_date = bs.slot_date AND o.slot_no = bs.slot_no
+             WHERE o.hold_id = #{holdId} AND bs.hold_id = #{holdId} AND bs.status = 'LOCKED'
+            """)
+    int deleteOccupancyForLockedBed(@Param("holdId") long holdId);
+
+    @Delete("""
+            DELETE FROM slot_occupancy WHERE hold_id = #{holdId}
+            """)
+    int deleteOccupancyByHold(@Param("holdId") long holdId);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE hold_id = #{holdId} AND status = 'LOCKED'
+            """)
+    int freeLockedTherapistSlots(@Param("holdId") long holdId, @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE hold_id = #{holdId} AND status = 'LOCKED'
+            """)
+    int freeLockedBedSlots(@Param("holdId") long holdId, @Param("now") LocalDateTime now);
+
+    @Select("""
+            SELECT hold_id FROM (
+                SELECT hold_id FROM therapist_slot
+                 WHERE status = 'LOCKED' AND lock_expire_at < #{now} AND hold_id IS NOT NULL
+                UNION
+                SELECT hold_id FROM bed_slot
+                 WHERE status = 'LOCKED' AND lock_expire_at < #{now} AND hold_id IS NOT NULL
+            ) u
+             ORDER BY hold_id
+             LIMIT #{limit}
+            """)
+    List<Long> findExpiredLockedHoldIds(@Param("now") LocalDateTime now, @Param("limit") int limit);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = CASE WHEN slot_no < #{serviceEnd} THEN 'BOOKED' ELSE 'BUFFER' END,
+                   lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE order_id = #{orderId} AND hold_id = #{holdId} AND status = 'LOCKED'
+            """)
+    int confirmPaidTherapistSlots(
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("serviceEnd") int serviceEnd,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET status = CASE WHEN slot_no < #{serviceEnd} THEN 'BOOKED' ELSE 'BUFFER' END,
+                   lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE order_id = #{orderId} AND hold_id = #{holdId} AND status = 'LOCKED'
+            """)
+    int confirmPaidBedSlots(
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("serviceEnd") int serviceEnd,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE delayed_job
+               SET status = 'DONE', updated_at = #{now}
+             WHERE job_type = 'RELEASE_LOCK' AND biz_key = #{bizKey}
+               AND status IN ('PENDING', 'RUNNING')
+            """)
+    int markReleaseLockJobDone(@Param("bizKey") String bizKey, @Param("now") LocalDateTime now);
+
+    @Select("""
+            SELECT store_id AS storeId, slot_date AS slotDate
+              FROM therapist_slot
+             WHERE hold_id = #{holdId}
+             LIMIT 1
+            """)
+    SlotHoldMeta findTherapistHoldMeta(@Param("holdId") long holdId);
+
+    @Select("""
+            SELECT store_id AS storeId, slot_date AS slotDate
+              FROM bed_slot
+             WHERE hold_id = #{holdId}
+             LIMIT 1
+            """)
+    SlotHoldMeta findBedHoldMeta(@Param("holdId") long holdId);
+
+    @Select("""
+            SELECT id FROM delayed_job
+             WHERE (status = 'PENDING' AND run_at <= #{now})
+                OR (status = 'RUNNING' AND lease_until < #{now})
+             ORDER BY run_at
+             LIMIT #{limit}
+             FOR UPDATE SKIP LOCKED
+            """)
+    List<Long> findClaimableJobIds(@Param("now") LocalDateTime now, @Param("limit") int limit);
+
+    @Update("""
+            UPDATE delayed_job
+               SET status = 'RUNNING',
+                   locked_by = #{instanceId},
+                   locked_at = #{now},
+                   lease_until = #{leaseUntil},
+                   retry_count = retry_count + IF(status = 'RUNNING', 1, 0),
+                   updated_at = #{now}
+             WHERE id IN (${ids})
+            """)
+    int markJobsRunning(
+            @Param("ids") String ids,
+            @Param("instanceId") String instanceId,
+            @Param("now") LocalDateTime now,
+            @Param("leaseUntil") LocalDateTime leaseUntil);
+
+    @Select("""
+            SELECT id, job_type AS jobType, biz_key AS bizKey, payload, run_at AS runAt,
+                   status, locked_by AS lockedBy, lease_until AS leaseUntil,
+                   retry_count AS retryCount, last_error AS lastError
+              FROM delayed_job
+             WHERE id = #{id}
+            """)
+    DelayedJobStore.DelayedJobRow findJob(@Param("id") long id);
+
+    @Update("""
+            UPDATE delayed_job
+               SET status = #{status}, last_error = #{lastError}, updated_at = #{now}
+             WHERE id = #{id}
+            """)
+    int completeJob(
+            @Param("id") long id,
+            @Param("status") String status,
+            @Param("lastError") String lastError,
+            @Param("now") LocalDateTime now);
 }

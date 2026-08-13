@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** Persistence port for lockNew. Tests use an in-memory CAS fake. */
-public interface SlotOccupyStore {
+/** Persistence port for lockNew / Release* / confirmPaid. Tests use an in-memory CAS fake. */
+public interface SlotOccupyStore extends DelayedJobStore {
 
     void beginWork();
 
@@ -68,6 +68,34 @@ public interface SlotOccupyStore {
 
     void insertDelayedJob(DelayedJobInsert row);
 
+    BookingOrderRef findOrderByHoldId(long holdId);
+
+    BookingOrderRef findOrderByAddOnHoldId(long holdId);
+
+    /** {@code SELECT … FOR UPDATE} on {@code booking_order.hold_id}. */
+    BookingOrderRef lockOrderByHoldId(long holdId);
+
+    BookingOrderRef lockOrderById(long orderId);
+
+    /** Occupancy whose slot row is still LOCKED for this hold. */
+    int deleteOccupancyForLockedHold(long holdId);
+
+    int deleteOccupancyByHold(long holdId);
+
+    int freeLockedTherapistSlots(long holdId, LocalDateTime now);
+
+    int freeLockedBedSlots(long holdId, LocalDateTime now);
+
+    List<Long> findExpiredLockedHoldIds(LocalDateTime now, int limit);
+
+    int confirmPaidTherapistSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now);
+
+    int confirmPaidBedSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now);
+
+    int markReleaseLockJobDone(long holdId, LocalDateTime now);
+
+    SlotHoldMeta findHoldSlotMeta(long holdId);
+
     record ProjectRef(long id, String name, int durationMinutes, int bufferMinutes, long priceFen) {
     }
 
@@ -119,8 +147,14 @@ public interface SlotOccupyStore {
             long payableFen,
             int startSlotNo,
             int endSlotNo,
-            int bufferSlots
+            int bufferSlots,
+            Long addOnHoldId,
+            long storeId,
+            LocalDate serviceDate
     ) {
+    }
+
+    record SlotHoldMeta(long storeId, LocalDate slotDate) {
     }
 
     record BookingOrderInsert(
