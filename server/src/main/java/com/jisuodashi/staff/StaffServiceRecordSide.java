@@ -28,4 +28,11 @@ public class StaffServiceRecordSide implements ServiceRecordSide {
     public void markEnded(long orderId, Instant now) {
         notes.markLatestEnded(orderId, now);
     }
+
+    /** Close the open segment and start a new one for the current order therapist. */
+    public void swapSegment(BookingOrderRef order, Instant now) {
+        notes.markLatestEnded(order.id(), now);
+        notes.insertServiceRecord(
+                ids.nextId(), order.id(), order.therapistId(), order.customerId(), order.storeId(), now);
+    }
 }

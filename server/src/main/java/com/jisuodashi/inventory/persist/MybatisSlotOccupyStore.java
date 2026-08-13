@@ -354,4 +354,37 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
         }
         return ids.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
+
+    @Override
+    public List<SlotRow> lockTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos) {
+        return mapper.lockTherapistSlots(therapistId, date, csv(slotNos));
+    }
+
+    @Override
+    public List<SlotRow> listTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos) {
+        return mapper.listTherapistSlots(therapistId, date, csv(slotNos));
+    }
+
+    @Override
+    public int assignTherapistSlot(
+            long therapistId, LocalDate date, int slotNo, String status,
+            long orderId, long holdId, LocalDateTime lockExpireAt, LocalDateTime now) {
+        return mapper.assignTherapistSlot(
+                therapistId, date, slotNo, status, orderId, holdId, lockExpireAt, now);
+    }
+
+    @Override
+    public int deleteTherapistOccupancy(long therapistId, LocalDate date, List<Integer> slotNos) {
+        return mapper.deleteTherapistOccupancy(therapistId, date, csv(slotNos));
+    }
+
+    @Override
+    public int freeTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos, LocalDateTime now) {
+        return mapper.freeTherapistSlots(therapistId, date, csv(slotNos), now);
+    }
+
+    @Override
+    public int updateTherapist(long orderId, long newTherapistId, long newHomeStoreId, LocalDateTime now) {
+        return mapper.updateTherapist(orderId, newTherapistId, newHomeStoreId, now);
+    }
 }

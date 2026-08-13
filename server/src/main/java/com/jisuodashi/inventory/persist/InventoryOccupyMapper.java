@@ -703,4 +703,83 @@ public interface InventoryOccupyMapper {
              WHERE order_id = #{orderId} AND item_type = 'ADD_ON'
             """)
     int deleteUnpaidAddOnItems(@Param("orderId") long orderId);
+
+    @Select("""
+            SELECT slot_no AS slotNo, status
+              FROM therapist_slot
+             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate}
+               AND slot_no IN (${slotNos})
+             ORDER BY slot_no
+             FOR UPDATE
+            """)
+    List<SlotRow> lockTherapistSlots(
+            @Param("therapistId") long therapistId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNos") String slotNos);
+
+    @Select("""
+            SELECT slot_no AS slotNo, status
+              FROM therapist_slot
+             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate}
+               AND slot_no IN (${slotNos})
+             ORDER BY slot_no
+            """)
+    List<SlotRow> listTherapistSlots(
+            @Param("therapistId") long therapistId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNos") String slotNos);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = #{status},
+                   order_id = #{orderId}, hold_id = #{holdId},
+                   lock_expire_at = #{expireAt}, updated_at = #{now}
+             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate}
+               AND slot_no = #{slotNo} AND status = 'FREE'
+            """)
+    int assignTherapistSlot(
+            @Param("therapistId") long therapistId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("status") String status,
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("expireAt") LocalDateTime expireAt,
+            @Param("now") LocalDateTime now);
+
+    @Delete("""
+            DELETE FROM slot_occupancy
+             WHERE resource_type = 'THERAPIST' AND resource_id = #{therapistId}
+               AND slot_date = #{slotDate} AND slot_no IN (${slotNos})
+            """)
+    int deleteTherapistOccupancy(
+            @Param("therapistId") long therapistId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNos") String slotNos);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate}
+               AND slot_no IN (${slotNos})
+            """)
+    int freeTherapistSlots(
+            @Param("therapistId") long therapistId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNos") String slotNos,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE booking_order
+               SET therapist_id = #{therapistId},
+                   therapist_home_store_id = #{homeStoreId},
+                   updated_at = #{now}
+             WHERE id = #{orderId}
+            """)
+    int updateTherapist(
+            @Param("orderId") long orderId,
+            @Param("therapistId") long therapistId,
+            @Param("homeStoreId") long homeStoreId,
+            @Param("now") LocalDateTime now);
 }

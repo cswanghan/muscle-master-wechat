@@ -81,4 +81,21 @@ public final class FrontDeskDtos {
 
     public record LookupResponse(List<OrderPreview> items) {
     }
+
+    public record SwapTherapistRequest(
+            @NotBlank(message = "requestId 不能为空") String requestId,
+            @NotBlank(message = "newTherapistId 不能为空") String newTherapistId,
+            String reason
+    ) {
+    }
+
+    public record SwapTherapistResponse(
+            String orderId,
+            String status,
+            String oldTherapistId,
+            String newTherapistId,
+            int fromSlotNo,
+            boolean replay
+    ) {
+    }
 }

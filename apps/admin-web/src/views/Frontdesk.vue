@@ -36,6 +36,15 @@ type CheckInData = {
   customerMask: string
 }
 
+type SwapData = {
+  orderId: string
+  status: string
+  oldTherapistId: string
+  newTherapistId: string
+  fromSlotNo: number
+  replay: boolean
+}
+
 type WalkInData = {
   orderId: string
   orderNo: string
@@ -53,6 +62,7 @@ type WalkInData = {
 
 const STORE = '3100000000000000001'
 const THERAPIST = '3100000000000000401'
+const THERAPIST_CHEN = '3100000000000000402'
 const PROJECT = '3100000000000000501'
 
 const token = ref('')
@@ -76,6 +86,12 @@ const walkLoading = ref(false)
 const walkIn = ref<WalkInData | null>(null)
 const pollStatus = ref('')
 let pollTimer: number | undefined
+
+const swapOrderId = ref('')
+const swapTherapistId = ref(THERAPIST_CHEN)
+const swapReason = ref('指定技师请假')
+const swapLoading = ref(false)
+const swapResult = ref<SwapData | null>(null)
 
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => walkIn.value?.codeUrl ?? '')
@@ -147,6 +163,7 @@ async function checkIn(orderId: string, verify?: string, kw?: string) {
       }),
     })
     checkInResult.value = await readEnvelope<CheckInData>(res)
+    swapOrderId.value = checkInResult.value.orderId
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
@@ -225,6 +242,33 @@ async function submitWalkIn() {
   }
 }
 
+async function swapTherapist(orderId?: string) {
+  const id = (orderId || swapOrderId.value).trim()
+  if (!id) {
+    error.value = '请填写订单'
+    return
+  }
+  swapLoading.value = true
+  error.value = ''
+  try {
+    const res = await fetch(`/api/v1/f/orders/${id}/swap-therapist`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        requestId: `sw-${Date.now()}`,
+        newTherapistId: swapTherapistId.value.trim(),
+        reason: swapReason.value.trim(),
+      }),
+    })
+    swapResult.value = await readEnvelope<SwapData>(res)
+    swapOrderId.value = swapResult.value.orderId
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    swapLoading.value = false
+  }
+}
+
 onUnmounted(stopPoll)
 </script>
 
@@ -270,14 +314,23 @@ onUnmounted(stopPoll)
             <span>{{ item.customerMask }} · {{ item.roomName }} {{ item.bedName }}</span>
             <em>{{ item.status }}</em>
           </div>
-          <el-button
-            type="primary"
-            size="large"
-            :loading="checkInLoading"
-            @click="checkIn(item.orderId)"
-          >
-            核销到店
-          </el-button>
+          <div class="row">
+            <el-button
+              type="primary"
+              size="large"
+              :loading="checkInLoading"
+              @click="checkIn(item.orderId)"
+            >
+              核销到店
+            </el-button>
+            <el-button
+              size="large"
+              :loading="swapLoading"
+              @click="swapOrderId = item.orderId; swapTherapist(item.orderId)"
+            >
+              换技师
+            </el-button>
+          </div>
         </article>
         <div v-if="checkInResult" id="checkin-result" class="result">
           {{ checkInResult.status }} · {{ checkInResult.roomName }} {{ checkInResult.bedName }} ·
@@ -316,6 +369,32 @@ onUnmounted(stopPoll)
         </div>
       </section>
     </div>
+
+    <section class="desk-card" id="swap-panel">
+      <h2>换技师</h2>
+      <p class="hint">只锁新技师剩余格 · 不重锁本单床 · POST /f/orders/{id}/swap-therapist</p>
+      <div class="form">
+        <label>订单 ID</label>
+        <el-input id="swap-order-id" v-model="swapOrderId" size="large" placeholder="核销后填入或从查找带入" />
+        <label>新技师 ID</label>
+        <el-input id="swap-therapist-id" v-model="swapTherapistId" size="large" />
+        <label>原因</label>
+        <el-input id="swap-reason" v-model="swapReason" size="large" />
+        <el-button
+          id="swap-submit"
+          type="primary"
+          size="large"
+          :loading="swapLoading"
+          @click="swapTherapist()"
+        >
+          确认换师
+        </el-button>
+      </div>
+      <div v-if="swapResult" id="swap-result" class="result">
+        {{ swapResult.status }} · {{ swapResult.oldTherapistId }} → {{ swapResult.newTherapistId }} ·
+        from={{ swapResult.fromSlotNo }}
+      </div>
+    </section>
 
     <section v-if="walkIn" id="qr-panel" class="desk-card qr-card">
       <div>

@@ -21,6 +21,7 @@ import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
+import com.jisuodashi.staff.TreatmentNoteRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -38,6 +39,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -717,6 +719,213 @@ public class SlotOccupyService {
 
         static IdempotencyBegin replay(LockNewResult body) {
             return new IdempotencyBegin(0, body.asReplay());
+        }
+    }
+
+    public static final String SCOPE_SWAP = "swap-therapist";
+    public static final String ORDER_CHECKED_IN = "CHECKED_IN";
+    public static final String ORDER_IN_SERVICE = "IN_SERVICE";
+
+    private TreatmentNoteRepository notes;
+
+    @Autowired(required = false)
+    public void setTreatmentNotes(TreatmentNoteRepository notes) {
+        this.notes = notes;
+    }
+
+    /**
+     * Move remain therapist slots to {@code newTherapistId}. Never CAS/locks the bed.
+     * Must not {@code fire()} (Law A). Caller then {@code fire(SWAP_THERAPIST, ctx.withSwapOk())};
+     * the SWAP_THERAPIST side is a no-op so audit is recorded without a second occupy.
+     */
+    public SwapTherapistResult swapTherapist(String requestId, long orderId, long newTherapistId, String reason) {
+        if (requestId == null || requestId.isBlank()) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        BookingOrderRef peek = store.findOrderById(orderId);
+        if (peek == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        String token = dayLock.tryAcquire(newTherapistId, peek.serviceDate());
+        if (token == null) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        try {
+            return retryDeadlock(() -> inTx(() -> doSwapTherapist(requestId, orderId, newTherapistId, reason)));
+        } finally {
+            dayLock.release(newTherapistId, peek.serviceDate(), token);
+            invalidateAvailability(peek.storeId(), peek.serviceDate());
+        }
+    }
+
+    private SwapTherapistResult doSwapTherapist(
+            String requestId, long orderId, long newTherapistId, String reason) {
+        store.beginWork();
+        try {
+            SwapIdem begin = beginSwapIdempotent(requestId);
+            if (begin.replay != null) {
+                store.commitWork();
+                return begin.replay;
+            }
+
+            BookingOrderRef order = store.lockOrderById(orderId);
+            if (order == null) {
+                throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+            }
+            if (!ORDER_CHECKED_IN.equals(order.status()) && !ORDER_IN_SERVICE.equals(order.status())) {
+                throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "当前状态不可换技师");
+            }
+            if (order.therapistId() == newTherapistId) {
+                throw new ApiException(ErrorCodes.BAD_REQUEST, "newTherapistId 不能与当前技师相同");
+            }
+            TherapistRef neu = store.loadTherapist(newTherapistId);
+            if (neu == null) {
+                throw new ApiException(ErrorCodes.NOT_FOUND, "技师不存在");
+            }
+
+            int fromNo = order.startSlotNo();
+            if (ORDER_IN_SERVICE.equals(order.status())) {
+                fromNo = Math.max(currentSlotNo(clock.now()), order.startSlotNo());
+            }
+            if (fromNo > order.endSlotNo()) {
+                fromNo = order.endSlotNo();
+            }
+            List<Integer> remain = slotRange(fromNo, order.endSlotNo());
+            LocalDateTime now = clock.now();
+            if (!remain.isEmpty()) {
+                moveRemainTherapist(order, newTherapistId, remain, now);
+            }
+            store.updateTherapist(order.id(), newTherapistId, neu.homeStoreId(), now);
+            writeSwapRecords(order, newTherapistId, reason, now);
+
+            SwapTherapistResult result = new SwapTherapistResult(
+                    order.id(), order.therapistId(), newTherapistId, fromNo, order.endSlotNo(), false);
+            finishSwapIdempotent(requestId, begin.version, result);
+            store.commitWork();
+            return result;
+        } catch (RuntimeException ex) {
+            store.rollbackWork();
+            throw ex;
+        }
+    }
+
+    private void moveRemainTherapist(
+            BookingOrderRef order, long newTherapistId, List<Integer> remain, LocalDateTime now) {
+        List<SlotRow> trows = store.lockTherapistSlots(newTherapistId, order.serviceDate(), remain);
+        if (trows.size() != remain.size()
+                || trows.stream().anyMatch(row -> !SlotStatus.FREE.equals(row.status()))) {
+            throw new ApiException(ErrorCodes.SLOT_UNAVAILABLE, "技师时段不可用");
+        }
+        List<SlotRow> oldRows = store.listTherapistSlots(order.therapistId(), order.serviceDate(), remain);
+        if (oldRows.size() != remain.size()) {
+            throw new ApiException(ErrorCodes.SLOT_UNAVAILABLE, "技师时段不可用");
+        }
+        for (SlotRow old : oldRows) {
+            int n = store.assignTherapistSlot(
+                    newTherapistId, order.serviceDate(), old.slotNo(), old.status(),
+                    order.id(), order.holdId(), null, now);
+            if (n != 1) {
+                throw new ApiException(ErrorCodes.SLOT_UNAVAILABLE, "技师时段不可用");
+            }
+        }
+        insertOccupancy(
+                ResourceType.THERAPIST, newTherapistId, order.serviceDate(), remain,
+                order.id(), order.holdId(), now);
+        store.deleteTherapistOccupancy(order.therapistId(), order.serviceDate(), remain);
+        store.freeTherapistSlots(order.therapistId(), order.serviceDate(), remain, now);
+    }
+
+    private void writeSwapRecords(BookingOrderRef order, long newTherapistId, String reason, LocalDateTime now) {
+        if (notes == null) {
+            return;
+        }
+        java.time.Instant at = now.atZone(AppClock.SHANGHAI).toInstant();
+        if (ORDER_IN_SERVICE.equals(order.status())) {
+            notes.markLatestEnded(order.id(), at);
+            notes.insertServiceRecord(
+                    ids.getAsLong(), order.id(), newTherapistId,
+                    order.customerId(), order.storeId(), at);
+        }
+        String content = (reason == null || reason.isBlank()) ? "中途换师" : "中途换师：" + reason.trim();
+        notes.insertSystemNote(ids.getAsLong(), order.id(), 0L, content, at);
+    }
+
+    private SwapIdem beginSwapIdempotent(String requestId) {
+        LocalDateTime now = clock.now();
+        boolean inserted = store.insertIdempotency(new IdemInsert(
+                ids.getAsLong(), SCOPE_SWAP, requestId, "PROCESSING", 0, instanceId,
+                now, now, now.plusSeconds(IDEMPOTENT_TAKEOVER_SECONDS)));
+        if (inserted) {
+            return SwapIdem.proceed(0);
+        }
+        IdemRow rec = store.lockIdempotency(SCOPE_SWAP, requestId);
+        if (rec == null) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        if ("DONE".equals(rec.status())) {
+            return SwapIdem.replay(parseSwapReplay(rec.responseBody()));
+        }
+        if ("PROCESSING".equals(rec.status()) && rec.expireAt() != null && rec.expireAt().isAfter(now)) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        int n = store.takeoverIdempotency(
+                SCOPE_SWAP, requestId, rec.version(), now.plusSeconds(IDEMPOTENT_TAKEOVER_SECONDS), now, instanceId);
+        if (n == 0) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        return SwapIdem.proceed(rec.version() + 1);
+    }
+
+    private void finishSwapIdempotent(String requestId, int version, SwapTherapistResult body) {
+        store.finishIdempotent(SCOPE_SWAP, requestId, version, toSwapJson(body), clock.now());
+    }
+
+    static String toSwapJson(SwapTherapistResult result) {
+        try {
+            SwapTherapistResult stored = result.replay()
+                    ? new SwapTherapistResult(
+                    result.orderId(), result.oldTherapistId(), result.newTherapistId(),
+                    result.fromSlotNo(), result.endSlotNo(), false)
+                    : result;
+            return JSON.writeValueAsString(stored);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static SwapTherapistResult parseSwapReplay(String json) {
+        if (json == null || json.isBlank()) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        try {
+            return JSON.readValue(json, SwapTherapistResult.class).asReplay();
+        } catch (JsonProcessingException e) {
+            throw new ApiException(ErrorCodes.INTERNAL, "幂等回放失败");
+        }
+    }
+
+    static int currentSlotNo(LocalDateTime now) {
+        return now.getHour() * 4 + now.getMinute() / 15;
+    }
+
+    static List<Integer> slotRange(int fromInclusive, int toExclusive) {
+        if (toExclusive <= fromInclusive) {
+            return List.of();
+        }
+        List<Integer> slots = new ArrayList<>(toExclusive - fromInclusive);
+        for (int i = fromInclusive; i < toExclusive; i++) {
+            slots.add(i);
+        }
+        return slots;
+    }
+
+    record SwapIdem(int version, SwapTherapistResult replay) {
+        static SwapIdem proceed(int version) {
+            return new SwapIdem(version, null);
+        }
+
+        static SwapIdem replay(SwapTherapistResult body) {
+            return new SwapIdem(0, body.asReplay());
         }
     }
 }

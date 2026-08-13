@@ -119,4 +119,50 @@ public class JdbcTreatmentNoteRepository implements TreatmentNoteRepository {
                 JdbcTimes.ts(endedAt),
                 orderId);
     }
+
+    @Override
+    public ServiceRecord insertServiceRecord(
+            long id, long orderId, long therapistId, long customerId, long storeId, Instant now) {
+        jdbc.update(
+                """
+                INSERT INTO service_record
+                  (id, order_id, therapist_id, customer_id, store_id, started_at, ended_at, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, NULL, ?)
+                """,
+                id, orderId, therapistId, customerId, storeId, JdbcTimes.ts(now), JdbcTimes.ts(now));
+        return new ServiceRecord(id, orderId, therapistId, customerId, storeId, now, null, now);
+    }
+
+    @Override
+    public List<ServiceRecord> listServiceRecords(long orderId) {
+        return jdbc.query(
+                """
+                SELECT id, order_id, therapist_id, customer_id, store_id, started_at, ended_at, created_at
+                  FROM service_record
+                 WHERE order_id = ?
+                 ORDER BY id
+                """,
+                (rs, i) -> new ServiceRecord(
+                        rs.getLong("id"),
+                        rs.getLong("order_id"),
+                        rs.getLong("therapist_id"),
+                        rs.getLong("customer_id"),
+                        rs.getLong("store_id"),
+                        JdbcTimes.instant(rs.getTimestamp("started_at")),
+                        JdbcTimes.instant(rs.getTimestamp("ended_at")),
+                        JdbcTimes.instant(rs.getTimestamp("created_at"))),
+                orderId);
+    }
+
+    @Override
+    public void insertSystemNote(long id, long orderId, long authorStaffId, String content, Instant now) {
+        long recordId = findLatestServiceRecord(orderId).map(ServiceRecord::id).orElse(0L);
+        jdbc.update(
+                """
+                INSERT INTO treatment_note
+                  (id, service_record_id, order_id, author_staff_id, content, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                id, recordId, orderId, authorStaffId, content, JdbcTimes.ts(now));
+    }
 }

@@ -132,6 +132,21 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     SlotHoldMeta findHoldSlotMeta(long holdId);
 
+    /** {@code SELECT … FOR UPDATE} remain slots (any status), ordered by slot_no. */
+    List<SlotRow> lockTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos);
+
+    List<SlotRow> listTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos);
+
+    int assignTherapistSlot(
+            long therapistId, LocalDate date, int slotNo, String status,
+            long orderId, long holdId, LocalDateTime lockExpireAt, LocalDateTime now);
+
+    int deleteTherapistOccupancy(long therapistId, LocalDate date, List<Integer> slotNos);
+
+    int freeTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos, LocalDateTime now);
+
+    int updateTherapist(long orderId, long newTherapistId, long newHomeStoreId, LocalDateTime now);
+
     record ProjectRef(long id, String name, int durationMinutes, int bufferMinutes, long priceFen) {
     }
 
