@@ -1,5 +1,6 @@
 package com.jisuodashi.frontdesk;
 
+import com.jisuodashi.catalog.CatalogRepository;
 import com.jisuodashi.auth.AuthContext;
 import com.jisuodashi.auth.Customer;
 import com.jisuodashi.auth.CustomerMergeService;
@@ -41,6 +42,7 @@ public class FrontDeskService {
     private final CustomerRepository customers;
     private final PhoneCrypto phones;
     private final AppClock clock;
+    private final CatalogRepository catalog;
 
     public FrontDeskService(
             SlotOccupyService occupy,
@@ -50,7 +52,8 @@ public class FrontDeskService {
             CustomerMergeService merge,
             CustomerRepository customers,
             PhoneCrypto phones,
-            AppClock clock
+            AppClock clock,
+            CatalogRepository catalog
     ) {
         this.occupy = occupy;
         this.orders = orders;
@@ -60,6 +63,7 @@ public class FrontDeskService {
         this.customers = customers;
         this.phones = phones;
         this.clock = clock;
+        this.catalog = catalog;
     }
 
     public FrontDeskDtos.CheckInResponse checkIn(String orderIdRaw, FrontDeskDtos.CheckInRequest req) {
@@ -76,7 +80,7 @@ public class FrontDeskService {
             return after == null
                     ? new FrontDeskDtos.CheckInResponse(
                     String.valueOf(fired.orderId()), fired.to().name(),
-                    FrontDeskNames.roomName(order.roomId()), FrontDeskNames.bedName(order.bedId()),
+                    roomName(order.roomId()), bedName(order.bedId()),
                     customerMask(order.customerId()))
                     : toCheckIn(after);
         } catch (ApiException ex) {
@@ -105,13 +109,13 @@ public class FrontDeskService {
                 throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
             }
             for (BookingOrderRef order : orders.listOrdersByCustomerId(customer.getId())) {
-                if (scope.contains(order.storeId())) {
+                if (scope.contains(order.storeId()) && visibleForDesk(order)) {
                     hits.add(order);
                 }
             }
         } else {
             BookingOrderRef order = orders.findOrderByOrderNo(keyword.trim());
-            if (order != null && scope.contains(order.storeId())) {
+            if (order != null && scope.contains(order.storeId()) && visibleForDesk(order)) {
                 hits.add(order);
             }
         }
@@ -151,7 +155,7 @@ public class FrontDeskService {
             Payment cash = payments.settleCash(locked.orderId());
             String status = order == null ? locked.status() : order.status();
             if (already) {
-                status = checkInAfterPay(locked.orderId(), status);
+                status = checkInAfterPay(locked.orderId());
             } else {
                 BookingOrderRef after = orders.findOrderById(locked.orderId());
                 status = after == null ? status : after.status();
@@ -168,14 +172,15 @@ public class FrontDeskService {
                 latest == null ? locked.status() : latest.status());
     }
 
-    private String checkInAfterPay(long orderId, String fallback) {
+    private String checkInAfterPay(long orderId) {
         try {
-            FireResult fired = machine.fire(orderId, OrderEvent.CHECK_IN, deskContext());
-            return fired.to().name();
+            return machine.fire(orderId, OrderEvent.CHECK_IN, deskContext()).to().name();
         } catch (ApiException ex) {
             if (ex.getCode() == ErrorCodes.ILLEGAL_TRANSITION) {
                 BookingOrderRef again = orders.findOrderById(orderId);
-                return again == null ? fallback : again.status();
+                if (again != null && OrderStatus.CHECKED_IN.name().equals(again.status())) {
+                    return again.status();
+                }
             }
             throw ex;
         }
@@ -233,12 +238,34 @@ public class FrontDeskService {
         return FireContext.staff(staffId, stores).withFrontDesk();
     }
 
+    private boolean visibleForDesk(BookingOrderRef order) {
+        if (!clock.today().equals(order.serviceDate())) {
+            return false;
+        }
+        return OrderStatus.BOOKED.name().equals(order.status())
+                || OrderStatus.CHECKED_IN.name().equals(order.status());
+    }
+
+    private String roomName(long roomId) {
+        if (catalog == null) {
+            return FrontDeskNames.roomName(null);
+        }
+        return FrontDeskNames.roomName(catalog.findRoom(roomId).map(r -> r.name()).orElse(null));
+    }
+
+    private String bedName(long bedId) {
+        if (catalog == null) {
+            return FrontDeskNames.bedName(null);
+        }
+        return FrontDeskNames.bedName(catalog.findBed(bedId).map(b -> b.name()).orElse(null));
+    }
+
     private FrontDeskDtos.CheckInResponse toCheckIn(BookingOrderRef order) {
         return new FrontDeskDtos.CheckInResponse(
                 String.valueOf(order.id()),
                 order.status(),
-                FrontDeskNames.roomName(order.roomId()),
-                FrontDeskNames.bedName(order.bedId()),
+                roomName(order.roomId()),
+                bedName(order.bedId()),
                 customerMask(order.customerId()));
     }
 
@@ -247,8 +274,8 @@ public class FrontDeskService {
                 String.valueOf(order.id()),
                 order.orderNo(),
                 order.status(),
-                FrontDeskNames.roomName(order.roomId()),
-                FrontDeskNames.bedName(order.bedId()),
+                roomName(order.roomId()),
+                bedName(order.bedId()),
                 customerMask(order.customerId()),
                 String.valueOf(order.therapistId()),
                 order.startSlotNo(),
@@ -277,8 +304,8 @@ public class FrontDeskService {
                 order == null ? 0L : order.payableFen(),
                 already,
                 replay,
-                order == null ? null : FrontDeskNames.roomName(order.roomId()),
-                order == null ? null : FrontDeskNames.bedName(order.bedId()),
+                order == null ? null : roomName(order.roomId()),
+                order == null ? null : bedName(order.bedId()),
                 maskFromCustomer(customer));
     }
 

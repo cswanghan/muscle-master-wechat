@@ -17,7 +17,7 @@
           <view class="strong">{{item.orderNo}}</view>
           <view class="meta">{{item.customerMask}} · {{item.roomName}} {{item.bedName}}</view>
         </view>
-        <button class="btn" data-id="{{item.orderId}}" bindtap="onCheckIn">核销</button>
+        <button class="btn" data-id="{{item.orderId}}" data-orderno="{{item.orderNo}}" bindtap="onCheckIn">核销</button>
       </view>
       <view wx:if="{{checkInText}}" class="ok">{{checkInText}}</view>
     </view>
@@ -32,7 +32,8 @@
       <view class="chip {{alreadyInStore?'on':''}}" bindtap="onToggleAlready">已在店</view>
       <button class="btn" bindtap="onWalkIn">开单收款</button>
       <view wx:if="{{walkText}}" class="ok">{{walkText}}</view>
-      <view wx:if="{{codeUrl}}" class="qr"></view>
+      <canvas wx:if="{{codeUrl}}" canvas-id="native-qr" class="qr-canvas"></canvas>
+      <view wx:if="{{!qrReady && codeUrl}}" class="qr"></view>
       <view wx:if="{{pollStatus}}" class="meta">轮询 {{pollStatus}}</view>
     </view>
   </view>

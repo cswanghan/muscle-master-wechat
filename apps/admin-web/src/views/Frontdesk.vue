@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
+import { qrSvg } from '../qr'
 
 type Envelope<T> = {
   code: number
@@ -78,6 +79,7 @@ let pollTimer: number | undefined
 
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => walkIn.value?.codeUrl ?? '')
+const qrMarkup = computed(() => (qrText.value ? qrSvg(qrText.value) : ''))
 
 function authHeaders(): HeadersInit {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -325,7 +327,13 @@ onUnmounted(stopPoll)
         <p v-if="pollStatus" id="poll-status">轮询 {{ walkIn.paymentNo }} → {{ pollStatus }}</p>
       </div>
       <div v-if="qrText" class="qr-box">
-        <div class="qr-mock" :title="qrText" />
+        <div
+          v-if="qrMarkup"
+          id="native-qr"
+          class="qr-svg"
+          v-html="qrMarkup"
+        />
+        <div v-else class="qr-mock" title="qr fallback" />
         <code>{{ qrText }}</code>
       </div>
     </section>

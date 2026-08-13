@@ -167,7 +167,7 @@ class FrontDeskApiTest {
         assertThat(created.get("status")).isEqualTo("PENDING_PAY");
         assertThat(created.get("payChannel")).isEqualTo("WECHAT");
         String paymentNo = String.valueOf(created.get("paymentNo"));
-        assertThat(created.get("codeUrl").toString()).startsWith("weixin://wxpay/bizpayurl?pr=MOCK_");
+        assertThat(created.get("codeUrl").toString()).startsWith("weixin://wxpay/bizpayurl?pr=LIVE_");
         assertThat(created.get("codeUrl").toString()).contains(paymentNo);
 
         Map<String, Object> pending = data(
@@ -221,6 +221,16 @@ class FrontDeskApiTest {
                 get("/api/v1/f/orders/lookup?verify=PHONE&keyword=18600004444", frontToken()), HttpStatus.OK);
         assertThat(items(byPhone)).hasSize(1);
         assertThat(items(byPhone).getFirst().get("customerMask")).isEqualTo("186****4444");
+    }
+
+    @Test
+    void walkInCashFutureDayDoesNotSwallowCheckIn40904() {
+        Map<String, Object> body = walkIn("wi-future", "18600006666", "明日客", 64, true, "CASH");
+        body.put("date", "2026-08-15");
+        ResponseEntity<Map<String, Object>> res = post("/api/v1/f/walk-ins", body, frontToken());
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(res.getBody()).isNotNull();
+        assertThat(res.getBody().get("code")).isEqualTo(40904);
     }
 
     @Test

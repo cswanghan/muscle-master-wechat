@@ -1,3 +1,5 @@
+const qrcode = require('../../utils/qrcode.js')
+
 const STORE = '3100000000000000001'
 const THERAPIST = '3100000000000000401'
 const PROJECT = '3100000000000000501'
@@ -18,6 +20,7 @@ Page({
     walkText: '',
     codeUrl: '',
     pollStatus: '',
+    qrReady: false,
     error: '',
   },
 
@@ -103,17 +106,23 @@ Page({
     }
   },
 
+  async checkInOrder(orderId, verify, keyword) {
+    this.setData({ error: '' })
+    const data = await this.request('/api/v1/f/orders/' + orderId + '/check-in', 'POST', {
+      requestId: 'ci-' + Date.now(),
+      verify,
+      keyword,
+    })
+    this.setData({
+      checkInText: data.status + ' · ' + data.roomName + ' ' + data.bedName + ' · ' + data.customerMask,
+    })
+  },
+
   async onCheckIn(e) {
     const orderId = e.currentTarget.dataset.id
-    this.setData({ error: '' })
+    const orderNo = e.currentTarget.dataset.orderno
     try {
-      const data = await this.request('/api/v1/f/orders/' + orderId + '/check-in', 'POST', {
-        requestId: 'ci-' + Date.now(),
-        keyword: this.data.keyword,
-      })
-      this.setData({
-        checkInText: data.status + ' · ' + data.roomName + ' ' + data.bedName + ' · ' + data.customerMask,
-      })
+      await this.checkInOrder(orderId, 'ORDER_NO', orderNo)
     } catch (err) {
       this.setData({ error: err.message || String(err) })
     }
@@ -138,13 +147,40 @@ Page({
       this.setData({
         walkText: data.orderNo + ' · ' + data.payChannel + ' · ' + data.status,
         codeUrl: data.codeUrl || '',
+        qrReady: false,
       })
+      if (data.codeUrl) {
+        this.drawQr(data.codeUrl)
+      }
       if (data.payChannel === 'WECHAT' && data.paymentNo) {
         this.startPoll(data.paymentNo, data.orderId, data.alreadyInStore)
       }
     } catch (e) {
       this.setData({ error: e.message || String(e) })
     }
+  },
+
+  drawQr(text) {
+    const modules = qrcode.modules(text)
+    if (!modules || !modules.length) {
+      this.setData({ qrReady: false })
+      return
+    }
+    const size = 280
+    const n = modules.length
+    const cell = size / (n + 2)
+    const ctx = wx.createCanvasContext('native-qr', this)
+    ctx.setFillStyle('#ffffff')
+    ctx.fillRect(0, 0, size, size)
+    ctx.setFillStyle('#14352c')
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        if (modules[y][x]) {
+          ctx.fillRect((x + 1) * cell, (y + 1) * cell, cell, cell)
+        }
+      }
+    }
+    ctx.draw(false, () => this.setData({ qrReady: true }))
   },
 
   startPoll(paymentNo, orderId, already) {
@@ -156,7 +192,7 @@ Page({
         if (view.status === 'SUCCESS' || view.status === 'CLOSED' || view.status === 'FAILED') {
           this.stopPoll()
           if (view.status === 'SUCCESS' && already) {
-            await this.onCheckIn({ currentTarget: { dataset: { id: orderId } } })
+            await this.checkInOrder(orderId, 'PHONE', this.data.phone)
           }
         }
       } catch (e) {

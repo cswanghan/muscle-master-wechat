@@ -1,5 +1,7 @@
 package com.jisuodashi.payment;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jisuodashi.auth.HumanTask;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
@@ -38,6 +40,7 @@ import java.util.function.Supplier;
 public class PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     public static final String TASK_UNKNOWN_PAYMENT = "UNKNOWN_PAYMENT";
     public static final String TASK_AMOUNT_MISMATCH = "AMOUNT_MISMATCH";
@@ -154,15 +157,49 @@ public class PaymentService {
     }
 
     private PaymentDtos.NativePayResponse doNative(long customerId, long orderId) {
-        RepayPlan plan = inBothTx(() -> decideRepay(customerId, orderId));
+        RepayPlan plan = inBothTx(() -> decideNative(customerId, orderId));
         if (plan.reuse != null) {
             return toNative(plan.reuse, true);
         }
         WeChatPayClient.NativePrepay prepay = wechat.nativePrepay(
                 plan.paymentNo, plan.amountFen, plan.description);
-        PersistResult saved = inBothTx(() -> persistNewPrepay(
-                customerId, orderId, plan, new WeChatPayClient.Prepay(prepay.prepayId())));
+        PersistResult saved = inBothTx(() -> persistNewNative(customerId, orderId, plan, prepay));
         return toNative(saved.payment(), saved.reused());
+    }
+
+    private RepayPlan decideNative(long customerId, long orderId) {
+        Payment pending = payments.lockPendingByOrderId(orderId);
+        BookingOrderRef order = requirePayableOrder(customerId, orderId);
+        LocalDateTime now = clock.now();
+        if (pending != null && pending.pending() && !pending.prepayExpired(now)
+                && storedCodeUrl(pending) != null) {
+            return RepayPlan.reuse(pending);
+        }
+        if (pending != null && pending.pending()) {
+            payments.update(pending.closed(now));
+        }
+        long id = ids.nextId();
+        return RepayPlan.create("P" + id, id, order.payableFen(), "booking-" + order.orderNo());
+    }
+
+    private PersistResult persistNewNative(
+            long customerId, long orderId, RepayPlan plan, WeChatPayClient.NativePrepay prepay) {
+        Payment pending = payments.lockPendingByOrderId(orderId);
+        requirePayableOrder(customerId, orderId);
+        LocalDateTime now = clock.now();
+        if (pending != null && pending.pending() && !pending.prepayExpired(now)
+                && storedCodeUrl(pending) != null) {
+            return new PersistResult(pending, true);
+        }
+        if (pending != null && pending.pending()) {
+            payments.update(pending.closed(now));
+        }
+        Payment row = new Payment(
+                plan.paymentId, plan.paymentNo, orderId, Payment.CHANNEL_WECHAT, plan.amountFen,
+                Payment.PENDING, prepay.prepayId(), null, null, codeUrlJson(prepay.codeUrl()),
+                now.plus(prepayTtl), now, now);
+        payments.insert(row);
+        return new PersistResult(row, false);
     }
 
     private Payment doSettleCash(long orderId) {
@@ -340,13 +377,38 @@ public class PaymentService {
     }
 
     private PaymentDtos.NativePayResponse toNative(Payment payment, boolean reused) {
+        String codeUrl = storedCodeUrl(payment);
+        if (codeUrl == null || codeUrl.isBlank()) {
+            throw new ApiException(ErrorCodes.PREPAY_FAILED, "收款码缺失");
+        }
         return new PaymentDtos.NativePayResponse(
                 String.valueOf(payment.orderId()),
                 payment.paymentNo(),
                 payment.status(),
                 payment.amountFen(),
                 reused,
-                wechat.nativeCodeUrl(payment.paymentNo()));
+                codeUrl);
+    }
+
+    public static String storedCodeUrl(Payment payment) {
+        if (payment == null || payment.notifyRaw() == null || payment.notifyRaw().isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode root = JSON.readTree(payment.notifyRaw());
+            JsonNode url = root.get("code_url");
+            return url == null || url.isNull() || url.asText().isBlank() ? null : url.asText();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    static String codeUrlJson(String codeUrl) {
+        try {
+            return JSON.writeValueAsString(Map.of("code_url", codeUrl == null ? "" : codeUrl));
+        } catch (Exception e) {
+            return "{\"code_url\":\"\"}";
+        }
     }
 
     private <T> T inBothTx(Supplier<T> work) {

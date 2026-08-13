@@ -41,12 +41,12 @@ public class MockWeChatPayClient implements WeChatPayClient {
         if (paymentNo == null || paymentNo.isBlank()) {
             throw new ApiException(ErrorCodes.PREPAY_FAILED, "预支付失败");
         }
-        return new NativePrepay(nativeCodeUrl(paymentNo), "mock_native_" + paymentNo);
+        return new NativePrepay("weixin://wxpay/bizpayurl?pr=LIVE_" + paymentNo, "mock_native_" + paymentNo);
     }
 
     @Override
     public String nativeCodeUrl(String paymentNo) {
-        return "weixin://wxpay/bizpayurl?pr=MOCK_" + paymentNo;
+        throw new ApiException(ErrorCodes.PREPAY_FAILED, "禁止从 paymentNo 拼收款码");
     }
 
     @Override

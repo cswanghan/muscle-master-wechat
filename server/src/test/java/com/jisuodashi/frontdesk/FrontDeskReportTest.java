@@ -10,6 +10,7 @@ import com.jisuodashi.auth.InMemoryCustomerRepository;
 import com.jisuodashi.auth.InMemoryRelatedRecordsRepository;
 import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.TokenType;
+import com.jisuodashi.catalog.InMemoryCatalogRepository;
 import com.jisuodashi.catalog.DemoCatalogIds;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
@@ -74,7 +75,7 @@ class FrontDeskReportTest {
                 new FrontDeskDtos.CheckInRequest("rpt-ci", "PHONE", "18600002222"));
         Payment polled = wx.payments.findByPaymentNo(nativePay.paymentNo());
         rows.add(row("WECHAT", "Native 收款码 + GET /f/payments 轮询至 SUCCESS 再核销",
-                nativePay.codeUrl() != null && nativePay.codeUrl().contains("MOCK_")
+                nativePay.codeUrl() != null && nativePay.codeUrl().contains("LIVE_")
                         && "PENDING_PAY".equals(nativePay.status())
                         && polled != null && polled.success()
                         && "CHECKED_IN".equals(checked.status()),
@@ -130,7 +131,7 @@ class FrontDeskReportTest {
                 ids,
                 clock.clock());
         FrontDeskService desk = new FrontDeskService(
-                occupy, store, machine, pay, merge, customers, crypto, clock);
+                occupy, store, machine, pay, merge, customers, crypto, clock, new InMemoryCatalogRepository());
         StoreScopeContext.set(new StoreScope(
                 DataScopeType.STORE, List.of(DemoCatalogIds.STORE), DemoStaffIds.FRONT, null));
         AuthContext.set(JwtPrincipal.staff(

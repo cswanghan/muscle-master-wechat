@@ -131,3 +131,10 @@
   border: 8rpx solid #1e5c4a;
   background: repeating-conic-gradient(#14352c 0% 25%, #fff 0% 50%) 50% / 28rpx 28rpx;
 }
+
+.qr-canvas {
+  width: 280rpx;
+  height: 280rpx;
+  margin: 16rpx auto;
+  background: #fff;
+}

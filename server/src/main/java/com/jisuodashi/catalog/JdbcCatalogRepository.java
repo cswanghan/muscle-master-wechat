@@ -167,6 +167,38 @@ public class JdbcCatalogRepository implements CatalogRepository {
     }
 
     @Override
+    public Optional<CatalogModels.Room> findRoom(long id) {
+        List<CatalogModels.Room> rows = jdbc.query(
+                "SELECT id, store_id, name, sort_no, status FROM room WHERE id=? AND deleted_at IS NULL",
+                (rs, i) -> new CatalogModels.Room(
+                        rs.getLong("id"),
+                        rs.getLong("store_id"),
+                        rs.getString("name"),
+                        rs.getInt("sort_no"),
+                        rs.getInt("status")),
+                id);
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
+    public Optional<CatalogModels.Bed> findBed(long id) {
+        List<CatalogModels.Bed> rows = jdbc.query(
+                """
+                SELECT id, store_id, room_id, name, sort_no, status
+                  FROM bed WHERE id=? AND deleted_at IS NULL
+                """,
+                (rs, i) -> new CatalogModels.Bed(
+                        rs.getLong("id"),
+                        rs.getLong("store_id"),
+                        rs.getLong("room_id"),
+                        rs.getString("name"),
+                        rs.getInt("sort_no"),
+                        rs.getInt("status")),
+                id);
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+    }
+
+    @Override
     public boolean hasSlotsOn(LocalDate date) {
         Integer one = jdbc.query(
                 "SELECT 1 FROM therapist_slot WHERE slot_date=? LIMIT 1",

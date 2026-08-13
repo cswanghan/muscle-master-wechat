@@ -1,30 +1,17 @@
 package com.jisuodashi.frontdesk;
 
-/** Demo room/bed labels (V3) plus phone mask for the desk screen. */
+/** Phone mask for the desk screen. Room/bed labels come from catalog. */
 final class FrontDeskNames {
-
-    static final long ROOM_1 = 3_100_000_000_000_000_101L;
-    static final long BED_1 = 3_100_000_000_000_000_201L;
-    static final long BED_2 = 3_100_000_000_000_000_202L;
 
     private FrontDeskNames() {
     }
 
-    static String roomName(long roomId) {
-        if (roomId == ROOM_1) {
-            return "一号房";
-        }
-        return "房间";
+    static String roomName(String catalogName) {
+        return catalogName == null || catalogName.isBlank() ? "房间" : catalogName;
     }
 
-    static String bedName(long bedId) {
-        if (bedId == BED_1) {
-            return "1号床";
-        }
-        if (bedId == BED_2) {
-            return "2号床";
-        }
-        return "床位";
+    static String bedName(String catalogName) {
+        return catalogName == null || catalogName.isBlank() ? "床位" : catalogName;
     }
 
     static String maskPhone(String raw) {
