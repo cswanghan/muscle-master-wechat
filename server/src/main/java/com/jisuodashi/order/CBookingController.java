@@ -33,6 +33,11 @@ public class CBookingController {
         return ApiResponse.ok(bookings.list(AuthContext.requireCustomer().subjectId(), cursor, limit));
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<BookingDtos.BookingListItem> get(@PathVariable("id") String id) {
+        return ApiResponse.ok(bookings.get(AuthContext.requireCustomer().subjectId(), id));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<BookingDtos.CreateBookingResponse>> create(
             @Valid @RequestBody BookingDtos.CreateBookingRequest request) {

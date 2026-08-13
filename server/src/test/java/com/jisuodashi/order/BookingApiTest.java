@@ -195,6 +195,22 @@ class BookingApiTest {
     }
 
     @Test
+    void getReturnsOwnOrderWithLockExpireAt() {
+        String token = customerToken();
+        Map<String, Object> created = data(post(body("req-get-one", 52), token));
+        String orderId = created.get("orderId").toString();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        ResponseEntity<Map<String, Object>> res = rest.exchange(
+                "/api/v1/c/bookings/" + orderId, HttpMethod.GET, new HttpEntity<>(headers), MAP);
+        Map<String, Object> item = dataOk(res);
+        assertThat(item.get("orderId")).isEqualTo(orderId);
+        assertThat(item.get("status")).isEqualTo("PENDING_PAY");
+        assertThat(item.get("lockExpireAt")).isNotNull();
+        assertThat(item.get("start")).isEqualTo("13:00");
+    }
+
+    @Test
     void listRequiresCustomerJwt() throws Exception {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/c/bookings"))
                 .andExpect(status().isUnauthorized())

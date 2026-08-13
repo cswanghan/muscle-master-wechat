@@ -281,7 +281,11 @@ function go(route, extra) {
 }
 
 function back() {
-  if (S.route === 'confirm') return go('calendar');
+  if (S.route === 'confirm') {
+    go('calendar');
+    loadAvailability();
+    return;
+  }
   if (S.route === 'calendar') return go(S.therapistId ? 'therapists' : 'stores');
   if (S.route === 'stores' && S.selectedSymptom) return go('symptom');
   go('home');
@@ -323,6 +327,7 @@ function mmss(ms) {
 }
 function startTick() {
   if (tickTimer) clearInterval(tickTimer);
+  if (!S.order || S.order.status !== 'PENDING_PAY') return;
   const step = () => {
     const ms = remainMs(S.order && S.order.lockExpireAt);
     S.remain = mmss(ms);
@@ -479,9 +484,12 @@ function viewCalendar() {
 
 function viewConfirm() {
   const o = S.order;
+  const pending = o && o.status === 'PENDING_PAY' && !S.paid;
+  const closed = o && (o.status === 'CLOSED' || o.status === 'CANCELLED');
   return `<div id="c4-confirm">
-    ${o && !S.paid && !S.expired ? `<div class="ticker" id="countdown">已锁定 · 剩余 ${esc(S.remain)} 支付，超时自动释放</div>` : ''}
-    ${S.expired && !S.paid ? '<div class="ticker dead" id="countdown">锁已过期，请返回重选时段</div>' : ''}
+    ${pending && !S.expired ? `<div class="ticker" id="countdown">已锁定 · 剩余 ${esc(S.remain)} 支付，超时自动释放</div>` : ''}
+    ${pending && S.expired ? '<div class="ticker dead" id="countdown">锁已过期，请返回重选时段</div>' : ''}
+    ${closed ? '<div class="ticker dead" id="closed-banner">预约已取消</div>' : ''}
     ${S.paid ? '<div class="ticker ok">支付成功 · 订单已预约</div>' : ''}
     <div class="card">
       <div class="row"><span class="k">门店</span><span>${esc(S.storeName)}</span></div>
@@ -492,10 +500,10 @@ function viewConfirm() {
       <div class="row"><span class="k">应付</span><span class="price">¥${fen((o && o.payableFen) || S.priceFen)}</span></div>
     </div>
     ${S.error ? `<div class="err">${esc(S.error)}</div>` : ''}
-    ${!o && !S.paid ? '<button class="btn" id="lock-btn">确认下单（锁定 15 分钟）</button>' : ''}
-    ${o && !S.paid && !S.expired ? '<button class="btn" id="pay-btn">立即支付（dev mock）</button>' : ''}
-    ${o && !S.paid ? '<button class="btn ghost" id="cancel-btn">取消预约</button>' : ''}
-    ${S.paid ? '<button class="btn" id="to-mine">查看订单</button>' : ''}
+    ${!o && !S.paid && !closed ? '<button class="btn" id="lock-btn">确认下单（锁定 15 分钟）</button>' : ''}
+    ${pending && !S.expired ? '<button class="btn" id="pay-btn">立即支付（dev mock）</button>' : ''}
+    ${pending ? '<button class="btn ghost" id="cancel-btn">取消预约</button>' : ''}
+    ${S.paid || closed ? '<button class="btn" id="to-mine">查看订单</button>' : ''}
   </div>`;
 }
 
@@ -615,9 +623,13 @@ function bind() {
   if (cancelBtn) cancelBtn.onclick = cancelOrder;
   const toMine = document.getElementById('to-mine');
   if (toMine) toMine.onclick = openMine;
+  document.querySelectorAll('[data-oid]').forEach((el) => {
+    el.onclick = () => resumeOrder(el.getAttribute('data-oid'));
+  });
 }
 
 async function lockOrder() {
+  if (S.order) return;
   S.error = ''; render();
   try {
     await login();
@@ -642,11 +654,35 @@ async function lockOrder() {
 }
 
 async function payOrder() {
+  if (!S.order || S.order.status !== 'PENDING_PAY' || S.paid || S.expired) return;
   try {
     await login();
     const pay = await api('/api/v1/c/bookings/' + S.order.orderId + '/pay', {
       method: 'POST', auth: true, body: { requestId: rid('pay') },
     });
+    const wxPay = typeof wx !== 'undefined' && wx && typeof wx.requestPayment === 'function';
+    if (wxPay) {
+      await new Promise((resolve) => {
+        wx.requestPayment({
+          timeStamp: pay.payParams && pay.payParams.timeStamp,
+          nonceStr: pay.payParams && pay.payParams.nonceStr,
+          package: pay.payParams && pay.payParams.package,
+          signType: pay.payParams && pay.payParams.signType,
+          paySign: pay.payParams && pay.payParams.paySign,
+          success: () => {
+            S.paid = true;
+            S.order.status = 'BOOKED';
+            resolve();
+          },
+          fail: (err) => {
+            S.error = (err && err.errMsg) || '支付未完成';
+            resolve();
+          },
+        });
+      });
+      render();
+      return;
+    }
     await api('/api/v1/pay/wechat/notify', {
       method: 'POST',
       body: { out_trade_no: pay.paymentNo, transaction_id: 'wx_mock_' + pay.paymentNo, amount_fen: pay.amountFen },
@@ -660,14 +696,56 @@ async function payOrder() {
 }
 
 async function cancelOrder() {
+  if (!S.order || S.order.status !== 'PENDING_PAY') return;
   try {
     await login();
     const data = await api('/api/v1/c/bookings/' + S.order.orderId + '/cancel', {
       method: 'POST', auth: true, body: { requestId: rid('cancel'), reason: 'user' },
     });
-    S.order.status = data.status;
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+    S.order.status = data.status || 'CLOSED';
+    S.paid = false;
+    S.expired = false;
     render();
   } catch (e) { S.error = e.message; render(); }
+}
+
+function nameOf(tid) {
+  const t = S.therapists.find((x) => x.therapistId === tid);
+  return t ? t.name : tid;
+}
+function storeOf(id) {
+  const s = S.stores.find((x) => x.storeId === id);
+  return s ? s.name : id;
+}
+
+async function resumeOrder(orderId) {
+  const o = S.bookings.find((x) => String(x.orderId) === String(orderId));
+  if (!o || o.status !== 'PENDING_PAY') return;
+  S.order = o;
+  S.paid = false;
+  S.expired = false;
+  S.error = '';
+  S.storeId = o.storeId;
+  S.storeName = storeOf(o.storeId);
+  S.therapistId = o.therapistId;
+  S.therapistName = nameOf(o.therapistId);
+  S.date = o.date;
+  S.priceFen = o.payableFen;
+  S.selected = {
+    therapistId: o.therapistId,
+    therapistName: S.therapistName,
+    slotNo: o.startSlotNo,
+    start: o.start,
+    priceFen: o.payableFen,
+  };
+  try {
+    const fresh = await api('/api/v1/c/bookings/' + o.orderId, { auth: true });
+    Object.assign(S.order, fresh);
+    S.therapistName = nameOf(fresh.therapistId || o.therapistId);
+  } catch (e) { S.error = e.message; }
+  startTick();
+  go('confirm');
 }
 
 async function openMine() {

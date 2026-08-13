@@ -1,8 +1,9 @@
 <view class="page" id="c4-confirm">
-  <view wx:if="{{orderId && !paid && !expired}}" class="ticker" id="countdown">
+  <view wx:if="{{pending && !expired}}" class="ticker" id="countdown">
     已锁定 · 剩余 {{remain}} 支付，超时自动释放
   </view>
-  <view wx:if="{{expired && !paid}}" class="ticker dead">锁已过期，请返回重选时段</view>
+  <view wx:if="{{pending && expired}}" class="ticker dead">锁已过期，请返回重选时段</view>
+  <view wx:if="{{closed}}" class="ticker dead" id="closed-banner">预约已取消</view>
   <view wx:if="{{paid}}" class="ticker ok">支付成功 · 订单已预约</view>
 
   <view class="card summary">
@@ -16,8 +17,8 @@
 
   <view wx:if="{{error}}" class="error">{{error}}</view>
 
-  <view wx:if="{{!orderId && !paid && !expired}}" class="btn" id="lock-btn" bindtap="lockOrder">确认下单（锁定 15 分钟）</view>
-  <view wx:if="{{orderId && !paid && !expired}}" class="btn" id="pay-btn" bindtap="lockAndPay">立即支付（dev mock）</view>
-  <view wx:if="{{orderId && !paid}}" class="btn ghost" bindtap="cancelOrder">取消预约</view>
-  <view wx:if="{{paid}}" class="btn" bindtap="goMine">查看订单</view>
+  <view wx:if="{{!orderId && !paid && !closed}}" class="btn" id="lock-btn" bindtap="lockOrder">确认下单（锁定 15 分钟）</view>
+  <view wx:if="{{pending && !expired}}" class="btn" id="pay-btn" bindtap="lockAndPay">立即支付（dev mock）</view>
+  <view wx:if="{{pending}}" class="btn ghost" bindtap="cancelOrder">取消预约</view>
+  <view wx:if="{{paid || closed}}" class="btn" bindtap="goMine">查看订单</view>
 </view>

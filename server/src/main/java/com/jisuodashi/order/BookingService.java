@@ -97,6 +97,14 @@ public class BookingService {
         }
     }
 
+    public BookingDtos.BookingListItem get(long customerId, String orderIdRaw) {
+        BookingOrderRef row = occupy.findOrderById(parseId(orderIdRaw, "id"));
+        if (row == null || row.customerId() != customerId) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        return toListItem(row);
+    }
+
     public BookingDtos.Page<BookingDtos.BookingListItem> list(long customerId, String cursor, Integer limit) {
         int size = limit == null ? 20 : limit;
         if (size < 1 || size > 100) {

@@ -94,8 +94,15 @@ Page({
       durationMinutes: Number(query.durationMinutes || 60),
       bufferMinutes: Number(query.bufferMinutes || 15),
       dates,
+    }, () => {
+      this._ready = true
+      this.loadAvailability()
     })
-    this.loadAvailability()
+  },
+  onShow() {
+    if (this._ready) {
+      this.loadAvailability()
+    }
   },
   pickDate(e) {
     const iso = e.currentTarget.dataset.iso
