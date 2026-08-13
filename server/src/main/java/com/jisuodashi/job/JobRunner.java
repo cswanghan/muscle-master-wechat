@@ -221,6 +221,14 @@ public class JobRunner {
         return byAddon == null ? null : byAddon.id();
     }
 
+    public static Long parseOrderId(String payload) {
+        return orderIdFromPayload(payload);
+    }
+
+    public static Long parseHoldId(String bizKey) {
+        return holdIdFromBizKey(bizKey);
+    }
+
     static Long orderIdFromPayload(String payload) {
         if (payload == null || payload.isBlank()) {
             return null;
