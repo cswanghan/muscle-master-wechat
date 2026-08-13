@@ -49,7 +49,7 @@
   <header>
     <h1>PR16 · 按 payment 退款 + ¥500 审批</h1>
     <p>POST /f/orders/{id}/refund · GET /f/human-tasks?status=OPEN · POST /f/human-tasks/{id}/approve</p>
-    <span class="badge ">ALL PASS · 11 / 11</span>
+    <span class="badge ">ALL PASS · 12 / 12</span>
   </header>
   <main>
     <div class="flow">
@@ -77,7 +77,8 @@
     </div>
     <div class="callout">
       <strong>§3.2 / §3.3</strong>
-      <div>P0 全额 = SUM(SUCCESS) − 已退；<code>amountFen</code> 必须等于 remaining 否则 40001。
+      <div>P0 全额 = SUM(SUCCESS) − 已退（<code>remainingFen</code>，不是 <code>payableFen</code>）；
+      <code>amountFen</code> 必须等于 remaining 否则 40001。
       同一 <code>refund_no</code> / <code>requestId</code> 重放；若仍 <code>PENDING</code> 则继续打微信。
       ≥¥500 审批=放款（<code>fire(REFUND)</code> 已取消订单）；拒绝放款写 <code>REFUND_DENIED</code>。
       Law A：释放只走 <code>fire(REFUND)</code>。human_task 带 <code>store_id</code> 并按门店过滤。</div>
@@ -105,10 +106,11 @@
 <tr class='ok'><td>TWO</td><td>双 SUCCESS payment → 两张退款 / 两次微信</td><td>refunds=2 wechat=2</td><td>PASS</td></tr>
 <tr class='ok'><td>CASH</td><td>现金只记账不调微信</td><td>wxId=CASH wechat=0</td><td>PASS</td></tr>
 <tr class='ok'><td>APPROVE</td><td>≥50000 先 WAIT_APPROVAL，approve 后再调微信</td><td>wait=WAIT_APPROVAL after=SUCCESS wechat=2</td><td>PASS</td></tr>
-<tr class='ok'><td>IDEM</td><td>同一 requestId / refund_no 重放</td><td>refundNo=R81621037317361664 replay=true</td><td>PASS</td></tr>
+<tr class='ok'><td>IDEM</td><td>同一 requestId / refund_no 重放</td><td>refundNo=R81623130337972224 replay=true</td><td>PASS</td></tr>
 <tr class='ok'><td>PERM</td><td>IN_SERVICE 无 refund:after_start → 40904</td><td>40904=true</td><td>PASS</td></tr>
 <tr class='ok'><td>PENDING</td><td>PENDING_PAY 禁止走退款 API</td><td>status=PENDING_PAY → 40904</td><td>PASS</td></tr>
 <tr class='ok'><td>FAIL</td><td>微信退款失败 → workflow MANUAL + human_task</td><td>wf=MANUAL refund=FAILED</td><td>PASS</td></tr>
+<tr class='ok'><td>REMAIN</td><td>remainingFen = SUM(SUCCESS)−已退，不是 payableFen</td><td>remaining=29700 payable=19800</td><td>PASS</td></tr>
 <tr class='ok'><td>AMT</td><td>amountFen ≠ remaining → 40001</td><td>40001=true</td><td>PASS</td></tr>
 <tr class='ok'><td>RESUME</td><td>PENDING 重放继续打微信</td><td>replay=true wechat=1</td><td>PASS</td></tr>
 <tr class='ok'><td>DENY</td><td>拒绝放款 → MANUAL + REFUND_DENIED，订单仍取消</td><td>wf=MANUAL deniedTask=OPEN</td><td>PASS</td></tr>

@@ -140,6 +140,12 @@ class RefundReportTest {
         } catch (ApiException ex) {
             amt400 = ex.getCode() == ErrorCodes.BAD_REQUEST;
         }
+        Fixture rem = booked("rpt-rem");
+        insertSuccess(rem, 9900);
+        rows.add(row("REMAIN", "remainingFen = SUM(SUCCESS)−已退，不是 payableFen",
+                rem.svc.remainingFen(rem.locked.orderId()) == 29700,
+                "remaining=" + rem.svc.remainingFen(rem.locked.orderId()) + " payable=19800"));
+
         rows.add(row("AMT", "amountFen ≠ remaining → 40001",
                 amt400 && amt.payments.listRefundsByOrderId(amt.locked.orderId()).isEmpty(),
                 "40001=" + amt400));
@@ -335,7 +341,8 @@ class RefundReportTest {
                     </div>
                     <div class="callout">
                       <strong>§3.2 / §3.3</strong>
-                      <div>P0 全额 = SUM(SUCCESS) − 已退；<code>amountFen</code> 必须等于 remaining 否则 40001。
+                      <div>P0 全额 = SUM(SUCCESS) − 已退（<code>remainingFen</code>，不是 <code>payableFen</code>）；
+                      <code>amountFen</code> 必须等于 remaining 否则 40001。
                       同一 <code>refund_no</code> / <code>requestId</code> 重放；若仍 <code>PENDING</code> 则继续打微信。
                       ≥¥500 审批=放款（<code>fire(REFUND)</code> 已取消订单）；拒绝放款写 <code>REFUND_DENIED</code>。
                       Law A：释放只走 <code>fire(REFUND)</code>。human_task 带 <code>store_id</code> 并按门店过滤。</div>

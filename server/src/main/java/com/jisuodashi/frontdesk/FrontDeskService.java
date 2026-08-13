@@ -280,7 +280,8 @@ public class FrontDeskService {
                 String.valueOf(order.therapistId()),
                 order.startSlotNo(),
                 order.serviceDate().toString(),
-                order.payableFen());
+                order.payableFen(),
+                payments.remainingFen(order.id()));
     }
 
     private FrontDeskDtos.WalkInResponse toWalkIn(
@@ -307,7 +308,8 @@ public class FrontDeskService {
                 replay,
                 order == null ? null : roomName(order.roomId()),
                 order == null ? null : bedName(order.bedId()),
-                maskFromCustomer(customer));
+                maskFromCustomer(customer),
+                order == null ? 0L : payments.remainingFen(order.id()));
     }
 
     private String customerMask(long customerId) {

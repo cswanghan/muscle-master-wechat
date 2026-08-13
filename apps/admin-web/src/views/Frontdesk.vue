@@ -27,6 +27,7 @@ type LookupItem = {
   startSlotNo: number
   serviceDate: string
   payableFen?: number
+  remainingFen?: number
 }
 
 type CheckInData = {
@@ -50,6 +51,7 @@ type WalkInData = {
   customerMask: string
   roomName?: string
   bedName?: string
+  remainingFen?: number
 }
 
 const STORE = '3100000000000000001'
@@ -161,7 +163,7 @@ async function lookup() {
     lookupItems.value = data.items
     const first = data.items[0]
     if (first) {
-      fillRefund(first.orderId, first.payableFen ?? refundAmount.value)
+      fillRefund(first.orderId, first.remainingFen ?? first.payableFen ?? refundAmount.value)
     }
   } catch (e) {
     lookupItems.value = []
@@ -244,7 +246,7 @@ async function submitWalkIn() {
     })
     const data = await readEnvelope<WalkInData>(res)
     walkIn.value = data
-    fillRefund(data.orderId, data.payableFen)
+    fillRefund(data.orderId, data.remainingFen ?? data.payableFen)
     if (data.payChannel === 'WECHAT' && data.paymentNo) {
       await pollPayment(data.paymentNo, data.orderId, data.alreadyInStore)
     }
@@ -480,7 +482,7 @@ onUnmounted(stopPoll)
     <div class="desk-grid">
       <section class="desk-card" id="refund-panel">
         <h2>按支付单退款</h2>
-        <p class="hint">P0 全额 = SUM(SUCCESS)−已退。金额锁定为 remaining，不符则 40001。≥¥500 审批=放款（订单已取消）。</p>
+        <p class="hint">P0 全额 = SUM(SUCCESS)−已退。金额锁定 remainingFen，不符则 40001。≥¥500 审批=放款（订单已取消）。</p>
         <div class="form">
           <label>订单 ID</label>
           <el-input id="refund-order" v-model="refundOrderId" size="large" placeholder="orderId" />

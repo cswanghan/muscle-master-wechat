@@ -518,6 +518,16 @@ public class PaymentService {
         return "R" + paymentId;
     }
 
+    /** P0 remaining = SUM(SUCCESS payment) of rows without a non-failed refund. */
+    public long remainingFen(long orderId) {
+        List<Refund> existing = payments.listRefundsByOrderId(orderId);
+        return payments.listByOrderId(orderId).stream()
+                .filter(Payment::success)
+                .filter(p -> existing.stream().noneMatch(r -> r.paymentId() == p.id() && !r.failed()))
+                .mapToLong(Payment::amountFen)
+                .sum();
+    }
+
     public PaymentDtos.RefundOutcome refund(
             long orderId, String requestId, long amountFen, String reason, FireContext ctx) {
         if (requestId == null || requestId.isBlank()) {
@@ -598,7 +608,7 @@ public class PaymentService {
                     WorkflowInstance.WAIT_APPROVAL.equals(wf == null ? "" : wf.status()),
                     existing);
         }
-        long remaining = openPays.stream().mapToLong(Payment::amountFen).sum();
+        long remaining = remainingFen(orderId);
         if (amountFen != remaining) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "amountFen 须等于待退金额 " + remaining);
         }

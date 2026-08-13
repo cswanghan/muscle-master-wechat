@@ -180,6 +180,25 @@ class FrontDeskRefundApiTest {
     }
 
     @Test
+    void lookupRemainingFenIncludesAddonPayment() {
+        String customer = customerToken();
+        Map<String, Object> created = data(post("/api/v1/c/bookings", booking("fd-rf-rem", 42), customer),
+                HttpStatus.CREATED);
+        long orderId = Long.parseLong(String.valueOf(created.get("orderId")));
+        Map<String, Object> pay = data(post("/api/v1/c/bookings/" + orderId + "/pay",
+                Map.of("requestId", "pay-fd-rem"), customer), HttpStatus.OK);
+        notify(String.valueOf(pay.get("paymentNo")), 19800);
+        insertAddon(orderId, 9900);
+        String orderNo = String.valueOf(created.get("orderNo"));
+        Map<String, Object> byNo = data(
+                get("/api/v1/f/orders/lookup?verify=ORDER_NO&keyword=" + orderNo, frontToken()),
+                HttpStatus.OK);
+        assertThat(items(byNo, "items")).hasSize(1);
+        assertThat(items(byNo, "items").getFirst().get("payableFen")).isEqualTo(19800);
+        assertThat(items(byNo, "items").getFirst().get("remainingFen")).isEqualTo(29700);
+    }
+
+    @Test
     void amountFenMismatchIs40001() {
         String customer = customerToken();
         Map<String, Object> created = data(post("/api/v1/c/bookings", booking("fd-rf-amt", 40), customer),
@@ -284,6 +303,10 @@ class FrontDeskRefundApiTest {
 
     private ResponseEntity<Map<String, Object>> post(String path, Map<String, ?> body, String bearer) {
         return rest.exchange(path, HttpMethod.POST, new HttpEntity<>(body, jsonHeaders(bearer)), MAP);
+    }
+
+    private ResponseEntity<Map<String, Object>> get(String path, String bearer) {
+        return rest.exchange(path, HttpMethod.GET, new HttpEntity<>(jsonHeaders(bearer)), MAP);
     }
 
     private static HttpHeaders jsonHeaders(String bearer) {

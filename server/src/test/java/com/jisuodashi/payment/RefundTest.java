@@ -142,6 +142,16 @@ class RefundTest {
     }
 
     @Test
+    void remainingFenIsSuccessMinusCoveredRefunds() {
+        Fixture f = booked("rf-rem");
+        assertThat(f.svc.remainingFen(f.locked.orderId())).isEqualTo(19800);
+        insertSuccess(f, 9900L);
+        assertThat(f.svc.remainingFen(f.locked.orderId())).isEqualTo(29700);
+        f.svc.refund(f.locked.orderId(), "req-rem", 29700, "全退", desk());
+        assertThat(f.svc.remainingFen(f.locked.orderId())).isZero();
+    }
+
+    @Test
     void amountFenMismatchIs40001() {
         Fixture f = booked("rf-amt");
         assertThatThrownBy(() -> f.svc.refund(f.locked.orderId(), "req-amt", 1, "少退", desk()))

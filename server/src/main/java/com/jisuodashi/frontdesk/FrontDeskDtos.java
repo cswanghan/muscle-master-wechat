@@ -62,7 +62,8 @@ public final class FrontDeskDtos {
             boolean replay,
             String roomName,
             String bedName,
-            String customerMask
+            String customerMask,
+            long remainingFen
     ) {
     }
 
@@ -76,7 +77,8 @@ public final class FrontDeskDtos {
             String therapistId,
             int startSlotNo,
             String serviceDate,
-            long payableFen
+            long payableFen,
+            long remainingFen
     ) {
     }
 
