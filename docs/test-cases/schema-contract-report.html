@@ -22,16 +22,17 @@
 <body>
   <header>
     <h1>SchemaContractTest</h1>
-    <span class="badge ">ALL PASS · 88 / 88</span>
+    <span class="badge ">ALL PASS · 89 / 89</span>
     <p style="margin:10px 0 0;opacity:.85">V1 dual-slot unique keys · occupancy · RBAC · demo store</p>
   </header>
   <main>
     <table>
       <thead><tr><th>Case</th><th>Check</th><th>Result</th></tr></thead>
       <tbody>
-<tr class='ok'><td>TC-2-01</td><td>uk_therapist_slot (therapist_id, slot_date, slot_no)</td><td>PASS</td></tr>
-<tr class='ok'><td>TC-2-01</td><td>uk_bed_slot (bed_id, slot_date, slot_no)</td><td>PASS</td></tr>
-<tr class='ok'><td>TC-2-01</td><td>uk_occ (resource_type, resource_id, slot_date, slot_no)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>uk_therapist_slot exact (therapist_id, slot_date, slot_no)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>uk_bed_slot exact (bed_id, slot_date, slot_no)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>uk_occ exact (resource_type, resource_id, slot_date, slot_no)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>uk_occ does not include hold_id</td><td>PASS</td></tr>
 <tr class='ok'><td>TC-2-01</td><td>therapist_slot.hold_id</td><td>PASS</td></tr>
 <tr class='ok'><td>TC-2-01</td><td>bed_slot.hold_id</td><td>PASS</td></tr>
 <tr class='ok'><td>TC-2-01</td><td>slot_occupancy.hold_id NOT NULL</td><td>PASS</td></tr>

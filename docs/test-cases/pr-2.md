@@ -14,7 +14,7 @@
   - `UNIQUE KEY uk_occ (resource_type, resource_id, slot_date, slot_no)`
   - `therapist_slot.hold_id` / `bed_slot.hold_id` / `slot_occupancy.hold_id NOT NULL`
   - 无 `PARTITION BY`（D24）
-- **实际结果**：PASS。`SchemaContractTest` 88/88。Surefire：`Tests run: 1, Failures: 0, Errors: 0`（契约）+ `MuscleMasterApplicationTests` `Tests run: 2`。合计 `Tests run: 3, Failures: 0, Errors: 0`。
+- **实际结果**：PASS。`SchemaContractTest` 89/89（含 unique 列精确相等 + `uk_occ` 不含 `hold_id`）。Surefire：`Tests run: 1, Failures: 0, Errors: 0`（契约）+ `MuscleMasterApplicationTests` `Tests run: 2`。合计 `Tests run: 3, Failures: 0, Errors: 0`。
 
 ![SchemaContractTest ALL PASS](screenshots/pr-2-schema-contract.png)
 
@@ -48,4 +48,4 @@
 
 ![schema preview](screenshots/pr-2-schema-preview.png)
 
-`scripts/verify-schema.sh` 在本机因无 Docker/MySQL 以 exit 2 退出并提示改跑契约测试；有 compose MySQL 时会 `CREATE` + 查 `information_schema`。
+`scripts/verify-schema.sh` 在本机因无 Docker/MySQL 以 exit 2 退出并提示改跑契约测试。有 compose MySQL 时 **destructive**：DROP+CREATE 独立库 `muscle_master_verify`（不碰 `muscle_master`），再 apply V1–V3 并查 `information_schema`（含 `uk_occ` 列精确等于 `resource_type,resource_id,slot_date,slot_no`）。

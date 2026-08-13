@@ -82,12 +82,17 @@ class SchemaContractTest {
     }
 
     private static void tc201DualSlotAndOccupancy() {
-        check("TC-2-01", "uk_therapist_slot (therapist_id, slot_date, slot_no)",
-                contains(v1, "UNIQUE KEY uk_therapist_slot (therapist_id, slot_date, slot_no)"));
-        check("TC-2-01", "uk_bed_slot (bed_id, slot_date, slot_no)",
-                contains(v1, "UNIQUE KEY uk_bed_slot (bed_id, slot_date, slot_no)"));
-        check("TC-2-01", "uk_occ (resource_type, resource_id, slot_date, slot_no)",
-                contains(v1, "UNIQUE KEY uk_occ (resource_type, resource_id, slot_date, slot_no)"));
+        List<String> ukTherapistSlot = uniqueKeyColumns(v1, "therapist_slot", "uk_therapist_slot");
+        List<String> ukBedSlot = uniqueKeyColumns(v1, "bed_slot", "uk_bed_slot");
+        List<String> ukOcc = uniqueKeyColumns(v1, "slot_occupancy", "uk_occ");
+        check("TC-2-01", "uk_therapist_slot exact (therapist_id, slot_date, slot_no)",
+                ukTherapistSlot.equals(List.of("therapist_id", "slot_date", "slot_no")));
+        check("TC-2-01", "uk_bed_slot exact (bed_id, slot_date, slot_no)",
+                ukBedSlot.equals(List.of("bed_id", "slot_date", "slot_no")));
+        check("TC-2-01", "uk_occ exact (resource_type, resource_id, slot_date, slot_no)",
+                ukOcc.equals(List.of("resource_type", "resource_id", "slot_date", "slot_no")));
+        check("TC-2-01", "uk_occ does not include hold_id",
+                !ukOcc.isEmpty() && !ukOcc.contains("hold_id"));
         check("TC-2-01", "therapist_slot.hold_id",
                 tableHasColumn(v1, "therapist_slot", "hold_id"));
         check("TC-2-01", "bed_slot.hold_id",
@@ -342,14 +347,6 @@ class SchemaContractTest {
         return resource.getContentAsString(StandardCharsets.UTF_8);
     }
 
-    private static boolean contains(String sql, String needle) {
-        return normalize(sql).contains(normalize(needle));
-    }
-
-    private static String normalize(String s) {
-        return s.replaceAll("\\s+", " ");
-    }
-
     private static boolean hasCreateTable(String sql, String table) {
         return Pattern.compile("CREATE TABLE\\s+" + table + "\\s*\\(", Pattern.CASE_INSENSITIVE)
                 .matcher(sql).find();
@@ -365,6 +362,24 @@ class SchemaContractTest {
     private static boolean tableHasColumn(String sql, String table, String column) {
         return Pattern.compile("(?m)^\\s*" + column + "\\s+", Pattern.CASE_INSENSITIVE)
                 .matcher(tableBody(sql, table)).find();
+    }
+
+    /** Column list of a named UNIQUE KEY; empty if the key is missing. Exact order, trimmed. */
+    private static List<String> uniqueKeyColumns(String sql, String table, String keyName) {
+        Matcher uk = Pattern.compile(
+                "UNIQUE KEY\\s+" + Pattern.quote(keyName) + "\\s*\\(([^)]+)\\)",
+                Pattern.CASE_INSENSITIVE).matcher(tableBody(sql, table));
+        if (!uk.find()) {
+            return List.of();
+        }
+        List<String> cols = new ArrayList<>();
+        for (String part : uk.group(1).split(",")) {
+            String col = part.trim();
+            if (!col.isEmpty()) {
+                cols.add(col);
+            }
+        }
+        return List.copyOf(cols);
     }
 
     private static int countInsertRows(String sql, String table) {
