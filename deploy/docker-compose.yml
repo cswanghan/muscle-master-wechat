@@ -1,0 +1,74 @@
+# P0 grayscale stack. Host may not have Docker; this file is still the deploy contract.
+# Single server process: SNOWFLAKE_WORKER_ID=1, app.jobs.enabled=true (one JobRunner).
+# Do not start a second server replica without assigning a new worker id.
+
+services:
+  mysql:
+    image: mysql:8.0
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_0900_ai_ci
+      --innodb_lock_wait_timeout=5
+      --default-time-zone=+08:00
+    environment:
+      MYSQL_DATABASE: muscle_master
+      MYSQL_USER: muscle
+      MYSQL_PASSWORD: muscle
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-umuscle", "-pmuscle"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/muscle_master?useUnicode=true&characterEncoding=utf8&connectionTimeZone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: muscle
+      SPRING_DATASOURCE_PASSWORD: muscle
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SNOWFLAKE_WORKER_ID: "1"
+      APP_JOBS_ENABLED: "true"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin:
+    build:
+      context: ../apps/admin-web
+      dockerfile: Dockerfile
+    ports:
+      - "8081:80"
+    depends_on:
+      - server
+
+volumes:
+  mysql_data:
+  redis_data:

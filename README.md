@@ -1,0 +1,67 @@
+# 肌松大师 muscle-master
+
+连锁门店推拿预约 / 前台 / 技师 / 管理后台。P0 模块化单体，见 [docs/p0-technical-design.md](docs/p0-technical-design.md)。
+
+## 仓库布局
+
+```
+apps/mini-customer   C 端微信原生小程序
+apps/mini-staff      员工端（技师 / 前台 / 店长）
+apps/admin-web       Vue 3 + Vite + TS + Element Plus
+server/              Spring Boot 3.3 / Java 21 单 JAR
+deploy/              docker-compose（MySQL 8 + Redis 7 + server + admin）
+docs/wechat-onboarding.md
+```
+
+## 本机无 Docker（推荐开发）
+
+本机可能没有 Docker。`dev` profile 使用 **H2 内存库**，并关闭 Redis 自动配置，因此 **不需要 MySQL / Redis**。
+
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21
+export PATH="$JAVA_HOME/bin:$PATH"
+
+mvn -f server/pom.xml test
+mvn -f server/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+健康检查：
+
+```bash
+curl --noproxy '*' -s http://127.0.0.1:8080/actuator/health
+```
+
+若本机开了 Surge / 系统代理，访问 `127.0.0.1` 必须绕过代理（`--noproxy '*'` 或把 localhost 加入 bypass）。
+
+期望：`{"status":"UP",...}`。Prometheus：`/actuator/prometheus`。
+
+管理后台（代理 `/actuator` → 8080）：
+
+```bash
+cd apps/admin-web
+npm install
+npm run dev          # http://127.0.0.1:5173/health
+```
+
+默认 `app.jobs.enabled=false`。Compose 里唯一的 `server` 服务才设为 `true`。
+
+## Docker Compose（有 Docker 的机器）
+
+```bash
+docker compose -f deploy/docker-compose.yml up --build
+```
+
+- MySQL 8：`3306`，库 `muscle_master` / 用户 `muscle`
+- Redis 7：`6379`
+- Server：`8080`，`SNOWFLAKE_WORKER_ID=1`，`APP_JOBS_ENABLED=true`（P0 仅这一份 JobRunner）
+- Admin：`8081` → nginx，反代 `/actuator`、`/api`
+
+禁止在未改 worker id 的情况下再起第二个 server 实例。
+
+## 微信开通
+
+支付合入前按 [docs/wechat-onboarding.md](docs/wechat-onboarding.md) 勾选 AppID、类目、商户号、APIv3 证书、支付目录、JSAPI 目录。
+
+## 技术栈
+
+Java 21 · Spring Boot 3.3 · MyBatis-Plus 3.5 · Flyway · MapStruct · MySQL 8 · Redis 7 · Micrometer/Prometheus

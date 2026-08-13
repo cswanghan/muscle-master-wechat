@@ -1,0 +1,26 @@
+# Local profile: H2 in-memory, no MySQL/Redis/Docker required.
+# /actuator/health is UP without external services.
+spring:
+  datasource:
+    url: jdbc:h2:mem:muscle_master;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  flyway:
+    enabled: false
+
+management:
+  health:
+    redis:
+      enabled: false
+
+app:
+  jobs:
+    enabled: false

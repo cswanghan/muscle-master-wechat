@@ -1,0 +1,5 @@
+<view class="page">
+  <view class="mark">玉</view>
+  <view class="title">{{title}}</view>
+  <view class="hint">C 端占位页 · C1–C4 尚未实现</view>
+</view>

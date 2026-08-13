@@ -1,0 +1,14 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1E5C4A",
+    "navigationBarTitleText": "肌松大师",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F4F1EA",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

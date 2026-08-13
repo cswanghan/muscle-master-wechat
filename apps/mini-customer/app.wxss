@@ -1,0 +1,10 @@
+page {
+  background-color: #f4f1ea;
+  color: #1a1c1b;
+  font-size: 28rpx;
+  min-height: 100%;
+}
+
+.brand {
+  color: #1e5c4a;
+}

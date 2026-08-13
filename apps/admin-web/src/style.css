@@ -1,0 +1,97 @@
+:root {
+  --jade: #1e5c4a;
+  --ink: #1a1c1b;
+  --paper: #f4f1ea;
+  --el-color-primary: #1e5c4a;
+  --el-color-primary-light-3: #4a8574;
+  --el-color-primary-light-5: #7eab9e;
+  --el-color-primary-light-7: #b2d0c7;
+  --el-color-primary-light-8: #cce0da;
+  --el-color-primary-light-9: #e5efec;
+  --el-color-primary-dark-2: #184a3b;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Source Han Sans SC", "PingFang SC", "Noto Sans SC", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+  background: var(--paper);
+}
+
+.layout {
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  background: var(--ink);
+  color: #f4f1ea;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #d7e6df;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #8aa89c;
+}
+
+.main {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.health-card {
+  border: 1px solid #d7e6df;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-head h1 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--jade);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.label {
+  color: #4a5a54;
+  font-size: 14px;
+}
+
+.json {
+  margin: 0;
+  padding: 16px;
+  background: #1a1c1b;
+  color: #d7e6df;
+  border-radius: 6px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.55;
+}
