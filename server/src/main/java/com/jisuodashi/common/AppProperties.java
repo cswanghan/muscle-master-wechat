@@ -15,6 +15,7 @@ public class AppProperties {
     private final Catalog catalog = new Catalog();
     private final Booking booking = new Booking();
     private final Internal internal = new Internal();
+    private final Availability availability = new Availability();
 
     public Jobs getJobs() {
         return jobs;
@@ -46,6 +47,10 @@ public class AppProperties {
 
     public Internal getInternal() {
         return internal;
+    }
+
+    public Availability getAvailability() {
+        return availability;
     }
 
     public static class Jobs {
@@ -233,6 +238,18 @@ public class AppProperties {
             public void setToken(String token) {
                 this.token = token;
             }
+        }
+    }
+
+    public static class Availability {
+        private Duration cacheTtl = Duration.ofSeconds(30);
+
+        public Duration getCacheTtl() {
+            return cacheTtl;
+        }
+
+        public void setCacheTtl(Duration cacheTtl) {
+            this.cacheTtl = cacheTtl;
         }
     }
 

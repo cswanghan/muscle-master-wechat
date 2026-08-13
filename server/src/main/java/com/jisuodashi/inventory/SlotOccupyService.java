@@ -84,6 +84,7 @@ public class SlotOccupyService {
     private final String instanceId;
     private final StringRedisTemplate redis;
     private final Counter stalePaid;
+    private final AvailabilityCache availCache;
 
     @Autowired
     public SlotOccupyService(
@@ -94,10 +95,11 @@ public class SlotOccupyService {
             PlatformTransactionManager txManager,
             AppProperties properties,
             @Autowired(required = false) StringRedisTemplate redis,
-            @Autowired(required = false) MeterRegistry meters
+            @Autowired(required = false) MeterRegistry meters,
+            @Autowired(required = false) AvailabilityCache availCache
     ) {
         this(store, dayLock, ids::nextId, clock, new TransactionTemplate(txManager),
-                "w" + properties.getSnowflake().getWorkerId(), redis, meters);
+                "w" + properties.getSnowflake().getWorkerId(), redis, meters, availCache);
     }
 
     public SlotOccupyService(
@@ -106,7 +108,7 @@ public class SlotOccupyService {
             LongSupplier ids,
             AppClock clock
     ) {
-        this(store, dayLock, ids, clock, null, "test", null, null);
+        this(store, dayLock, ids, clock, null, "test", null, null, null);
     }
 
     public SlotOccupyService(
@@ -116,7 +118,17 @@ public class SlotOccupyService {
             AppClock clock,
             MeterRegistry meters
     ) {
-        this(store, dayLock, ids, clock, null, "test", null, meters);
+        this(store, dayLock, ids, clock, null, "test", null, meters, null);
+    }
+
+    public SlotOccupyService(
+            SlotOccupyStore store,
+            TherapistDayLock dayLock,
+            LongSupplier ids,
+            AppClock clock,
+            AvailabilityCache availCache
+    ) {
+        this(store, dayLock, ids, clock, null, "test", null, null, availCache);
     }
 
     SlotOccupyService(
@@ -127,7 +139,8 @@ public class SlotOccupyService {
             TransactionTemplate tx,
             String instanceId,
             StringRedisTemplate redis,
-            MeterRegistry meters
+            MeterRegistry meters,
+            AvailabilityCache availCache
     ) {
         this.store = store;
         this.dayLock = dayLock;
@@ -136,6 +149,7 @@ public class SlotOccupyService {
         this.tx = tx;
         this.instanceId = instanceId;
         this.redis = redis;
+        this.availCache = availCache;
         if (meters == null) {
             this.stalePaid = null;
         } else {
@@ -161,7 +175,7 @@ public class SlotOccupyService {
             return retryDeadlock(() -> inTx(() -> doLockNew(cmd)));
         } finally {
             dayLock.release(cmd.therapistId(), cmd.date(), token);
-            evictAvail(cmd.storeId(), cmd.date());
+            invalidateAvailability(cmd.storeId(), cmd.date());
         }
     }
 
@@ -225,6 +239,17 @@ public class SlotOccupyService {
             }
         }
         return new SlotScanResult(List.copyOf(holds), orphans, pending, stale, addon);
+    }
+
+    /**
+     * ReleaseLock / forceFreeByHold / leave / pay: same store+date key as lockNew.
+     */
+    public void onRelease(long storeId, LocalDate date) {
+        invalidateAvailability(storeId, date);
+    }
+
+    public void invalidateAvailability(long storeId, LocalDate date) {
+        evictAvail(storeId, date);
     }
 
     private LockNewResult doLockNew(LockNewCommand cmd) {
@@ -523,12 +548,16 @@ public class SlotOccupyService {
     }
 
     private void evictAvail(long storeId, LocalDate date) {
+        if (availCache != null) {
+            availCache.invalidate(storeId, date);
+            return;
+        }
         if (redis == null) {
             return;
         }
         try {
             ScanOptions opts = ScanOptions.scanOptions()
-                    .match("cache:avail:" + storeId + ":" + date + ":*")
+                    .match(AvailabilityCache.redisPattern(storeId, date))
                     .count(64)
                     .build();
             Set<String> keys = new HashSet<>();

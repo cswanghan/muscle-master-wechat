@@ -40,6 +40,8 @@ app:
   catalog:
     near-meters: 1500
     store-cache-ttl: 5m
+  availability:
+    cache-ttl: 30s
   booking:
     captcha:
       enabled: false
