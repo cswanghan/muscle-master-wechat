@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR10 T1/T2 HTML preview</title>
+  <style>
+    body { margin:0; background:#d9e3dd; font-family:"PingFang SC", sans-serif; color:#1a1c1b; }
+    header { background:#1E5C4A; color:#fff; padding:20px 28px; }
+    header h1 { margin:0; font-size:20px; }
+    header p { margin:6px 0 0; font-size:13px; opacity:.85; }
+    .wrap { display:flex; gap:28px; padding:28px; justify-content:center; flex-wrap:wrap; }
+    .phone { width:375px; background:#f4f1ea; border-radius:28px; overflow:hidden;
+             box-shadow:0 12px 30px rgba(20,53,44,.18); min-height:720px; }
+    .bar { background:#1E5C4A; color:#f4f1ea; padding:16px 18px; }
+    .kicker { font-size:15px; opacity:.85; }
+    .title { font-size:22px; font-weight:700; margin-top:4px; }
+    .sub { font-size:15px; opacity:.8; }
+    .card { margin:-12px 12px 16px; background:#fff; border-radius:14px; padding:16px; }
+    .who { font-size:20px; font-weight:700; color:#1E5C4A; }
+    .badge { display:inline-block; margin-left:8px; background:#c45c26; color:#fff;
+             font-size:15px; padding:4px 8px; border-radius:999px; }
+    .when { font-size:18px; font-weight:600; margin-top:8px; }
+    .meta, .eta, .note, .hint { font-size:15px; }
+    .meta { margin-top:4px; color:#3d4f48; }
+    .eta { margin-top:10px; color:#1E5C4A; }
+    .btn { height:48px; line-height:48px; text-align:center; border-radius:10px;
+           font-size:16px; font-weight:600; margin-top:10px; }
+    .btn.jade { background:#1E5C4A; color:#fff; }
+    .btn.copper { background:#c45c26; color:#fff; }
+    .chip { display:inline-block; min-width:48px; min-height:48px; padding:6px 8px;
+            background:#1E5C4A; color:#fff; border-radius:8px; font-size:15px;
+            margin:4px 4px 0 0; vertical-align:top; }
+    .sec { padding:8px 16px; font-size:15px; font-weight:600; color:#1E5C4A; }
+    .note { background:#fff; margin:0 12px 8px; padding:10px 12px; border-radius:10px; }
+    .box { margin:0 12px; background:#fff; min-height:72px; border-radius:10px;
+           padding:10px; font-size:15px; color:#6b7a74; }
+    .ruler { margin:0 28px 24px; background:#fff; padding:12px 16px; border-radius:10px;
+             font-size:15px; }
+    .mark { display:inline-block; width:48px; height:48px; background:#1E5C4A; color:#fff;
+            text-align:center; line-height:48px; border-radius:8px; margin-right:8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>mini-staff T1 / T2 HTML preview</h1>
+    <p>WeChat 开发者工具未接入时的页面验收。最小字号 15px，主操作 48px tap target。orderId=81600459877388289</p>
+  </header>
+  <div class="wrap">
+    <div class="phone">
+      <div class="bar">
+        <div class="kicker">T1 · 技师工作台</div>
+        <div class="title">林晓</div>
+        <div class="sub">三秒看懂谁 / 几点 / 哪张床</div>
+      </div>
+      <div class="card">
+        <div><span class="who">王先生</span><span class="badge">新客</span></div>
+        <div class="when">19:30–20:30</div>
+        <div class="meta">一号房 · 1号床</div>
+        <div class="meta">全身推拿放松</div>
+        <div class="eta">26 分钟后开始</div>
+        <div class="btn jade">进入服务页</div>
+      </div>
+      <div class="sec">今日时间轴</div>
+      <div style="padding:0 12px 20px">
+        <span class="chip">19:30<br/>BOOKED</span>
+        <span class="chip">19:45<br/>BOOKED</span>
+        <span class="chip">20:15<br/>BUFFER</span>
+      </div>
+    </div>
+    <div class="phone">
+      <div class="bar">
+        <div class="kicker">T2 · 服务中</div>
+        <div class="title">王先生</div>
+        <div class="sub">全身推拿放松 · 19:30–20:30</div>
+      </div>
+      <div class="card">
+        <div class="meta">一号房 1号床 <span class="badge">新客</span></div>
+        <div class="meta">状态 服务中</div>
+        <div class="when">12:40</div>
+        <div class="btn jade">开始服务</div>
+        <div class="btn copper">结束服务</div>
+      </div>
+      <div class="sec">理疗记录（只增不改）</div>
+      <div class="note">腰段张力高，本次以放松为主。禁忌：孕。</div>
+      <div class="box">参考上次：力度偏好、禁忌；提交后不可改</div>
+      <div style="padding:10px 12px 20px"><div class="btn jade">追加记录</div></div>
+    </div>
+  </div>
+  <div class="ruler">
+    <span class="mark">48</span>
+    主按钮 / 时间轴格 ≥ 48×48px · 正文 ≥ 15px · 不展示客户手机号
+  </div>
+</body>
+</html>

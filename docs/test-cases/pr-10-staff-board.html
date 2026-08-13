@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR10 技师端 T1/T2</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:28px 40px 48px; }
+    table { width:100%; border-collapse:collapse; background:#fff; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    tr.ok td:last-child { color:#1E5C4A; font-weight:700; }
+    tr.bad td:last-child { color:#c0392b; font-weight:700; }
+    .flow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .st { padding:8px 10px; border-radius:8px; font-size:12px; font-weight:700;
+          border:2px solid var(--brand); background:#e8f1ed; }
+    .st.act { background:#1E5C4A; color:#fff; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PR10 · 技师端 T1/T2</h1>
+    <p>GET /api/v1/t/today · POST start/complete · 只增理疗记录 · 15px / 48px</p>
+    <span class="badge ">ALL PASS · 6 / 6</span>
+  </header>
+  <main>
+    <div class="flow">
+      <div class="st">BOOKED</div>
+      <div>CHECK_IN</div>
+      <div class="st">CHECKED_IN</div>
+      <div>POST /t/orders/{id}/start</div>
+      <div class="st act">IN_SERVICE</div>
+      <div>POST complete</div>
+      <div class="st act">COMPLETED</div>
+    </div>
+    <table>
+      <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>AUTH</td><td>GET /t/today 无 JWT → 40101</td><td>40101</td><td>PASS</td></tr>
+<tr class='ok'><td>T1</td><td>下一单卡片 who/when/bed/project/new guest</td><td>{orderId=81600459877388289, status=CHECKED_IN, start=19:30, end=20:30, projectName=全身推拿放松, roomName=一号房, bedName=1号床, customerName=王先生, isNewCustomer=true, minutesToStart=918}</td><td>PASS</td></tr>
+<tr class='ok'><td>T2</td><td>POST /t/orders/{id}/start → IN_SERVICE</td><td>IN_SERVICE</td><td>PASS</td></tr>
+<tr class='ok'><td>T2</td><td>他师 start → 40904</td><td>40904</td><td>PASS</td></tr>
+<tr class='ok'><td>NOTE</td><td>POST notes 只增；GET 仅本人</td><td>items=1 t2=40401</td><td>PASS</td></tr>
+<tr class='ok'><td>T2</td><td>POST /t/orders/{id}/complete → COMPLETED</td><td>COMPLETED</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

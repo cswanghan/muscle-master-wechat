@@ -1,0 +1,46 @@
+<view class="page">
+  <view class="hero">
+    <view class="hero-kicker">T2 · 服务中</view>
+    <view class="hero-title">{{next.customerName || '当前客人'}}</view>
+    <view class="hero-sub">{{next.projectName}} · {{next.start}}–{{next.end}}</view>
+  </view>
+
+  <view class="panel">
+    <view class="place">{{next.roomName}} {{next.bedName}} <text wx:if="{{next.isNewCustomer}}" class="badge">新客</text></view>
+    <view class="status">状态 {{statusLabel}}</view>
+    <view class="timer">{{timerText}}</view>
+
+    <button
+      class="btn start"
+      disabled="{{busy || status === 'IN_SERVICE' || status === 'COMPLETED'}}"
+      bindtap="startService"
+    >开始服务</button>
+    <button
+      class="btn complete"
+      disabled="{{busy || status !== 'IN_SERVICE'}}"
+      bindtap="completeService"
+    >结束服务</button>
+  </view>
+
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+
+  <view class="section-title">理疗记录（只增不改）</view>
+  <view class="notes">
+    <view wx:if="{{notes.length === 0}}" class="hint">还没有记录，提交后不可编辑</view>
+    <view wx:for="{{notes}}" wx:key="id" class="note">
+      <view class="note-t">{{item.createdAt}}</view>
+      <view class="note-c">{{item.content}}</view>
+    </view>
+  </view>
+
+  <view class="composer">
+    <textarea
+      class="box"
+      maxlength="2000"
+      placeholder="{{draftHint}}"
+      value="{{draft}}"
+      bindinput="onDraft"
+    />
+    <button class="btn append" disabled="{{busy || !draft}}" bindtap="appendNote">追加记录</button>
+  </view>
+</view>

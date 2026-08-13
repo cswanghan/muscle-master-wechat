@@ -1,6 +1,7 @@
 {
   "pages": [
-    "pages/index/index"
+    "pages/today/today",
+    "pages/service/service"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1E5C4A",

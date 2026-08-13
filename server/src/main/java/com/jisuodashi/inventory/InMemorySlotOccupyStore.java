@@ -1017,6 +1017,43 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         return therapistSlots.get(tkey(therapistId, date, slotNo));
     }
 
+    public List<BookingOrderRef> listTherapistDayOrders(long therapistId, LocalDate date) {
+        return orders.values().stream()
+                .filter(row -> row.therapistId() == therapistId && date.equals(row.serviceDate()))
+                .map(this::toRef)
+                .sorted(Comparator.comparingInt(BookingOrderRef::startSlotNo).thenComparingLong(BookingOrderRef::id))
+                .toList();
+    }
+
+    public List<TherapistSlotGlance> listTherapistDaySlots(long therapistId, LocalDate date) {
+        return therapistSlots.values().stream()
+                .filter(slot -> slot.resourceId == therapistId && date.equals(slot.date))
+                .sorted(Comparator.comparingInt(slot -> slot.slotNo))
+                .map(slot -> new TherapistSlotGlance(slot.slotNo, slot.status, slot.orderId))
+                .toList();
+    }
+
+    public String firstProjectName(long orderId) {
+        synchronized (this) {
+            return orderItems.stream()
+                    .filter(item -> item.orderId() == orderId && "PROJECT".equals(item.itemType()))
+                    .map(OrderItemInsert::projectName)
+                    .findFirst()
+                    .orElse(null);
+        }
+    }
+
+    public long countCompletedForCustomer(long customerId) {
+        return orders.values().stream()
+                .map(this::toRef)
+                .filter(row -> row.customerId() == customerId)
+                .filter(row -> "COMPLETED".equals(row.status()) || "REVIEWED".equals(row.status()))
+                .count();
+    }
+
+    public record TherapistSlotGlance(int slotNo, String status, Long orderId) {
+    }
+
     MutableSlot bedSlot(long bedId, LocalDate date, int slotNo) {
         return bedSlots.get(bkey(bedId, date, slotNo));
     }

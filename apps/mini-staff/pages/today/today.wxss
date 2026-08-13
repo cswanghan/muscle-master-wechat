@@ -1,0 +1,157 @@
+.page {
+  min-height: 100vh;
+  background: #f4f1ea;
+  padding-bottom: 80rpx;
+  font-size: 30rpx;
+}
+
+.hero {
+  background: #1e5c4a;
+  color: #f4f1ea;
+  padding: 40rpx 32rpx 48rpx;
+}
+
+.hero-kicker {
+  font-size: 30rpx;
+  opacity: 0.85;
+}
+
+.hero-title {
+  margin-top: 12rpx;
+  font-size: 44rpx;
+  font-weight: 700;
+}
+
+.hero-sub {
+  margin-top: 8rpx;
+  font-size: 30rpx;
+  opacity: 0.8;
+}
+
+.hint,
+.error,
+.empty-title,
+.section-title {
+  font-size: 30rpx;
+}
+
+.hint {
+  color: #6b7a74;
+  padding: 24rpx 32rpx;
+}
+
+.error {
+  color: #b42318;
+  padding: 24rpx 32rpx;
+}
+
+.card {
+  margin: -24rpx 24rpx 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  min-height: 96rpx;
+  box-shadow: 0 8rpx 24rpx rgba(20, 53, 44, 0.08);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.who {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1e5c4a;
+}
+
+.badge {
+  min-height: 48rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #c45c26;
+  color: #fff;
+  font-size: 30rpx;
+}
+
+.when {
+  margin-top: 16rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.meta {
+  margin-top: 8rpx;
+  font-size: 30rpx;
+  color: #3d4f48;
+}
+
+.eta {
+  margin-top: 20rpx;
+  font-size: 30rpx;
+  color: #1e5c4a;
+}
+
+.tap {
+  margin-top: 24rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  background: #1e5c4a;
+  color: #f4f1ea;
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.empty {
+  margin: 32rpx 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx 32rpx;
+}
+
+.empty-title {
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.section-title {
+  padding: 8rpx 32rpx 16rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding: 0 24rpx;
+}
+
+.chip {
+  min-height: 96rpx;
+  min-width: 96rpx;
+  padding: 12rpx 16rpx;
+  border-radius: 12rpx;
+  background: #e8efe9;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.chip.booked {
+  background: #1e5c4a;
+  color: #f4f1ea;
+}
+
+.chip.busy {
+  background: #c45c26;
+  color: #fff;
+}
+
+.chip-t,
+.chip-s {
+  font-size: 30rpx;
+}

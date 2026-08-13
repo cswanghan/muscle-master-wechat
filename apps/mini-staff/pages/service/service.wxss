@@ -1,0 +1,138 @@
+.page {
+  min-height: 100vh;
+  background: #f4f1ea;
+  padding-bottom: 48rpx;
+  font-size: 30rpx;
+}
+
+.hero {
+  background: #1e5c4a;
+  color: #f4f1ea;
+  padding: 36rpx 32rpx 40rpx;
+}
+
+.hero-kicker,
+.hero-sub,
+.place,
+.status,
+.timer,
+.section-title,
+.hint,
+.error,
+.note-t,
+.note-c {
+  font-size: 30rpx;
+}
+
+.hero-title {
+  margin-top: 8rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.panel {
+  margin: -20rpx 24rpx 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+}
+
+.place {
+  color: #1e5c4a;
+  font-weight: 600;
+}
+
+.badge {
+  margin-left: 12rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  background: #c45c26;
+  color: #fff;
+  font-size: 30rpx;
+}
+
+.status {
+  margin-top: 8rpx;
+  color: #3d4f48;
+}
+
+.timer {
+  margin: 20rpx 0;
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #1e5c4a;
+}
+
+.btn {
+  height: 96rpx;
+  line-height: 96rpx;
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-top: 16rpx;
+  padding: 0;
+}
+
+.btn.start {
+  background: #1e5c4a;
+  color: #f4f1ea;
+}
+
+.btn.complete {
+  background: #c45c26;
+  color: #fff;
+}
+
+.btn.append {
+  background: #1e5c4a;
+  color: #f4f1ea;
+}
+
+.btn[disabled] {
+  opacity: 0.45;
+}
+
+.error {
+  color: #b42318;
+  padding: 0 32rpx 16rpx;
+}
+
+.section-title {
+  padding: 8rpx 32rpx 12rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.notes {
+  padding: 0 24rpx 16rpx;
+}
+
+.note {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.note-t {
+  color: #6b7a74;
+  margin-bottom: 8rpx;
+}
+
+.hint {
+  color: #6b7a74;
+}
+
+.composer {
+  padding: 0 24rpx;
+}
+
+.box {
+  width: 100%;
+  min-height: 180rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  font-size: 30rpx;
+  box-sizing: border-box;
+}
