@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR3a SlotGenerateJob · demo store</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; opacity:.85; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    main { padding:28px 40px 48px; }
+    .meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+    .pill { background:#fff; border:1px solid var(--line); border-radius:999px;
+            padding:6px 14px; font-size:13px; }
+    h2 { font-size:16px; color:var(--brand); margin:28px 0 12px; }
+    table { width:100%; border-collapse:collapse; background:#fff;
+            box-shadow:0 1px 3px rgba(20,53,44,.06); margin-bottom:20px; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    td.ok { color:#1E5C4A; font-weight:700; }
+    td.restc { color:#8a6a2f; font-weight:700; }
+    td.free { background:#d9efe4; color:#14352c; text-align:center; width:22%; }
+    td.rest { background:#e8e4dc; color:#5c5346; text-align:center; width:22%;
+              text-decoration:line-through; }
+    .legend span { display:inline-block; padding:4px 10px; margin-right:8px;
+                   border-radius:4px; font-size:12px; }
+    .legend .free { background:#d9efe4; }
+    .legend .rest { background:#e8e4dc; }
+    footer { padding:0 40px 32px; color:#6b7c75; font-size:12px; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SlotGenerateJob · 演示旗舰店 DEMO01</h1>
+    <p>today=2026-08-14 Asia/Shanghai · window 2026-08-14 … 2026-08-29 · firstRun=true</p>
+    <span class="badge">PASS · therapist +2304 · bed +1536 · REST 8 / FREE 2296</span>
+  </header>
+  <main>
+    <div class="meta">
+      <span class="pill">1 店 / 3 技师 / 2 床 / 21 周模板</span>
+      <span class="pill">10:00–22:00 = 48 格</span>
+      <span class="pill">林晓 部分日 LEAVE 14:00–16:00 → 8 REST</span>
+      <span class="pill">陈默 SUPPORT store=3100000000000000002 18:00–22:00</span>
+      <span class="pill">no BUFFER / occupancy / lockNew</span>
+    </div>
+    <h2>生成计数</h2>
+    <table>
+      <thead><tr><th>资源</th><th>插入</th><th>IGNORE</th><th>冲突 human_task</th></tr></thead>
+      <tbody>
+        <tr><td>therapist_slot</td><td class="ok">2304</td><td>0</td><td>0</td></tr>
+        <tr><td>bed_slot</td><td class="ok">1536</td><td>0</td><td>0</td></tr>
+      </tbody>
+    </table>
+    <h2>林晓 (3100000000000000401) · 2026-08-14 FREE vs REST</h2>
+    <p class="legend"><span class="free">FREE 40</span><span class="rest">REST 8</span>
+    仅 14:00–16:00 为 REST，全日其余仍 FREE。</p>
+    <table>
+      <thead><tr><th>小时</th><th>:00</th><th>:15</th><th>:30</th><th>:45</th></tr></thead>
+      <tbody>
+<tr><th>10:00</th><td class='free'>40<br/>FREE</td><td class='free'>41<br/>FREE</td><td class='free'>42<br/>FREE</td><td class='free'>43<br/>FREE</td></tr>
+<tr><th>11:00</th><td class='free'>44<br/>FREE</td><td class='free'>45<br/>FREE</td><td class='free'>46<br/>FREE</td><td class='free'>47<br/>FREE</td></tr>
+<tr><th>12:00</th><td class='free'>48<br/>FREE</td><td class='free'>49<br/>FREE</td><td class='free'>50<br/>FREE</td><td class='free'>51<br/>FREE</td></tr>
+<tr><th>13:00</th><td class='free'>52<br/>FREE</td><td class='free'>53<br/>FREE</td><td class='free'>54<br/>FREE</td><td class='free'>55<br/>FREE</td></tr>
+<tr><th>14:00</th><td class='rest'>56<br/>REST</td><td class='rest'>57<br/>REST</td><td class='rest'>58<br/>REST</td><td class='rest'>59<br/>REST</td></tr>
+<tr><th>15:00</th><td class='rest'>60<br/>REST</td><td class='rest'>61<br/>REST</td><td class='rest'>62<br/>REST</td><td class='rest'>63<br/>REST</td></tr>
+<tr><th>16:00</th><td class='free'>64<br/>FREE</td><td class='free'>65<br/>FREE</td><td class='free'>66<br/>FREE</td><td class='free'>67<br/>FREE</td></tr>
+<tr><th>17:00</th><td class='free'>68<br/>FREE</td><td class='free'>69<br/>FREE</td><td class='free'>70<br/>FREE</td><td class='free'>71<br/>FREE</td></tr>
+<tr><th>18:00</th><td class='free'>72<br/>FREE</td><td class='free'>73<br/>FREE</td><td class='free'>74<br/>FREE</td><td class='free'>75<br/>FREE</td></tr>
+<tr><th>19:00</th><td class='free'>76<br/>FREE</td><td class='free'>77<br/>FREE</td><td class='free'>78<br/>FREE</td><td class='free'>79<br/>FREE</td></tr>
+<tr><th>20:00</th><td class='free'>80<br/>FREE</td><td class='free'>81<br/>FREE</td><td class='free'>82<br/>FREE</td><td class='free'>83<br/>FREE</td></tr>
+<tr><th>21:00</th><td class='free'>84<br/>FREE</td><td class='free'>85<br/>FREE</td><td class='free'>86<br/>FREE</td><td class='free'>87<br/>FREE</td></tr>
+      </tbody>
+    </table>
+    <h2>林晓 16 日 FREE / REST</h2>
+    <table>
+      <thead><tr><th>日期</th><th>星期</th><th>FREE</th><th>REST</th></tr></thead>
+      <tbody>
+<tr><td>2026-08-14</td><td>FRIDAY</td><td class='ok'>40</td><td class='restc'>8</td></tr>
+<tr><td>2026-08-15</td><td>SATURDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-16</td><td>SUNDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-17</td><td>MONDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-18</td><td>TUESDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-19</td><td>WEDNESDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-20</td><td>THURSDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-21</td><td>FRIDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-22</td><td>SATURDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-23</td><td>SUNDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-24</td><td>MONDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-25</td><td>TUESDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-26</td><td>WEDNESDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-27</td><td>THURSDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-28</td><td>FRIDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+<tr><td>2026-08-29</td><td>SATURDAY</td><td class='ok'>48</td><td class='restc'>0</td></tr>
+      </tbody>
+    </table>
+    <h2>陈默 SUPPORT 抽查</h2>
+    <table>
+      <thead><tr><th>slot</th><th>时间</th><th>store_id</th><th>status</th></tr></thead>
+      <tbody>
+        <tr><td>40</td><td>10:00</td><td>3100000000000000001</td><td>FREE</td></tr>
+        <tr><td>72</td><td>18:00</td><td>3100000000000000002</td><td>FREE</td></tr>
+        <tr><td>87</td><td>21:45</td><td>3100000000000000002</td><td>FREE</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>Generated by SlotGenerateReportTest with in-memory fakes (V3 IDs). Flyway/H2 off.</footer>
+</body>
+</html>
