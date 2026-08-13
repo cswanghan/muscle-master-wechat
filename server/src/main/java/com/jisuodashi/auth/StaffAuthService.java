@@ -41,8 +41,8 @@ public class StaffAuthService {
     public AuthDtos.StaffLoginResponse login(AuthDtos.WeChatLoginRequest request) {
         WeChatSession session = weChat.code2Session(request.code(), WeChatApp.STAFF);
         StaffUser staff = staffUsers.findByWxOpenid(session.openid()).orElse(null);
-        if (staff == null && properties.getWechat().isMock() && MockWeChatClient.DEV_STAFF_CODE.equals(request.code())) {
-            staff = bindMockStaff(session.openid());
+        if (staff == null && properties.getWechat().isMock()) {
+            staff = bindMockStaff(request.code(), session.openid());
         }
         if (staff == null) {
             throw new ApiException(ErrorCodes.UNAUTHORIZED, "员工未开通或未绑定");
@@ -73,9 +73,20 @@ public class StaffAuthService {
                 storeIds);
     }
 
-    private StaffUser bindMockStaff(String openid) {
-        String username = properties.getWechat().getMockStaffUsername();
-        StaffUser staff = staffUsers.findByUsername(username).orElseGet(this::createMissingDemoAdmin);
+    private StaffUser bindMockStaff(String code, String openid) {
+        String username = mockUsername(code);
+        if (username == null) {
+            return null;
+        }
+        StaffUser staff = staffUsers.findByUsername(username).orElseGet(() -> {
+            if ("demo.admin".equals(username)) {
+                return createMissingDemoAdmin();
+            }
+            return null;
+        });
+        if (staff == null) {
+            return null;
+        }
         if (staff.getWxOpenid() == null) {
             staff.setWxOpenid(openid);
             staff.setUpdatedAt(Instant.now(clock));
@@ -84,6 +95,19 @@ public class StaffAuthService {
             throw new ApiException(ErrorCodes.UNAUTHORIZED, "员工未开通或未绑定");
         }
         return staff;
+    }
+
+    private String mockUsername(String code) {
+        if (code == null) {
+            return null;
+        }
+        return switch (code) {
+            case MockWeChatClient.DEV_STAFF_CODE -> properties.getWechat().getMockStaffUsername();
+            case MockWeChatClient.DEV_STAFF_MANAGER_CODE -> "demo.manager";
+            case MockWeChatClient.DEV_STAFF_FRONT_CODE -> "demo.front";
+            case MockWeChatClient.DEV_STAFF_T1_CODE -> "demo.t1";
+            default -> null;
+        };
     }
 
     /** Dev-only: V3 seed may be missing when Flyway is off. */

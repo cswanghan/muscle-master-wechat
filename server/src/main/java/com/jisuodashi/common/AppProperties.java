@@ -13,6 +13,7 @@ public class AppProperties {
     private final Wechat wechat = new Wechat();
     private final Crypto crypto = new Crypto();
     private final Catalog catalog = new Catalog();
+    private final Booking booking = new Booking();
 
     public Jobs getJobs() {
         return jobs;
@@ -36,6 +37,10 @@ public class AppProperties {
 
     public Catalog getCatalog() {
         return catalog;
+    }
+
+    public Booking getBooking() {
+        return booking;
     }
 
     public static class Jobs {
@@ -190,6 +195,26 @@ public class AppProperties {
 
         public void setStoreCacheTtl(Duration storeCacheTtl) {
             this.storeCacheTtl = storeCacheTtl;
+        }
+    }
+
+    public static class Booking {
+        private final Captcha captcha = new Captcha();
+
+        public Captcha getCaptcha() {
+            return captcha;
+        }
+
+        public static class Captcha {
+            private boolean enabled = false;
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
         }
     }
 }

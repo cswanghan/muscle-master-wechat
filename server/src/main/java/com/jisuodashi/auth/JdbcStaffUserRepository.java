@@ -123,5 +123,15 @@ public class JdbcStaffUserRepository implements StaffUserRepository {
                 (rs, i) -> rs.getLong(1),
                 staff.getId());
         staff.setStoreIds(new ArrayList<>(stores));
+        List<String> perms = jdbc.query(
+                """
+                SELECT DISTINCT p.code FROM staff_role sr
+                JOIN role_permission rp ON rp.role_id = sr.role_id
+                JOIN permission p ON p.id = rp.permission_id
+                WHERE sr.staff_user_id = ?
+                """,
+                (rs, i) -> rs.getString(1),
+                staff.getId());
+        staff.setPermissionCodes(new ArrayList<>(perms));
     }
 }

@@ -17,6 +17,7 @@ public class StaffUser {
     private Instant updatedAt;
     private Instant deletedAt;
     private List<String> roleCodes = new ArrayList<>();
+    private List<String> permissionCodes = new ArrayList<>();
     private String scopeType = "SELF";
     private List<Long> storeIds = new ArrayList<>();
 
@@ -106,6 +107,14 @@ public class StaffUser {
 
     public void setRoleCodes(List<String> roleCodes) {
         this.roleCodes = roleCodes;
+    }
+
+    public List<String> getPermissionCodes() {
+        return permissionCodes;
+    }
+
+    public void setPermissionCodes(List<String> permissionCodes) {
+        this.permissionCodes = permissionCodes;
     }
 
     public String getScopeType() {

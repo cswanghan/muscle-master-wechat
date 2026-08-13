@@ -25,7 +25,7 @@ public final class AuthContext {
         return HOLDER.get();
     }
 
-    public static JwtPrincipal requireCustomer() {
+    public static JwtPrincipal require() {
         ApiException error = ERROR.get();
         if (error != null) {
             throw error;
@@ -34,7 +34,20 @@ public final class AuthContext {
         if (p == null) {
             throw new ApiException(ErrorCodes.UNAUTHORIZED, "未登录");
         }
+        return p;
+    }
+
+    public static JwtPrincipal requireCustomer() {
+        JwtPrincipal p = require();
         if (p.typ() != TokenType.C) {
+            throw new ApiException(ErrorCodes.FORBIDDEN, "无功能权限");
+        }
+        return p;
+    }
+
+    public static JwtPrincipal requireStaff() {
+        JwtPrincipal p = require();
+        if (p.typ() == TokenType.C) {
             throw new ApiException(ErrorCodes.FORBIDDEN, "无功能权限");
         }
         return p;

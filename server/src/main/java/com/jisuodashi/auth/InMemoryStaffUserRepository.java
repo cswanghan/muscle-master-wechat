@@ -1,9 +1,11 @@
 package com.jisuodashi.auth;
 
+import com.jisuodashi.rbac.PermissionCatalog;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +45,7 @@ public class InMemoryStaffUserRepository implements StaffUserRepository {
         s.setName(name);
         s.setStatus(1);
         s.setRoleCodes(List.copyOf(roles));
+        s.setPermissionCodes(new ArrayList<>(PermissionCatalog.forRoles(roles)));
         s.setScopeType(scope);
         s.setStoreIds(List.copyOf(stores));
         byId.put(id, s);
@@ -81,6 +84,9 @@ public class InMemoryStaffUserRepository implements StaffUserRepository {
 
     @Override
     public StaffUser insert(StaffUser staff) {
+        if (staff.getPermissionCodes() == null || staff.getPermissionCodes().isEmpty()) {
+            staff.setPermissionCodes(new ArrayList<>(PermissionCatalog.forRoles(staff.getRoleCodes())));
+        }
         byId.put(staff.getId(), copyOf(staff));
         return copyOf(staff);
     }
@@ -103,6 +109,7 @@ public class InMemoryStaffUserRepository implements StaffUserRepository {
         c.setUpdatedAt(s.getUpdatedAt());
         c.setDeletedAt(s.getDeletedAt());
         c.setRoleCodes(List.copyOf(s.getRoleCodes()));
+        c.setPermissionCodes(List.copyOf(s.getPermissionCodes()));
         c.setScopeType(s.getScopeType());
         c.setStoreIds(List.copyOf(s.getStoreIds()));
         return c;

@@ -43,7 +43,7 @@ npm install
 npm run dev          # http://127.0.0.1:5173/health  ·  /catalog
 ```
 
-`dev` 微信登录可 mock（无需真实 AppID）：`POST /api/v1/c/auth/wechat` `{"code":"dev"}`（C JWT 2h）；`POST /api/v1/staff/auth/wechat` `{"code":"dev-staff"}`（员工 JWT 8h）。目录 `GET /api/v1/c/stores|therapists|projects|symptoms` 无需登录。
+`dev` 微信登录可 mock（无需真实 AppID）：`POST /api/v1/c/auth/wechat` `{"code":"dev"}`（C JWT 2h）；`POST /api/v1/staff/auth/wechat` `{"code":"dev-staff"}`（员工 JWT 8h，超管 ALL）。店长/前台/技师：`dev-staff-manager` / `dev-staff-front` / `dev-staff-t1`。目录 `GET /api/v1/c/stores|therapists|projects|symptoms` 无需登录。`/api/v1/f/**` `/a/**` 走 `@StoreScoped` 门店域；`POST /c/bookings` 挂 `CaptchaFilter`（默认关）。
 
 默认 `app.jobs.enabled=false`。Compose 里唯一的 `server` 服务才设为 `true`。
 
