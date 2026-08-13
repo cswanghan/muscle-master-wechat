@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>P0 Schema Preview · V1</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; opacity:.85; }
+    main { padding:28px 40px 48px; }
+    .meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+    .pill { background:#fff; border:1px solid var(--line); border-radius:999px;
+            padding:6px 14px; font-size:13px; }
+    table { width:100%; border-collapse:collapse; background:#fff;
+            box-shadow:0 1px 3px rgba(20,53,44,.06); }
+    th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
+             font-size:13px; vertical-align:top; }
+    th { background:#e8f1ed; color:var(--brand); font-weight:600; }
+    tr:hover td { background:#f7fbf9; }
+    .n { color:#7a8f87; width:36px; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+    footer { padding:0 40px 32px; color:#6b7c75; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>肌松大师 · P0 Schema Preview</h1>
+    <p>Parsed from Flyway <code>V1__init.sql</code> · dual-resource slots · no partitions</p>
+  </header>
+  <main>
+    <div class="meta">
+      <span class="pill">Tables: 37</span>
+      <span class="pill">uk_therapist_slot + uk_bed_slot + uk_occ</span>
+      <span class="pill">customer.wx_openid NULL UNIQUE</span>
+      <span class="pill">no balance_fen</span>
+      <span class="pill">InnoDB utf8mb4 · DATETIME(3) · BIGINT fen</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Table</th><th>Comment</th><th>Cols</th><th>Unique keys</th><th>PK</th></tr>
+      </thead>
+      <tbody>
+<tr><td class='n'>1</td><td><code>store</code></td><td>门店</td><td>15</td><td>uk_store_code (code)</td><td>id</td></tr>
+<tr><td class='n'>2</td><td><code>room</code></td><td>房间</td><td>8</td><td></td><td>id</td></tr>
+<tr><td class='n'>3</td><td><code>bed</code></td><td>床位</td><td>9</td><td></td><td>id</td></tr>
+<tr><td class='n'>4</td><td><code>therapist</code></td><td>技师</td><td>15</td><td>uk_therapist_emp (employee_no)</td><td>id</td></tr>
+<tr><td class='n'>5</td><td><code>project</code></td><td>项目 SKU</td><td>13</td><td>uk_project_code (code)</td><td>id</td></tr>
+<tr><td class='n'>6</td><td><code>store_project</code></td><td>门店上架项目</td><td>5</td><td>uk_store_project (store_id, project_id)</td><td>id</td></tr>
+<tr><td class='n'>7</td><td><code>symptom</code></td><td>症状</td><td>6</td><td></td><td>id</td></tr>
+<tr><td class='n'>8</td><td><code>symptom_project</code></td><td>症状-项目</td><td>2</td><td></td><td>symptom_id, project_id</td></tr>
+<tr><td class='n'>9</td><td><code>therapist_project</code></td><td>技师可接项目</td><td>2</td><td></td><td>therapist_id, project_id</td></tr>
+<tr><td class='n'>10</td><td><code>therapist_symptom</code></td><td>技师擅长症状</td><td>2</td><td></td><td>therapist_id, symptom_id</td></tr>
+<tr><td class='n'>11</td><td><code>schedule_template</code></td><td>周排班模板</td><td>11</td><td></td><td>id</td></tr>
+<tr><td class='n'>12</td><td><code>schedule_exception</code></td><td>请假/调班/跨店支援</td><td>12</td><td></td><td>id</td></tr>
+<tr><td class='n'>13</td><td><code>therapist_slot</code></td><td>技师日历格；V1 不分区</td><td>12</td><td>uk_therapist_slot (therapist_id, slot_date, slot_no)</td><td>id</td></tr>
+<tr><td class='n'>14</td><td><code>bed_slot</code></td><td>床位日历格；V1 不分区</td><td>11</td><td>uk_bed_slot (bed_id, slot_date, slot_no)</td><td>id</td></tr>
+<tr><td class='n'>15</td><td><code>slot_occupancy</code></td><td>占用账本，INSERT 唯一键防超卖</td><td>8</td><td>uk_occ (resource_type, resource_id, slot_date, slot_no)</td><td>id</td></tr>
+<tr><td class='n'>16</td><td><code>customer</code></td><td>C 端客户</td><td>12</td><td>uk_customer_openid (wx_openid), uk_customer_phone_hash (phone_hash)</td><td>id</td></tr>
+<tr><td class='n'>17</td><td><code>auth_session</code></td><td>会话</td><td>6</td><td>uk_sess_token (token_hash)</td><td>id</td></tr>
+<tr><td class='n'>18</td><td><code>booking_order</code></td><td>预约单</td><td>30</td><td>uk_order_no (order_no), uk_order_request (request_id)</td><td>id</td></tr>
+<tr><td class='n'>19</td><td><code>order_item</code></td><td>订单行</td><td>13</td><td></td><td>id</td></tr>
+<tr><td class='n'>20</td><td><code>payment</code></td><td>支付单；回调按 payment_no 幂等</td><td>12</td><td>uk_payment_no (payment_no), uk_wx_txn (wx_transaction_id)</td><td>id</td></tr>
+<tr><td class='n'>21</td><td><code>refund</code></td><td>退款单</td><td>11</td><td>uk_refund_no (refund_no)</td><td>id</td></tr>
+<tr><td class='n'>22</td><td><code>service_record</code></td><td>服务段；一单可多行（换师）</td><td>8</td><td></td><td>id</td></tr>
+<tr><td class='n'>23</td><td><code>treatment_note</code></td><td>理疗记录，只增不改不删；保留 3 年</td><td>6</td><td></td><td>id</td></tr>
+<tr><td class='n'>24</td><td><code>staff_user</code></td><td>员工账号</td><td>11</td><td>uk_staff_username (username), uk_staff_phone_hash (phone_hash), uk_staff_openid (wx_openid)</td><td>id</td></tr>
+<tr><td class='n'>25</td><td><code>role</code></td><td>角色</td><td>3</td><td>uk_role_code (code)</td><td>id</td></tr>
+<tr><td class='n'>26</td><td><code>permission</code></td><td>功能权限</td><td>3</td><td>uk_perm_code (code)</td><td>id</td></tr>
+<tr><td class='n'>27</td><td><code>role_permission</code></td><td>角色权限</td><td>2</td><td></td><td>role_id, permission_id</td></tr>
+<tr><td class='n'>28</td><td><code>staff_role</code></td><td>员工角色</td><td>2</td><td></td><td>staff_user_id, role_id</td></tr>
+<tr><td class='n'>29</td><td><code>data_scope</code></td><td>数据域；P0 不做 REGION</td><td>4</td><td></td><td>id</td></tr>
+<tr><td class='n'>30</td><td><code>audit_log</code></td><td>审计，不可删，保留 3 年</td><td>13</td><td></td><td>id</td></tr>
+<tr><td class='n'>31</td><td><code>idempotency_record</code></td><td>写接口幂等；唯一键保留 24h</td><td>11</td><td>uk_idem (scope, request_id)</td><td>id</td></tr>
+<tr><td class='n'>32</td><td><code>delayed_job</code></td><td>延时任务；SKIP LOCKED 领取</td><td>13</td><td>uk_job_biz (job_type, biz_key)</td><td>id</td></tr>
+<tr><td class='n'>33</td><td><code>outbox_event</code></td><td>本地消息落库；P0 不发送订阅消息</td><td>7</td><td></td><td>id</td></tr>
+<tr><td class='n'>34</td><td><code>workflow_instance</code></td><td>脏流程实例</td><td>8</td><td></td><td>id</td></tr>
+<tr><td class='n'>35</td><td><code>workflow_step</code></td><td>脏流程步骤</td><td>10</td><td></td><td>id</td></tr>
+<tr><td class='n'>36</td><td><code>human_task</code></td><td>人工介入队列</td><td>13</td><td>uk_ht_biz (biz_key)</td><td>id</td></tr>
+<tr><td class='n'>37</td><td><code>order_change_log</code></td><td>改约/换人/加钟痕迹</td><td>7</td><td></td><td>id</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>Generated by SchemaContractTest from V1 source of truth. Flyway off on H2 dev profile.</footer>
+</body>
+</html>

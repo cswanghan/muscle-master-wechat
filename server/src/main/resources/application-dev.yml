@@ -1,5 +1,8 @@
 # Local profile: H2 in-memory, no MySQL/Redis/Docker required.
 # /actuator/health is UP without external services.
+# Flyway stays off: V1 uses MySQL-only types (VARBINARY, DATETIME(3), JSON,
+# table comments). Do not weaken that DDL for H2. Schema is asserted by
+# SchemaContractTest + scripts/verify-schema.sh against compose MySQL.
 spring:
   datasource:
     url: jdbc:h2:mem:muscle_master;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH

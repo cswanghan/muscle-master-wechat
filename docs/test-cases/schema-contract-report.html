@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SchemaContractTest · ALL PASS</title>
+  <style>
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:#0f1f1a; color:#e8f1ed; }
+    header { padding:28px 40px; background:#1E5C4A; }
+    header h1 { margin:0 0 8px; font-size:22px; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; letter-spacing:.04em; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:24px 40px 48px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #2a463c; font-size:13px; }
+    tr.ok td:last-child { color:#3ddc84; font-weight:700; }
+    tr.bad td:last-child { color:#ff8a7a; font-weight:700; }
+    code { font-family: ui-monospace, Menlo, monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SchemaContractTest</h1>
+    <span class="badge ">ALL PASS · 88 / 88</span>
+    <p style="margin:10px 0 0;opacity:.85">V1 dual-slot unique keys · occupancy · RBAC · demo store</p>
+  </header>
+  <main>
+    <table>
+      <thead><tr><th>Case</th><th>Check</th><th>Result</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>TC-2-01</td><td>uk_therapist_slot (therapist_id, slot_date, slot_no)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>uk_bed_slot (bed_id, slot_date, slot_no)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>uk_occ (resource_type, resource_id, slot_date, slot_no)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>therapist_slot.hold_id</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>bed_slot.hold_id</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>slot_occupancy.hold_id NOT NULL</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-01</td><td>V1 slot tables are not partitioned</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-02</td><td>customer.wx_openid VARCHAR(64) NULL</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-02</td><td>customer.wx_openid is not NOT NULL</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-02</td><td>uk_customer_openid (wx_openid)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-03</td><td>no customer.balance_fen</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-03</td><td>no wallet / ledger tables</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-04</td><td>exactly 1 store (DEMO01)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-04</td><td>exactly 3 therapists T001/T002/T003</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-04</td><td>exactly 2 beds</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-04</td><td>1–2 rooms</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-04</td><td>weekly schedule templates (21 = 3×7)</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-04</td><td>projects buffer_minutes=15</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-04</td><td>templates effective_from 2026-01-01</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>role SUPER_ADMIN</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>role FINANCE</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>role OPS</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>role REGION_MANAGER</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>role STORE_MANAGER</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>role FRONTDESK</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>role THERAPIST</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission catalog:store</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission catalog:therapist</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission catalog:project</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission catalog:write</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission schedule:write</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission schedule:approve</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission order:list</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission order:view</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission order:refund</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission frontdesk:order:*</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission refund:create</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission refund:after_start</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission refund:approve</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission inventory:force_release</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>permission staff:self</td><td>PASS</td></tr>
+<tr class='ok'><td>TC-2-05</td><td>7 roles seeded</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE store</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE room</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE bed</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE therapist</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE project</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE store_project</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE symptom</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE symptom_project</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE therapist_project</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE therapist_symptom</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE schedule_template</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE schedule_exception</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE therapist_slot</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE bed_slot</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE slot_occupancy</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE customer</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE auth_session</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE booking_order</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE order_item</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE order_change_log</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE payment</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE refund</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE service_record</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE treatment_note</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE staff_user</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE role</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE permission</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE staff_role</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE role_permission</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE data_scope</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE audit_log</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE human_task</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE workflow_instance</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE workflow_step</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE delayed_job</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE outbox_event</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>CREATE TABLE idempotency_record</td><td>PASS</td></tr>
+<tr class='ok'><td>D10</td><td>booking_order money columns are BIGINT fen</td><td>PASS</td></tr>
+<tr class='ok'><td>D10</td><td>DATETIME(3) used</td><td>PASS</td></tr>
+<tr class='ok'><td>D12</td><td>booking_order.therapist_home_store_id</td><td>PASS</td></tr>
+<tr class='ok'><td>D12</td><td>booking_order.store_id + hold_id + request_id</td><td>PASS</td></tr>
+<tr class='ok'><td>D21</td><td>idempotency_record uk_idem (scope, request_id)</td><td>PASS</td></tr>
+<tr class='ok'><td>D16</td><td>delayed_job has lease columns</td><td>PASS</td></tr>
+<tr class='ok'><td>D16</td><td>outbox_event has no lease columns</td><td>PASS</td></tr>
+<tr class='ok'><td>SWAP</td><td>service_record has no UNIQUE on order_id</td><td>PASS</td></tr>
+<tr class='ok'><td>ENGINE</td><td>InnoDB utf8mb4 on store</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>
