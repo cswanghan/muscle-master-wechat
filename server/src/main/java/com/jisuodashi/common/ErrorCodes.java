@@ -12,6 +12,10 @@ public final class ErrorCodes {
     public static final int FORBIDDEN = 40301;
     public static final int DATA_SCOPE = 40302;
     public static final int NOT_FOUND = 40401;
+    public static final int SLOT_UNAVAILABLE = 40901;
+    public static final int NO_FREE_BED = 40902;
+    public static final int LOCK_CONFLICT = 40903;
+    public static final int ILLEGAL_TRANSITION = 40904;
     public static final int CUSTOMER_COLLISION = 40908;
     public static final int INTERNAL = 50001;
 
@@ -25,10 +29,16 @@ public final class ErrorCodes {
             case UNAUTHORIZED, TOKEN_EXPIRED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN, DATA_SCOPE -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case CUSTOMER_COLLISION -> HttpStatus.CONFLICT;
-            default -> code >= 40000 && code < 50000
-                    ? HttpStatus.BAD_REQUEST
-                    : HttpStatus.INTERNAL_SERVER_ERROR;
+            case CUSTOMER_COLLISION, SLOT_UNAVAILABLE, NO_FREE_BED, LOCK_CONFLICT, ILLEGAL_TRANSITION
+                    -> HttpStatus.CONFLICT;
+            default -> {
+                if (code >= 40900 && code < 41000) {
+                    yield HttpStatus.CONFLICT;
+                }
+                yield code >= 40000 && code < 50000
+                        ? HttpStatus.BAD_REQUEST
+                        : HttpStatus.INTERNAL_SERVER_ERROR;
+            }
         };
     }
 }
