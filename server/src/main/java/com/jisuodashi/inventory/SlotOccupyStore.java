@@ -132,7 +132,11 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     SlotHoldMeta findHoldSlotMeta(long holdId);
 
-    record ProjectRef(long id, String name, int durationMinutes, int bufferMinutes, long priceFen) {
+    record ProjectRef(
+            long id, String name, int durationMinutes, int bufferMinutes, long priceFen, Long addOnPriceFen) {
+        public ProjectRef(long id, String name, int durationMinutes, int bufferMinutes, long priceFen) {
+            this(id, name, durationMinutes, bufferMinutes, priceFen, null);
+        }
     }
 
     record TherapistRef(long id, long homeStoreId) {
@@ -246,4 +250,35 @@ public interface SlotOccupyStore extends DelayedJobStore {
             LocalDateTime createdAt
     ) {
     }
+
+    record OwnedSlotRow(int slotNo, String status, Long orderId) {
+    }
+
+    List<OwnedSlotRow> lockTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos);
+
+    List<OwnedSlotRow> lockBedSlots(long bedId, LocalDate date, List<Integer> slotNos);
+
+    int updateTherapistSlotDest(
+            long therapistId, LocalDate date, int slotNo,
+            String expectedStatus, Long expectedOrderId,
+            String destStatus, long orderId, long holdId,
+            LocalDateTime expireAt, LocalDateTime now);
+
+    int updateBedSlotDest(
+            long bedId, LocalDate date, int slotNo,
+            String expectedStatus, Long expectedOrderId,
+            String destStatus, long orderId, long holdId,
+            LocalDateTime expireAt, LocalDateTime now);
+
+    int applyCashAddOn(long orderId, int newEndSlotNo, long addAmountFen, LocalDateTime now);
+
+    int setAddOnHold(long orderId, long addHoldId, LocalDateTime now);
+
+    int applyPaidAddOn(long orderId, int newEndSlotNo, long addAmountFen, LocalDateTime now);
+
+    int markReleaseAddonJobDone(long addHoldId, LocalDateTime now);
+
+    OrderItemInsert findLatestAddOnItem(long orderId);
+
+    void insertCashPayment(long id, String paymentNo, long orderId, long amountFen, LocalDateTime now);
 }

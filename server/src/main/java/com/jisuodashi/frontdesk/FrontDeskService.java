@@ -10,6 +10,7 @@ import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.PhoneCrypto;
+import com.jisuodashi.inventory.ExtendOwnResult;
 import com.jisuodashi.inventory.LockNewCommand;
 import com.jisuodashi.inventory.LockNewResult;
 import com.jisuodashi.inventory.SlotOccupyService;
@@ -352,5 +353,56 @@ public class FrontDeskService {
         } catch (NumberFormatException e) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, field + " 无效");
         }
+    }
+
+    public FrontDeskDtos.AddOnResponse addOn(String orderIdRaw, FrontDeskDtos.AddOnRequest req) {
+        AuthContext.requireStaff();
+        if (req == null) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        long orderId = parseId(orderIdRaw, "orderId");
+        BookingOrderRef order = requireScopedOrder(orders.findOrderById(orderId));
+        int minutes = req.durationMinutes() == null ? 0 : req.durationMinutes();
+        if (minutes < 15 || minutes % 15 != 0) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "durationMinutes 必须是 15 的倍数且 ≥15");
+        }
+        String channel = normalizeChannel(req.payChannel());
+        int slots = minutes / 15;
+        boolean cash = FrontDeskDtos.CASH.equals(channel);
+        ExtendOwnResult ext = occupy.extendOwn(
+                order.id(), parseId(req.projectId(), "projectId"), slots, cash, req.requestId());
+        if (ext.replay()) {
+            return toAddOn(orderId, channel, ext, ext.paymentNo(), null, true);
+        }
+        if (cash) {
+            machine.fire(orderId, OrderEvent.ADD_ON, deskContext().withAddOnPaid());
+            return toAddOn(orderId, channel, ext, ext.paymentNo(), null, false);
+        }
+        PaymentDtos.NativePayResponse nativePay = payments.tryNativeAddOnPrepay(
+                orderId, ext.amountFen(), req.requestId() + ":native");
+        if (nativePay == null) {
+            throw new ApiException(ErrorCodes.PREPAY_FAILED, "微信预下单失败");
+        }
+        return toAddOn(orderId, channel, ext, nativePay.paymentNo(), nativePay.codeUrl(), nativePay.reused());
+    }
+
+    private FrontDeskDtos.AddOnResponse toAddOn(
+            long orderId,
+            String channel,
+            ExtendOwnResult ext,
+            String paymentNo,
+            String codeUrl,
+            boolean replay
+    ) {
+        BookingOrderRef latest = orders.findOrderById(orderId);
+        return new FrontDeskDtos.AddOnResponse(
+                String.valueOf(orderId),
+                latest == null ? OrderStatus.IN_SERVICE.name() : latest.status(),
+                channel,
+                paymentNo,
+                codeUrl,
+                ext.amountFen(),
+                latest == null ? ext.newEndSlotNo() : latest.endSlotNo(),
+                replay);
     }
 }

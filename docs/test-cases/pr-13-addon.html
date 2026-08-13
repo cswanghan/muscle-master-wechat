@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR13 前台 · extendOwn 现金 / 微信加钟</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; --paper:#f4f1ea; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; opacity:.85; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:28px 40px 48px; }
+    h2 { font-size:16px; color:var(--brand); margin:24px 0 10px; }
+    table { width:100%; border-collapse:collapse; background:#fff;
+            box-shadow:0 1px 3px rgba(20,53,44,.06); }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    tr.ok td:last-child { color:#1E5C4A; font-weight:700; }
+    tr.bad td:last-child { color:#c0392b; font-weight:700; }
+    .callout { background:#fff; border-left:4px solid #1E5C4A; padding:12px 16px;
+               margin:16px 0; }
+    .flow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .st { padding:8px 10px; border-radius:8px; font-size:12px; font-weight:700;
+          border:2px solid var(--brand); background:#e8f1ed; }
+    .st.pay { background:#1E5C4A; color:#fff; }
+    .arr { font-size:12px; color:#4a6a5f; }
+    .ipad { width:1024px; max-width:100%; background:var(--paper); border:10px solid #1a1c1b;
+            border-radius:18px; padding:20px; display:grid; grid-template-columns:1fr 1fr;
+            gap:16px; box-sizing:border-box; }
+    .pad { background:#fff; border-radius:12px; padding:16px 18px; min-height:220px; }
+    .pad h3 { margin:0 0 12px; color:var(--brand); font-size:18px; }
+    .field { margin:10px 0; }
+    .field label { display:block; font-size:15px; color:#4a5a54; margin-bottom:4px; }
+    .fake { height:48px; border:1px solid #d7e6df; border-radius:8px; background:#f8faf9;
+            display:flex; align-items:center; padding:0 12px; font-size:16px; }
+    .btn { height:48px; border:none; border-radius:8px; background:var(--brand); color:#fff;
+           font-size:16px; font-weight:700; padding:0 20px; }
+    .qr { width:168px; height:168px; margin:8px auto; background:
+          repeating-conic-gradient(#14352c 0% 25%, #fff 0% 50%) 50%/16px 16px;
+          border:4px solid var(--brand); }
+    .hint { font-size:15px; color:#4a6a5f; text-align:center; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+    footer { padding:0 40px 32px; color:#6b7c75; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PR13 · extendOwn 现金 / 微信加钟</h1>
+    <p>POST /f/orders/{id}/add-on · 40907 冲突 · ADD_ON_PAY_TIMEOUT</p>
+    <span class="badge ">ALL PASS · 4 / 4</span>
+  </header>
+  <main>
+    <div class="flow">
+      <div class="st">IN_SERVICE</div>
+      <div class="arr">CASH extendOwn</div>
+      <div class="st pay">fire(ADD_ON)</div>
+      <div class="arr">end_slot += M</div>
+      <div class="st pay">IN_SERVICE</div>
+    </div>
+    <div class="flow">
+      <div class="st">WECHAT LOCKED</div>
+      <div class="arr">Native + poll</div>
+      <div class="st pay">confirmPaidAddOn</div>
+      <div class="arr">fire(ADD_ON)</div>
+      <div class="st pay">不 fire PAY_SUCCESS</div>
+    </div>
+    <div class="callout">
+      <strong>Law A / 40907</strong>
+      <div><code>extendOwn</code> / <code>ReleaseAddOnHold</code> 禁止 <code>fire()</code>。
+      后续格冲突 <code>40907</code> 整单回滚。微信预下单失败 → <code>human_task</code>，锁不回滚。</div>
+    </div>
+    <h2>iPad 前台 1024（加钟 + 收款码）</h2>
+    <div class="ipad" id="ipad-addon">
+      <section class="pad">
+        <h3>服务中加钟</h3>
+        <div class="field"><label>时长</label>
+          <div class="fake">30 分钟 · CASH / WECHAT</div></div>
+        <button class="btn">确认加钟</button>
+        <p class="hint" style="text-align:left;margin-top:16px;">IN_SERVICE · 结束格 +2</p>
+      </section>
+      <section class="pad">
+        <h3>加钟收款码</h3>
+        <div class="qr" aria-label="mock native qr"></div>
+        <p class="hint">WECHAT Native · 轮询 SUCCESS</p>
+        <p class="hint">超时 ADD_ON_PAY_TIMEOUT</p>
+      </section>
+    </div>
+    <h2>验收项</h2>
+    <table>
+      <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>CASH</td><td>IN_SERVICE 现金 extendOwn 后 fire(ADD_ON)，原 BUFFER 变 BOOKED</td><td>status=IN_SERVICE amt=9900 end=71</td><td>PASS</td></tr>
+<tr class='ok'><td>WECHAT</td><td>extendOwn LOCKED + Native 轮询；notify 后 fire(ADD_ON) 不 fire(PAY_SUCCESS)</td><td>qr=weixin://wxpay/bizpayurl?pr=LIVE_P81616381245657088 poll=SUCCESS end=55</td><td>PASS</td></tr>
+<tr class='ok'><td>40907</td><td>后续格占用 → 40907，不部分占格、不建 workflow</td><td>code=40907 occ=10</td><td>PASS</td></tr>
+<tr class='ok'><td>TIMEOUT</td><td>ADD_ON_PAY_TIMEOUT → ReleaseAddOnHold 恢复 BUFFER，订单仍 IN_SERVICE</td><td>hold=null</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>Generated by FrontDeskAddOnReportTest · extendOwn · confirmPaidAddOn</footer>
+</body>
+</html>

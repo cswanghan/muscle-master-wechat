@@ -51,6 +51,16 @@ type WalkInData = {
   bedName?: string
 }
 
+type AddOnData = {
+  orderId: string
+  status: string
+  payChannel: string
+  paymentNo?: string | null
+  codeUrl?: string | null
+  amountFen: number
+  endSlotNo: number
+}
+
 const STORE = '3100000000000000001'
 const THERAPIST = '3100000000000000401'
 const PROJECT = '3100000000000000501'
@@ -77,8 +87,14 @@ const walkIn = ref<WalkInData | null>(null)
 const pollStatus = ref('')
 let pollTimer: number | undefined
 
+const addOnOrderId = ref('')
+const addOnMinutes = ref(30)
+const addOnChannel = ref<'CASH' | 'WECHAT'>('CASH')
+const addOnLoading = ref(false)
+const addOn = ref<AddOnData | null>(null)
+
 const loggedIn = computed(() => token.value.length > 0)
-const qrText = computed(() => walkIn.value?.codeUrl ?? '')
+const qrText = computed(() => addOn.value?.codeUrl || walkIn.value?.codeUrl || '')
 const qrMarkup = computed(() => (qrText.value ? qrSvg(qrText.value) : ''))
 
 function authHeaders(): HeadersInit {
@@ -225,6 +241,40 @@ async function submitWalkIn() {
   }
 }
 
+async function submitAddOn() {
+  addOnLoading.value = true
+  error.value = ''
+  addOn.value = null
+  pollStatus.value = ''
+  stopPoll()
+  try {
+    const orderId = addOnOrderId.value.trim() || checkInResult.value?.orderId || ''
+    if (!orderId) {
+      throw new Error('请先核销或填写订单号')
+    }
+    const res = await fetch(`/api/v1/f/orders/${orderId}/add-on`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        requestId: `ao-${Date.now()}`,
+        projectId: PROJECT,
+        durationMinutes: addOnMinutes.value,
+        payChannel: addOnChannel.value,
+      }),
+    })
+    const data = await readEnvelope<AddOnData>(res)
+    addOn.value = data
+    addOnOrderId.value = data.orderId
+    if (data.payChannel === 'WECHAT' && data.paymentNo) {
+      await pollPayment(data.paymentNo, data.orderId, false)
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    addOnLoading.value = false
+  }
+}
+
 onUnmounted(stopPoll)
 </script>
 
@@ -233,7 +283,7 @@ onUnmounted(stopPoll)
     <header class="desk-bar">
       <div>
         <h1>门店前台</h1>
-        <p>iPad 横屏 1024 · 核销 / 现金 / 微信收款码</p>
+        <p>iPad 横屏 1024 · 核销 / 现金 / 微信收款码 / 加钟</p>
       </div>
       <el-button id="desk-login-btn" type="primary" :loading="loginLoading" @click="devLogin">
         {{ loggedIn ? staffName : '登录前台 demo.front' }}
@@ -317,14 +367,59 @@ onUnmounted(stopPoll)
       </section>
     </div>
 
-    <section v-if="walkIn" id="qr-panel" class="desk-card qr-card">
+    <section class="desk-card" id="addon-panel">
+      <h2>服务中加钟</h2>
+      <p class="hint">IN_SERVICE · durationMinutes 为 15 的倍数 · CASH 当场 / WECHAT 收款码轮询</p>
+      <div class="form">
+        <label>订单</label>
+        <el-input
+          id="addon-order"
+          v-model="addOnOrderId"
+          size="large"
+          :placeholder="checkInResult?.orderId || '服务中订单 ID'"
+        />
+        <label>加钟时长 / 支付</label>
+        <div class="row">
+          <el-select id="addon-minutes" v-model="addOnMinutes" size="large" style="width: 160px">
+            <el-option :value="15" label="15 分钟" />
+            <el-option :value="30" label="30 分钟" />
+            <el-option :value="45" label="45 分钟" />
+          </el-select>
+          <el-radio-group id="addon-channel" v-model="addOnChannel" size="large">
+            <el-radio-button value="CASH">现金</el-radio-button>
+            <el-radio-button value="WECHAT">微信收款码</el-radio-button>
+          </el-radio-group>
+        </div>
+        <el-button
+          id="addon-submit"
+          type="primary"
+          size="large"
+          :loading="addOnLoading"
+          @click="submitAddOn"
+        >
+          确认加钟
+        </el-button>
+      </div>
+      <div v-if="addOn" id="addon-result" class="result">
+        {{ addOn.status }} · {{ addOn.payChannel }} · ¥{{ (addOn.amountFen / 100).toFixed(0) }} ·
+        结束格 {{ addOn.endSlotNo }}
+      </div>
+    </section>
+
+    <section v-if="walkIn || addOn" id="qr-panel" class="desk-card qr-card">
       <div>
         <h2>收款结果</h2>
-        <p>
+        <p v-if="walkIn">
           {{ walkIn.orderNo }} · {{ walkIn.payChannel }} · {{ walkIn.status }} ·
           ¥{{ (walkIn.payableFen / 100).toFixed(0) }}
         </p>
-        <p v-if="pollStatus" id="poll-status">轮询 {{ walkIn.paymentNo }} → {{ pollStatus }}</p>
+        <p v-else-if="addOn">
+          加钟 {{ addOn.orderId }} · {{ addOn.payChannel }} · {{ addOn.status }} ·
+          ¥{{ (addOn.amountFen / 100).toFixed(0) }}
+        </p>
+        <p v-if="pollStatus" id="poll-status">
+          轮询 {{ addOn?.paymentNo || walkIn?.paymentNo }} → {{ pollStatus }}
+        </p>
       </div>
       <div v-if="qrText" class="qr-box">
         <div

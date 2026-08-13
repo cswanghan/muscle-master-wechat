@@ -354,4 +354,76 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
         }
         return ids.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
+
+    @Override
+    public List<OwnedSlotRow> lockTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos) {
+        List<Long> ids = mapper.findTherapistSlotIds(therapistId, date, csv(slotNos));
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<OwnedSlotRow> rows = mapper.lockOwnedTherapistSlotsByIds(csvLongs(ids));
+        return rows == null ? List.of() : rows;
+    }
+
+    @Override
+    public List<OwnedSlotRow> lockBedSlots(long bedId, LocalDate date, List<Integer> slotNos) {
+        List<Long> ids = mapper.findBedSlotIds(bedId, date, csv(slotNos));
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<OwnedSlotRow> rows = mapper.lockOwnedBedSlotsByIds(csvLongs(ids));
+        return rows == null ? List.of() : rows;
+    }
+
+    @Override
+    public int updateTherapistSlotDest(
+            long therapistId, LocalDate date, int slotNo,
+            String expectedStatus, Long expectedOrderId,
+            String destStatus, long orderId, long holdId,
+            LocalDateTime expireAt, LocalDateTime now) {
+        return mapper.updateTherapistSlotDest(
+                therapistId, date, slotNo, expectedStatus, expectedOrderId,
+                destStatus, orderId, holdId, expireAt, now);
+    }
+
+    @Override
+    public int updateBedSlotDest(
+            long bedId, LocalDate date, int slotNo,
+            String expectedStatus, Long expectedOrderId,
+            String destStatus, long orderId, long holdId,
+            LocalDateTime expireAt, LocalDateTime now) {
+        return mapper.updateBedSlotDest(
+                bedId, date, slotNo, expectedStatus, expectedOrderId,
+                destStatus, orderId, holdId, expireAt, now);
+    }
+
+    @Override
+    public int applyCashAddOn(long orderId, int newEndSlotNo, long addAmountFen, LocalDateTime now) {
+        return mapper.applyCashAddOn(orderId, newEndSlotNo, addAmountFen, now);
+    }
+
+    @Override
+    public int setAddOnHold(long orderId, long addHoldId, LocalDateTime now) {
+        return mapper.setAddOnHold(orderId, addHoldId, now);
+    }
+
+    @Override
+    public int applyPaidAddOn(long orderId, int newEndSlotNo, long addAmountFen, LocalDateTime now) {
+        return mapper.applyPaidAddOn(orderId, newEndSlotNo, addAmountFen, now);
+    }
+
+    @Override
+    public int markReleaseAddonJobDone(long addHoldId, LocalDateTime now) {
+        return mapper.markReleaseAddonJobDone("hold:" + addHoldId, now);
+    }
+
+    @Override
+    public OrderItemInsert findLatestAddOnItem(long orderId) {
+        return mapper.findLatestAddOnItem(orderId);
+    }
+
+    @Override
+    public void insertCashPayment(long id, String paymentNo, long orderId, long amountFen, LocalDateTime now) {
+        mapper.insertCashPayment(id, paymentNo, orderId, amountFen, "CASH-" + paymentNo, now);
+    }
 }

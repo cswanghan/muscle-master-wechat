@@ -4,6 +4,8 @@ import com.jisuodashi.inventory.DelayedJobStore;
 import com.jisuodashi.inventory.SlotOccupyStore.BedRef;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.inventory.SlotOccupyStore.IdemRow;
+import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.OwnedSlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotHoldMeta;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
@@ -24,7 +26,7 @@ public interface InventoryOccupyMapper {
 
     @Select("""
             SELECT id, name, duration_minutes AS durationMinutes, buffer_minutes AS bufferMinutes,
-                   price_fen AS priceFen
+                   price_fen AS priceFen, add_on_price_fen AS addOnPriceFen
               FROM project
              WHERE id = #{id} AND deleted_at IS NULL
             """)
@@ -703,4 +705,165 @@ public interface InventoryOccupyMapper {
              WHERE order_id = #{orderId} AND item_type = 'ADD_ON'
             """)
     int deleteUnpaidAddOnItems(@Param("orderId") long orderId);
+
+    @Select("""
+            SELECT id
+              FROM therapist_slot
+             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate}
+               AND slot_no IN (${slotNos})
+             ORDER BY slot_no
+            """)
+    List<Long> findTherapistSlotIds(
+            @Param("therapistId") long therapistId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNos") String slotNos);
+
+    @Select("""
+            SELECT id
+              FROM bed_slot
+             WHERE bed_id = #{bedId} AND slot_date = #{slotDate}
+               AND slot_no IN (${slotNos})
+             ORDER BY slot_no
+            """)
+    List<Long> findBedSlotIds(
+            @Param("bedId") long bedId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNos") String slotNos);
+
+    @Select("""
+            SELECT slot_no AS slotNo, status, order_id AS orderId
+              FROM therapist_slot
+             WHERE id IN (${ids})
+             ORDER BY slot_no
+             FOR UPDATE
+            """)
+    List<OwnedSlotRow> lockOwnedTherapistSlotsByIds(@Param("ids") String ids);
+
+    @Select("""
+            SELECT slot_no AS slotNo, status, order_id AS orderId
+              FROM bed_slot
+             WHERE id IN (${ids})
+             ORDER BY slot_no
+             FOR UPDATE
+            """)
+    List<OwnedSlotRow> lockOwnedBedSlotsByIds(@Param("ids") String ids);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = #{destStatus}, order_id = #{orderId}, hold_id = #{holdId},
+                   lock_expire_at = #{expireAt}, updated_at = #{now}
+             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+               AND status = #{expectedStatus}
+               AND ((#{expectedOrderId} IS NULL AND order_id IS NULL)
+                    OR order_id = #{expectedOrderId})
+            """)
+    int updateTherapistSlotDest(
+            @Param("therapistId") long therapistId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("expectedStatus") String expectedStatus,
+            @Param("expectedOrderId") Long expectedOrderId,
+            @Param("destStatus") String destStatus,
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("expireAt") LocalDateTime expireAt,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET status = #{destStatus}, order_id = #{orderId}, hold_id = #{holdId},
+                   lock_expire_at = #{expireAt}, updated_at = #{now}
+             WHERE bed_id = #{bedId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+               AND status = #{expectedStatus}
+               AND ((#{expectedOrderId} IS NULL AND order_id IS NULL)
+                    OR order_id = #{expectedOrderId})
+            """)
+    int updateBedSlotDest(
+            @Param("bedId") long bedId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("expectedStatus") String expectedStatus,
+            @Param("expectedOrderId") Long expectedOrderId,
+            @Param("destStatus") String destStatus,
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("expireAt") LocalDateTime expireAt,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE booking_order
+               SET end_slot_no = #{newEndSlotNo},
+                   payable_fen = payable_fen + #{addAmountFen},
+                   paid_fen = paid_fen + #{addAmountFen},
+                   updated_at = #{now}
+             WHERE id = #{orderId}
+            """)
+    int applyCashAddOn(
+            @Param("orderId") long orderId,
+            @Param("newEndSlotNo") int newEndSlotNo,
+            @Param("addAmountFen") long addAmountFen,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE booking_order
+               SET add_on_hold_id = #{addHoldId}, updated_at = #{now}
+             WHERE id = #{orderId}
+            """)
+    int setAddOnHold(
+            @Param("orderId") long orderId,
+            @Param("addHoldId") long addHoldId,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE booking_order
+               SET end_slot_no = #{newEndSlotNo},
+                   add_on_hold_id = NULL,
+                   payable_fen = payable_fen + #{addAmountFen},
+                   paid_fen = paid_fen + #{addAmountFen},
+                   updated_at = #{now}
+             WHERE id = #{orderId}
+            """)
+    int applyPaidAddOn(
+            @Param("orderId") long orderId,
+            @Param("newEndSlotNo") int newEndSlotNo,
+            @Param("addAmountFen") long addAmountFen,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE delayed_job
+               SET status = 'DONE', updated_at = #{now}
+             WHERE job_type = 'RELEASE_ADDON' AND biz_key = #{bizKey}
+               AND status IN ('PENDING', 'RUNNING')
+            """)
+    int markReleaseAddonJobDone(@Param("bizKey") String bizKey, @Param("now") LocalDateTime now);
+
+    @Select("""
+            SELECT id, order_id AS orderId, item_type AS itemType, project_id AS projectId,
+                   project_name AS projectName, duration_minutes AS durationMinutes,
+                   buffer_minutes AS bufferMinutes, quantity,
+                   unit_price_fen AS unitPriceFen, amount_fen AS amountFen,
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo,
+                   created_at AS createdAt
+              FROM order_item
+             WHERE order_id = #{orderId} AND item_type = 'ADD_ON'
+             ORDER BY id DESC
+             LIMIT 1
+            """)
+    OrderItemInsert findLatestAddOnItem(@Param("orderId") long orderId);
+
+    @Insert("""
+            INSERT INTO payment
+              (id, payment_no, order_id, channel, amount_fen, status, wx_prepay_id,
+               wx_transaction_id, paid_at, notify_raw, created_at, updated_at)
+            VALUES
+              (#{id}, #{paymentNo}, #{orderId}, 'CASH', #{amountFen}, 'SUCCESS', NULL,
+               #{wxTxn}, #{now}, NULL, #{now}, #{now})
+            """)
+    int insertCashPayment(
+            @Param("id") long id,
+            @Param("paymentNo") String paymentNo,
+            @Param("orderId") long orderId,
+            @Param("amountFen") long amountFen,
+            @Param("wxTxn") String wxTxn,
+            @Param("now") LocalDateTime now);
 }

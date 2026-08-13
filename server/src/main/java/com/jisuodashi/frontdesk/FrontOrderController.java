@@ -39,4 +39,13 @@ public class FrontOrderController {
             @Valid @RequestBody FrontDeskDtos.CheckInRequest request) {
         return ApiResponse.ok(desk.checkIn(id, request));
     }
+
+    @PostMapping("/{id}/add-on")
+    @StoreScoped
+    @RequirePerm("frontdesk:order:*")
+    public ApiResponse<FrontDeskDtos.AddOnResponse> addOn(
+            @PathVariable("id") String id,
+            @Valid @RequestBody FrontDeskDtos.AddOnRequest request) {
+        return ApiResponse.ok(desk.addOn(id, request));
+    }
 }

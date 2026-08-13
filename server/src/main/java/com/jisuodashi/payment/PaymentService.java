@@ -8,6 +8,7 @@ import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.SnowflakeIdGenerator;
+import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.order.FireContext;
@@ -44,6 +45,7 @@ public class PaymentService {
 
     public static final String TASK_UNKNOWN_PAYMENT = "UNKNOWN_PAYMENT";
     public static final String TASK_AMOUNT_MISMATCH = "AMOUNT_MISMATCH";
+    public static final String TASK_ADD_ON_PREPAY_FAILED = "ADD_ON_PREPAY_FAILED";
     public static final String REFUND_REASON_CLOSED_PAID = "CLOSED_ORDER_AUTO_REFUND";
     static final int DEADLOCK_RETRIES = 3;
 
@@ -55,6 +57,7 @@ public class PaymentService {
     private final AppClock clock;
     private final Duration prepayTtl;
     private final TransactionTemplate tx;
+    private final SlotOccupyService occupy;
 
     @Autowired
     public PaymentService(
@@ -65,10 +68,11 @@ public class PaymentService {
             SnowflakeIdGenerator ids,
             AppClock clock,
             AppProperties properties,
-            PlatformTransactionManager txManager
+            PlatformTransactionManager txManager,
+            @Autowired(required = false) SlotOccupyService occupy
     ) {
         this(payments, orders, machine, wechat, ids, clock, properties.getWechat().getPrepayTtl(),
-                new TransactionTemplate(txManager));
+                new TransactionTemplate(txManager), occupy);
     }
 
     public PaymentService(
@@ -79,7 +83,19 @@ public class PaymentService {
             SnowflakeIdGenerator ids,
             AppClock clock
     ) {
-        this(payments, orders, machine, wechat, ids, clock, Duration.ofHours(2), null);
+        this(payments, orders, machine, wechat, ids, clock, Duration.ofHours(2), null, null);
+    }
+
+    public PaymentService(
+            PaymentStore payments,
+            SlotOccupyStore orders,
+            OrderStateMachine machine,
+            WeChatPayClient wechat,
+            SnowflakeIdGenerator ids,
+            AppClock clock,
+            SlotOccupyService occupy
+    ) {
+        this(payments, orders, machine, wechat, ids, clock, Duration.ofHours(2), null, occupy);
     }
 
     PaymentService(
@@ -92,6 +108,20 @@ public class PaymentService {
             Duration prepayTtl,
             TransactionTemplate tx
     ) {
+        this(payments, orders, machine, wechat, ids, clock, prepayTtl, tx, null);
+    }
+
+    PaymentService(
+            PaymentStore payments,
+            SlotOccupyStore orders,
+            OrderStateMachine machine,
+            WeChatPayClient wechat,
+            SnowflakeIdGenerator ids,
+            AppClock clock,
+            Duration prepayTtl,
+            TransactionTemplate tx,
+            SlotOccupyService occupy
+    ) {
         this.payments = payments;
         this.orders = orders;
         this.machine = machine;
@@ -100,6 +130,7 @@ public class PaymentService {
         this.clock = clock;
         this.prepayTtl = prepayTtl == null ? Duration.ofHours(2) : prepayTtl;
         this.tx = tx;
+        this.occupy = occupy;
     }
 
     public PaymentDtos.PayResponse repay(long customerId, long orderId, String requestId) {
@@ -325,8 +356,101 @@ public class PaymentService {
             machine.fire(p.orderId(), OrderEvent.PAY_SUCCESS, FireContext.system().withPaymentMatched(true));
             return PaymentDtos.WechatNotifyAck.success();
         }
+        if (status == OrderStatus.IN_SERVICE && order.addOnHoldId() != null && occupy != null) {
+            payments.update(p.paid(n.transactionId(), n.raw(), now));
+            occupy.confirmPaidAddOnInOpenTx(order.id());
+            machine.fire(p.orderId(), OrderEvent.ADD_ON, FireContext.system().withAddOnPaid());
+            return PaymentDtos.WechatNotifyAck.success();
+        }
         payments.update(p.paid(n.transactionId(), n.raw(), now));
         return PaymentDtos.WechatNotifyAck.success();
+    }
+
+    /** Add-on Native QR. Failure must not roll back extendOwn; caller writes human_task. */
+    public PaymentDtos.NativePayResponse tryNativeAddOnPrepay(long orderId, long amountFen, String requestId) {
+        try {
+            return nativeAddOnPrepay(orderId, amountFen, requestId);
+        } catch (RuntimeException ex) {
+            log.warn("add-on prepay failed order={}", orderId, ex);
+            try {
+                inBothTx(() -> {
+                    insertTask(TASK_ADD_ON_PREPAY_FAILED, "addon:" + orderId, "加钟微信预下单失败");
+                    return Boolean.TRUE;
+                });
+            } catch (RuntimeException ignored) {
+                // Task insert is best-effort; lock stays for ADD_ON_PAY_TIMEOUT.
+            }
+            return null;
+        }
+    }
+
+    public PaymentDtos.NativePayResponse nativeAddOnPrepay(long orderId, long amountFen, String requestId) {
+        if (requestId == null || requestId.isBlank()) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        if (amountFen <= 0) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "加钟金额无效");
+        }
+        return retryDeadlock(() -> doNativeAddOn(orderId, amountFen));
+    }
+
+    private PaymentDtos.NativePayResponse doNativeAddOn(long orderId, long amountFen) {
+        RepayPlan plan = inBothTx(() -> decideNativeAddOn(orderId, amountFen));
+        if (plan.reuse != null) {
+            return toNative(plan.reuse, true);
+        }
+        WeChatPayClient.NativePrepay prepay = wechat.nativePrepay(
+                plan.paymentNo, plan.amountFen, plan.description);
+        PersistResult saved = inBothTx(() -> persistNewNativeAddOn(orderId, plan, prepay));
+        return toNative(saved.payment(), saved.reused());
+    }
+
+    private RepayPlan decideNativeAddOn(long orderId, long amountFen) {
+        Payment pending = payments.lockPendingByOrderId(orderId);
+        requireAddOnOrder(orderId);
+        LocalDateTime now = clock.now();
+        if (pending != null && pending.pending() && !pending.prepayExpired(now)
+                && pending.amountFen() == amountFen && storedCodeUrl(pending) != null) {
+            return RepayPlan.reuse(pending);
+        }
+        if (pending != null && pending.pending()) {
+            payments.update(pending.closed(now));
+        }
+        long id = ids.nextId();
+        return RepayPlan.create("P" + id, id, amountFen, "addon-" + orderId);
+    }
+
+    private PersistResult persistNewNativeAddOn(long orderId, RepayPlan plan, WeChatPayClient.NativePrepay prepay) {
+        Payment pending = payments.lockPendingByOrderId(orderId);
+        requireAddOnOrder(orderId);
+        LocalDateTime now = clock.now();
+        if (pending != null && pending.pending() && !pending.prepayExpired(now)
+                && pending.amountFen() == plan.amountFen && storedCodeUrl(pending) != null) {
+            return new PersistResult(pending, true);
+        }
+        if (pending != null && pending.pending()) {
+            payments.update(pending.closed(now));
+        }
+        Payment row = new Payment(
+                plan.paymentId, plan.paymentNo, orderId, Payment.CHANNEL_WECHAT, plan.amountFen,
+                Payment.PENDING, prepay.prepayId(), null, null, codeUrlJson(prepay.codeUrl()),
+                now.plusMinutes(SlotOccupyService.LOCK_MINUTES), now, now);
+        payments.insert(row);
+        return new PersistResult(row, false);
+    }
+
+    private BookingOrderRef requireAddOnOrder(long orderId) {
+        BookingOrderRef order = orders.lockOrderById(orderId);
+        if (order == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        if (OrderStatus.parse(order.status()) != OrderStatus.IN_SERVICE) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "非法状态转移");
+        }
+        if (order.addOnHoldId() == null) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "无未支付加钟");
+        }
+        return order;
     }
 
     private void enqueueClosedOrderRefund(Payment paid, LocalDateTime now) {
