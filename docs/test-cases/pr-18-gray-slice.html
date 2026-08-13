@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR18 灰度切片 · 坏锁回滚演练</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; --paper:#f4f1ea; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; opacity:.85; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:28px 40px 48px; }
+    h2 { font-size:16px; color:var(--brand); margin:24px 0 10px; }
+    table { width:100%; border-collapse:collapse; background:#fff;
+            box-shadow:0 1px 3px rgba(20,53,44,.06); }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    tr.ok td:last-child { color:#1E5C4A; font-weight:700; }
+    tr.bad td:last-child { color:#c0392b; font-weight:700; }
+    .callout { background:#fff; border-left:4px solid #1E5C4A; padding:12px 16px;
+               margin:16px 0; }
+    .flow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .st { padding:8px 10px; border-radius:8px; font-size:12px; font-weight:700;
+          border:2px solid var(--brand); background:#e8f1ed; }
+    .st.pay { background:#1E5C4A; color:#fff; }
+    .st.warn { background:#f4e6c4; border-color:#c9a227; }
+    .arr { font-size:12px; color:#4a6a5f; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+    footer { padding:0 40px 32px; color:#6b7c75; font-size:12px; }
+    ol.run { background:#fff; padding:12px 16px 12px 36px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PR18 · 灰度切片 e2e + 坏锁回滚演练</h1>
+    <p>gray slice = PR7+PR8+PR9+PR11 · login / browse / book+pay / check-in / cash walk-in / unpaid cancel</p>
+    <span class="badge ">ALL PASS · 7 / 7</span>
+  </header>
+  <main>
+    <h2>Gray slice</h2>
+    <div class="flow">
+      <div class="st">LOGIN mock WeChat</div>
+      <div class="arr">→</div>
+      <div class="st">BROWSE stores/therapists/projects</div>
+      <div class="arr">→</div>
+      <div class="st pay">BOOK + notify</div>
+      <div class="arr">→</div>
+      <div class="st pay">CHECK_IN</div>
+      <div class="arr">→</div>
+      <div class="st pay">CASH walk-in</div>
+      <div class="arr">→</div>
+      <div class="st">UNPAID cancel / PAY_TIMEOUT</div>
+    </div>
+    <h2>坏锁回滚</h2>
+    <div class="flow">
+      <div class="st warn">booking.lock.enabled=false</div>
+      <div class="arr">→</div>
+      <div class="st">ForceReleaseJob PENDING_PAY leftover</div>
+      <div class="arr">→</div>
+      <div class="st">superadmin force-release orphan</div>
+      <div class="arr">→</div>
+      <div class="st warn">不要回滚 Flyway</div>
+      <div class="arr">→</div>
+      <div class="st pay">5 min scan 必须留</div>
+    </div>
+    <div class="callout">
+      <strong>§坏锁回滚</strong>
+      <div>紧急停锁只改 <code>app.booking.lock.enabled</code>。扫描 cron
+      <code>0 */5 * * * *</code> Asia/Shanghai 是权威释放路径。
+      <code>forceFreeByHold</code> 只清 LOCKED；已 BOOKED 占用不动。见
+      <code>docs/runbooks/lock-rollback.md</code>。</div>
+    </div>
+    <ol class="run">
+      <li><code>booking.lock.enabled=false</code>，C 端停售，前台停散客。</li>
+      <li>跑 <code>ForceReleaseJob</code>：PENDING_PAY 超时单释放；列出仍 LOCKED 且无订单的格。</li>
+      <li>超管 <code>POST /internal/force-release?holdId=</code>（本机 + token）。</li>
+      <li>回滚 server 镜像；<strong>不要回滚 Flyway</strong>。</li>
+      <li>灰度店先开锁，跑并发套件再开第二家。</li>
+    </ol>
+    <h2>验收项</h2>
+    <table>
+      <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>FLAG</td><td>app.booking.lock.enabled 默认 true，可紧急关掉</td><td>lock.enabled=true</td><td>PASS</td></tr>
+<tr class='ok'><td>FLAG</td><td>booking.lock.enabled=false 停锁</td><td>lock.enabled=false</td><td>PASS</td></tr>
+<tr class='ok'><td>CANCEL</td><td>未支付 USER_CANCEL → CLOSED + ReleaseLock</td><td>status=CLOSED occ=0</td><td>PASS</td></tr>
+<tr class='ok'><td>TIMEOUT</td><td>PAY_TIMEOUT 扫描 → CLOSED + 格 FREE</td><td>pending=1 status=CLOSED</td><td>PASS</td></tr>
+<tr class='ok'><td>DRILL</td><td>ForceReleaseJob 清 stuck LOCKED → FREE + occupancy 0</td><td>outcome=ORPHAN_FREED occ=0</td><td>PASS</td></tr>
+<tr class='ok'><td>SCAN</td><td>5 min 扫描必须保留（不随镜像回滚删掉）</td><td>cron=0 */5 * * * * zone=Asia/Shanghai</td><td>PASS</td></tr>
+<tr class='ok'><td>RUNBOOK</td><td>docs/runbooks/lock-rollback.md 对齐设计 §坏锁回滚</td><td>/Users/hanwang/.grok/worktrees/workspaces-muscle-master/subagent-019ffd76-7402-76c1-9111-d301c2c61c93/docs/runbooks/lock-rollback.md</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>Generated by GraySliceReportTest · H2/dev · no Docker · random port</footer>
+</body>
+</html>
