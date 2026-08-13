@@ -98,6 +98,15 @@ class AdminCatalogApiTest {
         assertThat(items(data(get("/api/v1/a/stores", admin()))))
                 .extracting(i -> i.get("code"))
                 .doesNotContain("DEMO99");
+
+        ResponseEntity<Map<String, Object>> reuse = rest.exchange(
+                "/api/v1/a/stores",
+                HttpMethod.POST,
+                json(Map.of("code", "DEMO99", "name", "复用编码"), admin()),
+                MAP);
+        assertThat(reuse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(reuse.getBody().get("code")).isEqualTo(40001);
+        assertThat(String.valueOf(reuse.getBody().get("message"))).contains("占用");
     }
 
     @Test
@@ -128,6 +137,20 @@ class AdminCatalogApiTest {
         assertThat(badBuffer.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(badBuffer.getBody().get("code")).isEqualTo(40001);
         assertThat(String.valueOf(badBuffer.getBody().get("message"))).contains("buffer");
+
+        ResponseEntity<Map<String, Object>> badDuration = rest.exchange(
+                "/api/v1/a/projects",
+                HttpMethod.POST,
+                json(Map.of(
+                        "code", "P16",
+                        "name", "非15倍数",
+                        "durationMinutes", 16,
+                        "bufferMinutes", 15,
+                        "priceFen", 10000), admin()),
+                MAP);
+        assertThat(badDuration.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(badDuration.getBody().get("code")).isEqualTo(40001);
+        assertThat(String.valueOf(badDuration.getBody().get("message"))).contains("15");
 
         ResponseEntity<Map<String, Object>> project = rest.exchange(
                 "/api/v1/a/projects",
@@ -168,7 +191,41 @@ class AdminCatalogApiTest {
         rest.exchange("/api/v1/a/schedule-templates/" + templateId, HttpMethod.DELETE, json(null, admin()), MAP);
         rest.exchange("/api/v1/a/projects/" + projectId, HttpMethod.DELETE, json(null, admin()), MAP);
         rest.exchange("/api/v1/a/therapists/" + therapistId, HttpMethod.DELETE, json(null, admin()), MAP);
-        assertThat(data(get("/api/v1/a/therapists/" + therapistId, admin())).get("status")).isEqualTo(0);
+
+        ResponseEntity<Map<String, Object>> gone = get("/api/v1/a/therapists/" + therapistId, admin());
+        assertThat(gone.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(gone.getBody().get("code")).isEqualTo(40401);
+        assertThat(items(data(get("/api/v1/a/therapists", admin()))))
+                .extracting(i -> i.get("therapistId"))
+                .doesNotContain(therapistId);
+        assertThat(items(data(get("/api/v1/a/projects", admin()))))
+                .extracting(i -> i.get("projectId"))
+                .doesNotContain(projectId);
+
+        ResponseEntity<Map<String, Object>> reuseEmp = rest.exchange(
+                "/api/v1/a/therapists",
+                HttpMethod.POST,
+                json(Map.of(
+                        "employeeNo", "T099",
+                        "name", "复用工号",
+                        "homeStoreId", String.valueOf(DemoCatalogIds.STORE),
+                        "level", "JUNIOR"), admin()),
+                MAP);
+        assertThat(reuseEmp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(reuseEmp.getBody().get("code")).isEqualTo(40001);
+
+        ResponseEntity<Map<String, Object>> reuseCode = rest.exchange(
+                "/api/v1/a/projects",
+                HttpMethod.POST,
+                json(Map.of(
+                        "code", "P30",
+                        "name", "复用编码",
+                        "durationMinutes", 30,
+                        "bufferMinutes", 15,
+                        "priceFen", 8800), admin()),
+                MAP);
+        assertThat(reuseCode.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(reuseCode.getBody().get("code")).isEqualTo(40001);
     }
 
     @Test
@@ -185,6 +242,14 @@ class AdminCatalogApiTest {
                 MAP);
         assertThat(east.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(east.getBody().get("code")).isEqualTo(40302);
+
+        ResponseEntity<Map<String, Object>> create = rest.exchange(
+                "/api/v1/a/stores",
+                HttpMethod.POST,
+                json(Map.of("code", "DEMO98", "name", "越权新店"), scoped),
+                MAP);
+        assertThat(create.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(create.getBody().get("code")).isEqualTo(40302);
     }
 
     @Test

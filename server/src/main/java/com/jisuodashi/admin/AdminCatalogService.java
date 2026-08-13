@@ -149,18 +149,14 @@ public class AdminCatalogService {
     }
 
     private void assertUniqueEmployeeNo(String employeeNo, long ignoreId) {
-        boolean taken = catalog.listTherapists().stream()
-                .anyMatch(t -> t.id() != ignoreId && employeeNo.equals(t.employeeNo()));
-        if (taken) {
-            throw new ApiException(ErrorCodes.BAD_REQUEST, "工号已存在");
+        if (catalog.employeeNoTaken(employeeNo, ignoreId)) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "工号已占用");
         }
     }
 
     private void assertUniqueProjectCode(String code, long ignoreId) {
-        boolean taken = catalog.listProjects().stream()
-                .anyMatch(p -> p.id() != ignoreId && code.equals(p.code()));
-        if (taken) {
-            throw new ApiException(ErrorCodes.BAD_REQUEST, "项目编码已存在");
+        if (catalog.projectCodeTaken(code, ignoreId)) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "项目编码已占用");
         }
     }
 
@@ -246,8 +242,8 @@ public class AdminCatalogService {
         int duration = request.durationMinutes() == null
                 ? (existing == null ? 0 : existing.durationMinutes())
                 : request.durationMinutes();
-        if (duration < 15) {
-            throw new ApiException(ErrorCodes.BAD_REQUEST, "durationMinutes 无效");
+        if (duration < 15 || duration % 15 != 0) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "durationMinutes 须为 15 的倍数");
         }
         int buffer = request.bufferMinutes() == null
                 ? (existing == null ? 15 : existing.bufferMinutes())

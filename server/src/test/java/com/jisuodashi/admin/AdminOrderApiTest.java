@@ -80,8 +80,10 @@ class AdminOrderApiTest {
         List<Map<String, Object>> page1 = items(first);
         assertThat(page1).hasSize(2);
         assertThat(page1).extracting(i -> i.get("orderId")).containsExactly(
-                String.valueOf(AdminDemoIds.ORDER_EAST),
-                String.valueOf(AdminDemoIds.ORDER_PENDING));
+                String.valueOf(AdminDemoIds.ORDER_SAME_SEC_HI),
+                String.valueOf(AdminDemoIds.ORDER_SAME_SEC_LO));
+        assertThat(String.valueOf(page1.getFirst().get("createdAt"))).contains(".500");
+        assertThat(String.valueOf(page1.get(1).get("createdAt"))).contains(".200");
 
         List<Map<String, Object>> collected = new ArrayList<>(page1);
         String cursor = String.valueOf(first.get("nextCursor"));
@@ -91,7 +93,7 @@ class AdminOrderApiTest {
             Object nextCursor = next.get("nextCursor");
             cursor = nextCursor == null ? null : String.valueOf(nextCursor);
         }
-        assertThat(collected).hasSize(6);
+        assertThat(collected).hasSize(8);
         Set<Object> ids = new HashSet<>();
         collected.forEach(i -> assertThat(ids.add(i.get("orderId"))).isTrue());
         Map<String, Object> abnormal = collected.stream()
@@ -115,7 +117,7 @@ class AdminOrderApiTest {
         String scoped = jwt.issue(JwtPrincipal.staff(
                 DemoStaffIds.ADMIN, TokenType.A, "STORE", List.of(RbacDemoIds.STORE))).token();
         List<Map<String, Object>> own = items(data(get("/api/v1/a/orders?view=all", scoped)));
-        assertThat(own).hasSize(5);
+        assertThat(own).hasSize(7);
         assertThat(own).extracting(i -> i.get("orderId"))
                 .doesNotContain(String.valueOf(AdminDemoIds.ORDER_EAST));
 
@@ -135,6 +137,19 @@ class AdminOrderApiTest {
         ResponseEntity<Map<String, Object>> c = get("/api/v1/a/orders", customer);
         assertThat(c.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(c.getBody().get("code")).isEqualTo(40301);
+    }
+
+    @Test
+    void allViewSameSecondMillisCursorKeepsSibling() {
+        Map<String, Object> first = data(get("/api/v1/a/orders?view=all&limit=1", admin()));
+        assertThat(items(first).getFirst().get("orderId"))
+                .isEqualTo(String.valueOf(AdminDemoIds.ORDER_SAME_SEC_HI));
+        String cursor = String.valueOf(first.get("nextCursor"));
+        assertThat(cursor).contains("14:00:00.500");
+        Map<String, Object> second = data(get("/api/v1/a/orders?view=all&limit=1&cursor=" + cursor, admin()));
+        assertThat(items(second).getFirst().get("orderId"))
+                .isEqualTo(String.valueOf(AdminDemoIds.ORDER_SAME_SEC_LO));
+        assertThat(items(second).getFirst().get("createdAt")).isEqualTo("2026-08-14T14:00:00.200");
     }
 
     @Test

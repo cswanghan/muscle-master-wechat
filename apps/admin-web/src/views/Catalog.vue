@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { getToken, request } from '../api'
 
 type StoreItem = { storeId: string; code: string; name: string; status: number }
@@ -227,6 +228,11 @@ async function saveTemplate() {
 
 async function remove(kind: 'stores' | 'therapists' | 'projects' | 'schedule-templates', id: string) {
   try {
+    await ElMessageBox.confirm('删除后编码/工号不可复用', '确认删除', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
     await request(`/api/v1/a/${kind}/${id}`, { method: 'DELETE' })
     await loadAll()
   } catch (e) {
@@ -282,6 +288,9 @@ onMounted(loadAll)
             <el-table-column prop="employeeNo" label="工号" width="90" />
             <el-table-column prop="name" label="姓名" width="100" />
             <el-table-column prop="level" label="等级" width="100" />
+            <el-table-column label="状态" width="80">
+              <template #default="{ row }">{{ row.status === 1 ? '在职' : '停用' }}</template>
+            </el-table-column>
             <el-table-column prop="intro" label="简介" />
             <el-table-column label="操作" width="160">
               <template #default="{ row }">
@@ -303,6 +312,9 @@ onMounted(loadAll)
             </el-table-column>
             <el-table-column label="价格" width="90">
               <template #default="{ row }">¥{{ fenYuan(row.priceFen) }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="80">
+              <template #default="{ row }">{{ row.status === 1 ? '上架' : '下架' }}</template>
             </el-table-column>
             <el-table-column label="操作" width="160">
               <template #default="{ row }">
@@ -383,7 +395,7 @@ onMounted(loadAll)
       <el-form label-width="100px">
         <el-form-item label="编码"><el-input v-model="projectForm.code" /></el-form-item>
         <el-form-item label="名称"><el-input v-model="projectForm.name" /></el-form-item>
-        <el-form-item label="时长(分)"><el-input-number v-model="projectForm.durationMinutes" :min="15" /></el-form-item>
+        <el-form-item label="时长(分)"><el-input-number v-model="projectForm.durationMinutes" :min="15" :step="15" /></el-form-item>
         <el-form-item label="缓冲(分)"><el-input-number v-model="projectForm.bufferMinutes" :min="1" :max="15" /></el-form-item>
         <el-form-item label="价格(分)"><el-input-number v-model="projectForm.priceFen" :min="0" :step="100" /></el-form-item>
       </el-form>

@@ -39,12 +39,14 @@ public class ScopedStoreService {
     }
 
     public RbacDtos.StoreItem create(long id, RbacDtos.StoreUpsertRequest request) {
+        if (!StoreScopeContext.require().all()) {
+            throw new ApiException(ErrorCodes.DATA_SCOPE, "仅超管可新建门店");
+        }
         requireText(request == null ? null : request.code(), "code");
         requireText(request == null ? null : request.name(), "name");
         String code = request.code().trim();
-        if (directory.list().stream().anyMatch(s -> code.equals(s.code()))
-                || directory.find(id).isPresent()) {
-            throw new ApiException(ErrorCodes.BAD_REQUEST, "门店编码已存在");
+        if (directory.codeTaken(code) || directory.find(id).isPresent()) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "门店编码已占用");
         }
         ScopedStore created = new ScopedStore(id, code, request.name().trim(), statusOr(request.status(), 1));
         directory.insert(created);

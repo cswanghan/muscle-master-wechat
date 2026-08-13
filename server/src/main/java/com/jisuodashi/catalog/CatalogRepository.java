@@ -42,6 +42,11 @@ public interface CatalogRepository {
 
     void deleteTemplate(long id);
 
+    /** Live + soft-deleted. employee_no / code are never reused. */
+    boolean employeeNoTaken(String employeeNo, long ignoreId);
+
+    boolean projectCodeTaken(String code, long ignoreId);
+
     default void resetDemo() {
     }
 

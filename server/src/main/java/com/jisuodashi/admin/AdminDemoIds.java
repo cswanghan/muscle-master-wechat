@@ -15,6 +15,9 @@ public final class AdminDemoIds {
     public static final long ORDER_COMPLETED = 9_100_000_000_000_000_204L;
     public static final long ORDER_PENDING = 9_100_000_000_000_000_205L;
     public static final long ORDER_EAST = 9_100_000_000_000_000_206L;
+    /** Same second as LO, later millis — first page of view=all. */
+    public static final long ORDER_SAME_SEC_HI = 9_100_000_000_000_000_207L;
+    public static final long ORDER_SAME_SEC_LO = 9_100_000_000_000_000_208L;
 
     private AdminDemoIds() {
     }

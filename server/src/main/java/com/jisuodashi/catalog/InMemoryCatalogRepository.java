@@ -22,7 +22,9 @@ public class InMemoryCatalogRepository implements CatalogRepository {
 
     private final CopyOnWriteArrayList<CatalogModels.Store> stores = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<CatalogModels.Therapist> therapists = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Therapist> deletedTherapists = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<CatalogModels.Project> projects = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Project> deletedProjects = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<CatalogModels.StoreProject> storeProjects = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<CatalogModels.Symptom> symptoms = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<CatalogModels.SymptomProject> symptomProjects = new CopyOnWriteArrayList<>();
@@ -35,7 +37,9 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     private void seed() {
         stores.clear();
         therapists.clear();
+        deletedTherapists.clear();
         projects.clear();
+        deletedProjects.clear();
         storeProjects.clear();
         symptoms.clear();
         symptomProjects.clear();
@@ -175,31 +179,47 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     @Override
     public synchronized void upsertTherapist(CatalogModels.Therapist therapist) {
         therapists.removeIf(t -> t.id() == therapist.id());
+        deletedTherapists.removeIf(t -> t.id() == therapist.id());
         therapists.add(therapist);
     }
 
     @Override
     public synchronized void softDeleteTherapist(long id) {
-        therapists.replaceAll(t -> t.id() == id
-                ? new CatalogModels.Therapist(
-                t.id(), t.staffUserId(), t.employeeNo(), t.name(), t.homeStoreId(), t.level(),
-                t.avatarUrl(), t.intro(), t.ratingX100(), 0, t.projectIds(), t.symptomIds())
-                : t);
+        therapists.stream().filter(t -> t.id() == id).findFirst().ifPresent(t -> {
+            therapists.remove(t);
+            deletedTherapists.add(new CatalogModels.Therapist(
+                    t.id(), t.staffUserId(), t.employeeNo(), t.name(), t.homeStoreId(), t.level(),
+                    t.avatarUrl(), t.intro(), t.ratingX100(), 0, t.projectIds(), t.symptomIds()));
+        });
     }
 
     @Override
     public synchronized void upsertProject(CatalogModels.Project project) {
         projects.removeIf(p -> p.id() == project.id());
+        deletedProjects.removeIf(p -> p.id() == project.id());
         projects.add(project);
     }
 
     @Override
     public synchronized void softDeleteProject(long id) {
-        projects.replaceAll(p -> p.id() == id
-                ? new CatalogModels.Project(
-                p.id(), p.code(), p.name(), p.durationMinutes(), p.bufferMinutes(),
-                p.priceFen(), p.description(), p.coverUrl(), 0)
-                : p);
+        projects.stream().filter(p -> p.id() == id).findFirst().ifPresent(p -> {
+            projects.remove(p);
+            deletedProjects.add(new CatalogModels.Project(
+                    p.id(), p.code(), p.name(), p.durationMinutes(), p.bufferMinutes(),
+                    p.priceFen(), p.description(), p.coverUrl(), 0));
+        });
+    }
+
+    @Override
+    public boolean employeeNoTaken(String employeeNo, long ignoreId) {
+        return therapists.stream().anyMatch(t -> t.id() != ignoreId && employeeNo.equals(t.employeeNo()))
+                || deletedTherapists.stream().anyMatch(t -> t.id() != ignoreId && employeeNo.equals(t.employeeNo()));
+    }
+
+    @Override
+    public boolean projectCodeTaken(String code, long ignoreId) {
+        return projects.stream().anyMatch(p -> p.id() != ignoreId && code.equals(p.code()))
+                || deletedProjects.stream().anyMatch(p -> p.id() != ignoreId && code.equals(p.code()));
     }
 
     @Override

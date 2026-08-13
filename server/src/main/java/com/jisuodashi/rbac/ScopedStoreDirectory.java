@@ -17,6 +17,9 @@ public interface ScopedStoreDirectory {
 
     void softDelete(long id);
 
+    /** Live + soft-deleted. Codes are never reused. */
+    boolean codeTaken(String code);
+
     default void resetDemo() {
     }
 }

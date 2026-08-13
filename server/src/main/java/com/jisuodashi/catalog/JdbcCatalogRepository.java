@@ -340,6 +340,26 @@ public class JdbcCatalogRepository implements CatalogRepository {
     }
 
     @Override
+    public boolean employeeNoTaken(String employeeNo, long ignoreId) {
+        Integer one = jdbc.query(
+                "SELECT 1 FROM therapist WHERE employee_no=? AND id<>? LIMIT 1",
+                rs -> rs.next() ? 1 : null,
+                employeeNo,
+                ignoreId);
+        return one != null;
+    }
+
+    @Override
+    public boolean projectCodeTaken(String code, long ignoreId) {
+        Integer one = jdbc.query(
+                "SELECT 1 FROM project WHERE code=? AND id<>? LIMIT 1",
+                rs -> rs.next() ? 1 : null,
+                code,
+                ignoreId);
+        return one != null;
+    }
+
+    @Override
     public boolean hasSlotsOn(LocalDate date) {
         Integer one = jdbc.query(
                 "SELECT 1 FROM therapist_slot WHERE slot_date=? LIMIT 1",

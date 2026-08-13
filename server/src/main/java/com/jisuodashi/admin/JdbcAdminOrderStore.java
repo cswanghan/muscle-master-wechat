@@ -6,6 +6,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -23,7 +26,7 @@ public class JdbcAdminOrderStore implements AdminOrderStore {
             rs.getLong("payable_fen"),
             rs.getInt("manual") != 0);
 
-    private static final String LIST_SQL = """
+    private static final String SELECT = """
             SELECT o.id, o.order_no, o.store_id, o.therapist_id, o.status, o.service_date,
                    o.created_at, o.payable_fen,
                    EXISTS (SELECT 1 FROM workflow_instance w
@@ -39,6 +42,63 @@ public class JdbcAdminOrderStore implements AdminOrderStore {
 
     @Override
     public List<AdminOrderRow> list() {
-        return jdbc.query(LIST_SQL, ROW);
+        return jdbc.query(SELECT, ROW);
+    }
+
+    @Override
+    public List<AdminOrderRow> listAbnormalFirst(Long storeId, int limit) {
+        StringBuilder sql = new StringBuilder(SELECT);
+        sql.append("""
+                 WHERE (o.status = 'ABNORMAL'
+                    OR EXISTS (SELECT 1 FROM workflow_instance w
+                                WHERE w.order_id = o.id AND w.status = 'MANUAL'))
+                """);
+        List<Object> args = new ArrayList<>();
+        if (storeId != null) {
+            sql.append(" AND o.store_id=?");
+            args.add(storeId);
+        }
+        sql.append(" ORDER BY o.id DESC LIMIT ?");
+        args.add(limit);
+        return jdbc.query(sql.toString(), ROW, args.toArray());
+    }
+
+    @Override
+    public List<AdminOrderRow> listAll(
+            Long storeId,
+            String status,
+            LocalDate from,
+            LocalDate to,
+            AdminOrderCursors.Cursor cursor,
+            int fetch) {
+        StringBuilder sql = new StringBuilder(SELECT);
+        sql.append(" WHERE 1=1");
+        List<Object> args = new ArrayList<>();
+        if (storeId != null) {
+            sql.append(" AND o.store_id=?");
+            args.add(storeId);
+        }
+        if (status != null && !status.isBlank()) {
+            sql.append(" AND o.status=?");
+            args.add(status);
+        }
+        if (from != null) {
+            sql.append(" AND o.created_at>=?");
+            args.add(Timestamp.valueOf(from.atStartOfDay()));
+        }
+        if (to != null) {
+            sql.append(" AND o.created_at<?");
+            args.add(Timestamp.valueOf(to.plusDays(1).atStartOfDay()));
+        }
+        if (cursor != null) {
+            Timestamp ts = Timestamp.valueOf(cursor.createdAt());
+            sql.append(" AND (o.created_at<? OR (o.created_at=? AND o.id<?))");
+            args.add(ts);
+            args.add(ts);
+            args.add(cursor.id());
+        }
+        sql.append(" ORDER BY o.created_at DESC, o.id DESC LIMIT ?");
+        args.add(fetch);
+        return jdbc.query(sql.toString(), ROW, args.toArray());
     }
 }

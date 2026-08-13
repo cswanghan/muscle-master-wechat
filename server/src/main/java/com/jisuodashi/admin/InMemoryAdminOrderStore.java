@@ -34,6 +34,10 @@ public class InMemoryAdminOrderStore implements AdminOrderStore {
                 "PENDING_PAY", LocalDateTime.of(2026, 8, 14, 12, 0, 0), 19800, false));
         orders.add(row(AdminDemoIds.ORDER_EAST, "A20260814006", AdminDemoIds.STORE_EAST,
                 "BOOKED", LocalDateTime.of(2026, 8, 14, 13, 0, 0), 12800, false));
+        orders.add(row(AdminDemoIds.ORDER_SAME_SEC_HI, "A20260814007", AdminDemoIds.STORE,
+                "COMPLETED", LocalDateTime.of(2026, 8, 14, 14, 0, 0, 500_000_000), 8800, false));
+        orders.add(row(AdminDemoIds.ORDER_SAME_SEC_LO, "A20260814008", AdminDemoIds.STORE,
+                "COMPLETED", LocalDateTime.of(2026, 8, 14, 14, 0, 0, 200_000_000), 8800, false));
     }
 
     private static AdminOrderRow row(
