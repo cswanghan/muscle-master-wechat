@@ -271,7 +271,8 @@ public class SlotOccupyService {
     /**
      * Dual-table expired LOCKED scan without {@code fire()} (Law A).
      * Orphan → forceFree; PENDING_PAY / CLOSED leftover → ReleaseLock;
-     * add-on / paid → skip. Production scan uses {@code SlotScanJob} + fire.
+     * add-on hold → ReleaseAddOnHold; paid → skip. Production scan uses
+     * {@code SlotScanJob} + fire.
      */
     public SlotScanResult scanExpiredLocks() {
         List<Long> holds = store.findExpiredLockedHoldIds(clock.now(), SCAN_BATCH);
@@ -286,8 +287,8 @@ public class SlotOccupyService {
                 forceFreeByHold(holdId);
                 orphans++;
             } else if (byAddon != null && byAddon.addOnHoldId() != null && byAddon.addOnHoldId() == holdId) {
+                releaseAddOnHold(holdId);
                 addon++;
-                incStalePaid();
             } else if (byHold != null && mayReleaseUnpaidLocked(byHold.status())) {
                 ReleaseResult r = releaseLock(holdId);
                 if (r.skipped()) {
@@ -562,7 +563,7 @@ public class SlotOccupyService {
         store.restoreBufferSlots(order.id(), bufferFrom, oldEnd, order.holdId(), now);
         store.reassignOccupancyHold(order.id(), bufferFrom, oldEnd, order.holdId());
         store.clearAddOnHold(order.id(), now);
-        store.deleteUnpaidAddOnItems(order.id());
+        store.deleteUnpaidAddOnItems(order.id(), bufferFrom);
         evictAvail(order.storeId(), order.serviceDate());
         String outcome = (occ == 0 && therapist == 0 && bed == 0)
                 ? ReleaseResult.IDEMPOTENT
@@ -893,10 +894,14 @@ public class SlotOccupyService {
                 throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
             }
         }
-        insertOccupancy(ResourceType.THERAPIST, order.therapistId(), order.serviceDate(),
-                newFree, order.id(), addHold, now);
-        insertOccupancy(ResourceType.BED, order.bedId(), order.serviceDate(),
-                newFree, order.id(), addHold, now);
+        try {
+            insertOccupancy(ResourceType.THERAPIST, order.therapistId(), order.serviceDate(),
+                    newFree, order.id(), addHold, now);
+            insertOccupancy(ResourceType.BED, order.bedId(), order.serviceDate(),
+                    newFree, order.id(), addHold, now);
+        } catch (DuplicateOccupancyException ex) {
+            throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
+        }
     }
 
     private ConfirmPaidResult doConfirmPaidAddOn(long orderId) {

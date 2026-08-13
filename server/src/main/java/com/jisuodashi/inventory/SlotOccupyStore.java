@@ -128,7 +128,7 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     int reassignOccupancyHold(long orderId, int fromSlotNo, int toExclusive, long mainHoldId);
 
-    int deleteUnpaidAddOnItems(long orderId);
+    int deleteUnpaidAddOnItems(long orderId, int fromSlotNo);
 
     SlotHoldMeta findHoldSlotMeta(long holdId);
 

@@ -310,8 +310,8 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
-    public int deleteUnpaidAddOnItems(long orderId) {
-        return mapper.deleteUnpaidAddOnItems(orderId);
+    public int deleteUnpaidAddOnItems(long orderId, int fromSlotNo) {
+        return mapper.deleteUnpaidAddOnItems(orderId, fromSlotNo);
     }
 
     @Override

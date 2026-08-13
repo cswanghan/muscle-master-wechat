@@ -863,10 +863,11 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
-    public synchronized int deleteUnpaidAddOnItems(long orderId) {
+    public synchronized int deleteUnpaidAddOnItems(long orderId, int fromSlotNo) {
         List<OrderItemInsert> removed = new ArrayList<>();
         orderItems.removeIf(item -> {
-            if (item.orderId() == orderId && "ADD_ON".equals(item.itemType())) {
+            if (item.orderId() == orderId && "ADD_ON".equals(item.itemType())
+                    && item.startSlotNo() >= fromSlotNo) {
                 removed.add(item);
                 return true;
             }
@@ -1118,7 +1119,6 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
 
     @Override
     public void insertCashPayment(long id, String paymentNo, long orderId, long amountFen, LocalDateTime now) {
-        // Persist is payment-store's job in WeChat; cash row lives in occupy TX for MySQL.
     }
 
     public long paidFen(long orderId) {

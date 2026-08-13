@@ -121,6 +121,53 @@ class FrontDeskAddOnApiTest {
     }
 
     @Test
+    void wechatAddOnReplayReturnsQr() {
+        long orderId = inServiceWalkIn("ao-replay", "18600007070", 40);
+        Map<String, Object> first = data(post(
+                "/api/v1/f/orders/" + orderId + "/add-on",
+                addOn("ao-replay-1", 30, "WECHAT"),
+                frontToken()), HttpStatus.OK);
+        assertThat(first.get("codeUrl").toString()).startsWith("weixin://wxpay/bizpayurl?pr=LIVE_");
+        Map<String, Object> replay = data(post(
+                "/api/v1/f/orders/" + orderId + "/add-on",
+                addOn("ao-replay-1", 30, "WECHAT"),
+                frontToken()), HttpStatus.OK);
+        assertThat(replay.get("replay")).isEqualTo(true);
+        assertThat(replay.get("paymentNo")).isEqualTo(first.get("paymentNo"));
+        assertThat(replay.get("codeUrl")).isEqualTo(first.get("codeUrl"));
+        assertThat(occupyStore.findOrderById(orderId).addOnHoldId()).isNotNull();
+    }
+
+    @Test
+    void supersededAddOnQrDoesNotConfirmHold() {
+        long orderId = inServiceWalkIn("ao-stale", "18600008080", 44);
+        Map<String, Object> first = data(post(
+                "/api/v1/f/orders/" + orderId + "/add-on",
+                addOn("ao-stale-1", 30, "WECHAT"),
+                frontToken()), HttpStatus.OK);
+        String oldNo = String.valueOf(first.get("paymentNo"));
+        payments.expirePrepay(oldNo, java.time.LocalDateTime.of(2020, 1, 1, 0, 0));
+        Map<String, Object> next = data(post(
+                "/api/v1/f/orders/" + orderId + "/add-on",
+                addOn("ao-stale-1", 30, "WECHAT"),
+                frontToken()), HttpStatus.OK);
+        assertThat(next.get("paymentNo")).isNotEqualTo(oldNo);
+        assertThat(next.get("codeUrl")).isNotNull();
+
+        ResponseEntity<Map<String, Object>> notify = rest.exchange(
+                "/api/v1/pay/wechat/notify",
+                HttpMethod.POST,
+                new HttpEntity<>(notifyBody(oldNo, 9800), jsonHeaders(null)),
+                MAP);
+        assertThat(notify.getStatusCode()).isEqualTo(HttpStatus.OK);
+        BookingOrderRef after = occupyStore.findOrderById(orderId);
+        assertThat(after.addOnHoldId()).isNotNull();
+        assertThat(after.endSlotNo()).isEqualTo(49);
+        assertThat(payments.findByPaymentNo(oldNo).success()).isTrue();
+        assertThat(payments.listRefundsByOrderId(orderId)).isNotEmpty();
+    }
+
+    @Test
     void addOnRequiresFrontJwt() throws Exception {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .post("/api/v1/f/orders/1/add-on")

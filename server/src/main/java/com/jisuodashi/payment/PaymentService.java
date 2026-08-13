@@ -46,6 +46,7 @@ public class PaymentService {
     public static final String TASK_UNKNOWN_PAYMENT = "UNKNOWN_PAYMENT";
     public static final String TASK_AMOUNT_MISMATCH = "AMOUNT_MISMATCH";
     public static final String TASK_ADD_ON_PREPAY_FAILED = "ADD_ON_PREPAY_FAILED";
+    public static final String TASK_ADD_ON_CONFIRM_FAILED = "ADD_ON_CONFIRM_FAILED";
     public static final String REFUND_REASON_CLOSED_PAID = "CLOSED_ORDER_AUTO_REFUND";
     static final int DEADLOCK_RETRIES = 3;
 
@@ -69,7 +70,7 @@ public class PaymentService {
             AppClock clock,
             AppProperties properties,
             PlatformTransactionManager txManager,
-            @Autowired(required = false) SlotOccupyService occupy
+            SlotOccupyService occupy
     ) {
         this(payments, orders, machine, wechat, ids, clock, properties.getWechat().getPrepayTtl(),
                 new TransactionTemplate(txManager), occupy);
@@ -356,14 +357,42 @@ public class PaymentService {
             machine.fire(p.orderId(), OrderEvent.PAY_SUCCESS, FireContext.system().withPaymentMatched(true));
             return PaymentDtos.WechatNotifyAck.success();
         }
-        if (status == OrderStatus.IN_SERVICE && order.addOnHoldId() != null && occupy != null) {
+        if (status == OrderStatus.IN_SERVICE && isCurrentAddOnPay(order, p)) {
+            if (occupy == null) {
+                insertTask(TASK_ADD_ON_CONFIRM_FAILED, "addon:" + order.id(), "加钟确认缺少库存服务");
+                return PaymentDtos.WechatNotifyAck.success();
+            }
             payments.update(p.paid(n.transactionId(), n.raw(), now));
             occupy.confirmPaidAddOnInOpenTx(order.id());
             machine.fire(p.orderId(), OrderEvent.ADD_ON, FireContext.system().withAddOnPaid());
             return PaymentDtos.WechatNotifyAck.success();
         }
+        if (status == OrderStatus.IN_SERVICE && isStaleAddOnPay(order, p)) {
+            Payment paid = p.paid(n.transactionId(), n.raw(), now);
+            payments.update(paid);
+            enqueueClosedOrderRefund(paid, now);
+            return PaymentDtos.WechatNotifyAck.success();
+        }
         payments.update(p.paid(n.transactionId(), n.raw(), now));
         return PaymentDtos.WechatNotifyAck.success();
+    }
+
+    private boolean isCurrentAddOnPay(BookingOrderRef order, Payment p) {
+        if (order.addOnHoldId() == null || !p.pending()) {
+            return false;
+        }
+        SlotOccupyStore.OrderItemInsert item = orders.findLatestAddOnItem(order.id());
+        return item != null && item.amountFen() == p.amountFen();
+    }
+
+    private boolean isStaleAddOnPay(BookingOrderRef order, Payment p) {
+        if (p.success() || !Payment.CHANNEL_WECHAT.equals(p.channel())) {
+            return false;
+        }
+        if (order.addOnHoldId() == null) {
+            return true;
+        }
+        return !p.pending();
     }
 
     /** Add-on Native QR. Failure must not roll back extendOwn; caller writes human_task. */

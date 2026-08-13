@@ -137,6 +137,23 @@ class ExtendOwnServiceTest {
     }
 
     @Test
+    void releaseAddOnHoldKeepsPaidCashItem() {
+        Fixture f = inService("eo-cash-then-wx");
+        f.occupy.extendOwn(f.locked.orderId(), OccupyFixtures.P60, M, true);
+        f.occupy.extendOwn(f.locked.orderId(), OccupyFixtures.P60, 1, false);
+        f.machine.fire(f.locked.orderId(), OrderEvent.ADD_ON_PAY_TIMEOUT, FireContext.job());
+
+        SlotOccupyStore.OrderItemInsert paid = f.store.findLatestAddOnItem(f.locked.orderId());
+        assertThat(paid).isNotNull();
+        assertThat(paid.startSlotNo()).isEqualTo(82);
+        assertThat(paid.endSlotNo()).isEqualTo(85);
+        assertThat(paid.amountFen()).isEqualTo(PRO_RATA);
+        assertThat(f.store.orderItems.stream().filter(i -> "ADD_ON".equals(i.itemType()))).hasSize(1);
+        assertThat(f.store.findOrderById(f.locked.orderId()).endSlotNo()).isEqualTo(85);
+        assertThat(f.store.findOrderById(f.locked.orderId()).addOnHoldId()).isNull();
+    }
+
+    @Test
     void confirmPaidAddOnThenFirePromotesSlots() {
         Fixture f = inService("eo-paid");
         ExtendOwnResult ext = f.occupy.extendOwn(f.locked.orderId(), OccupyFixtures.P60, M, false);

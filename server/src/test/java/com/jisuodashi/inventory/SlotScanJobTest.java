@@ -104,20 +104,41 @@ class SlotScanJobTest {
     }
 
     @Test
-    void addOnHoldIsNotReleasedWithoutFire() {
+    void expiredAddOnHoldFiresTimeoutAndRestoresBuffer() {
         InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
         SlotOccupyService service = OccupyFixtures.service(store);
         LockNewResult locked = service.lockNew(OccupyFixtures.cmd("scan-addon", T1, START_1930));
-        long addOn = 6_600_000_000_000_000_099L;
-        store.setAddOnHoldId(locked.orderId(), addOn);
+        service.confirmPaidSlots(locked.orderId());
         store.setOrderStatus(locked.orderId(), "IN_SERVICE");
-        plantBedOnly(store, BED2, addOn, TODAY.atTime(18, 30));
+        ExtendOwnResult ext = service.extendOwn(locked.orderId(), OccupyFixtures.P60, 2, false);
+        store.expireHold(ext.addHoldId(), TODAY.atTime(18, 30));
 
         SlotScanResult scan = scanJob(store, service).run();
-        assertThat(scan.holdIds()).contains(addOn);
+        assertThat(scan.holdIds()).contains(ext.addHoldId());
         assertThat(scan.addonSkipped()).isEqualTo(1);
         assertThat(scan.orphansFreed()).isZero();
-        assertThat(store.bedSlot(BED2, TODAY, 78).status).isEqualTo(SlotStatus.LOCKED);
+        assertThat(store.findOrderById(locked.orderId()).addOnHoldId()).isNull();
+        assertThat(store.findOrderById(locked.orderId()).status()).isEqualTo("IN_SERVICE");
+        assertThat(store.therapistSlot(T1, TODAY, 82).status).isEqualTo(SlotStatus.BUFFER);
+        assertThat(store.therapistSlot(T1, TODAY, 83).status).isEqualTo(SlotStatus.FREE);
+        assertThat(store.bedSlot(BED1, TODAY, 84).status).isEqualTo(SlotStatus.FREE);
+    }
+
+    @Test
+    void scanExpiredLocksReleasesAddOnHoldWithoutFire() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService service = OccupyFixtures.service(store);
+        LockNewResult locked = service.lockNew(OccupyFixtures.cmd("scan-addon-nf", T1, START_1930));
+        service.confirmPaidSlots(locked.orderId());
+        store.setOrderStatus(locked.orderId(), "IN_SERVICE");
+        ExtendOwnResult ext = service.extendOwn(locked.orderId(), OccupyFixtures.P60, 2, false);
+        store.expireHold(ext.addHoldId(), TODAY.atTime(18, 30));
+
+        SlotScanResult scan = service.scanExpiredLocks();
+        assertThat(scan.addonSkipped()).isEqualTo(1);
+        assertThat(store.findOrderById(locked.orderId()).addOnHoldId()).isNull();
+        assertThat(store.therapistSlot(T1, TODAY, 82).status).isEqualTo(SlotStatus.BUFFER);
+        assertThat(store.therapistSlot(T1, TODAY, 83).status).isEqualTo(SlotStatus.FREE);
     }
 
     @Test

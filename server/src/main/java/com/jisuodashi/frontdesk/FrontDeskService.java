@@ -371,19 +371,19 @@ public class FrontDeskService {
         boolean cash = FrontDeskDtos.CASH.equals(channel);
         ExtendOwnResult ext = occupy.extendOwn(
                 order.id(), parseId(req.projectId(), "projectId"), slots, cash, req.requestId());
-        if (ext.replay()) {
-            return toAddOn(orderId, channel, ext, ext.paymentNo(), null, true);
-        }
         if (cash) {
-            machine.fire(orderId, OrderEvent.ADD_ON, deskContext().withAddOnPaid());
-            return toAddOn(orderId, channel, ext, ext.paymentNo(), null, false);
+            if (!ext.replay()) {
+                machine.fire(orderId, OrderEvent.ADD_ON, deskContext().withAddOnPaid());
+            }
+            return toAddOn(orderId, channel, ext, ext.paymentNo(), null, ext.replay());
         }
         PaymentDtos.NativePayResponse nativePay = payments.tryNativeAddOnPrepay(
                 orderId, ext.amountFen(), req.requestId() + ":native");
         if (nativePay == null) {
             throw new ApiException(ErrorCodes.PREPAY_FAILED, "微信预下单失败");
         }
-        return toAddOn(orderId, channel, ext, nativePay.paymentNo(), nativePay.codeUrl(), nativePay.reused());
+        return toAddOn(orderId, channel, ext, nativePay.paymentNo(), nativePay.codeUrl(),
+                ext.replay() || nativePay.reused());
     }
 
     private FrontDeskDtos.AddOnResponse toAddOn(

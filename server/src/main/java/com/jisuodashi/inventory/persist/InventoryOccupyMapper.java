@@ -703,8 +703,9 @@ public interface InventoryOccupyMapper {
     @Delete("""
             DELETE FROM order_item
              WHERE order_id = #{orderId} AND item_type = 'ADD_ON'
+               AND start_slot_no >= #{fromSlotNo}
             """)
-    int deleteUnpaidAddOnItems(@Param("orderId") long orderId);
+    int deleteUnpaidAddOnItems(@Param("orderId") long orderId, @Param("fromSlotNo") int fromSlotNo);
 
     @Select("""
             SELECT id
