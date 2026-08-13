@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * V1–V3 source-of-truth contract. H2 cannot execute the MySQL DDL
+ * V1–V4 source-of-truth contract. H2 cannot execute the MySQL DDL
  * (VARBINARY, DATETIME(3), JSON, comments); Flyway stays off on {@code dev}.
  * Apply against compose MySQL with {@code scripts/verify-schema.sh}.
  */
@@ -55,6 +55,7 @@ class SchemaContractTest {
     private static String v1;
     private static String v2;
     private static String v3;
+    private static String v4;
     private static final List<Check> CHECKS = new ArrayList<>();
 
     @BeforeAll
@@ -62,6 +63,7 @@ class SchemaContractTest {
         v1 = readMigration("V1__init.sql");
         v2 = readMigration("V2__rbac_seed.sql");
         v3 = readMigration("V3__demo_store.sql");
+        v4 = readMigration("V4__locknew_free_indexes.sql");
     }
 
     @Test
@@ -183,6 +185,10 @@ class SchemaContractTest {
                 !tableBody(v1, "service_record").matches("(?is).*UNIQUE KEY\\s+\\w+\\s*\\(\\s*order_id\\s*\\).*"));
         check("ENGINE", "InnoDB utf8mb4 on store",
                 v1.contains("ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"));
+        check("PR3b", "idx_ts_free (therapist_id, slot_date, status, slot_no)",
+                v4.contains("idx_ts_free (therapist_id, slot_date, status, slot_no)"));
+        check("PR3b", "idx_bs_free (bed_id, slot_date, status, slot_no)",
+                v4.contains("idx_bs_free (bed_id, slot_date, status, slot_no)"));
     }
 
     private static void writeReports() throws IOException {

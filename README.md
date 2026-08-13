@@ -47,9 +47,9 @@ npm run dev          # http://127.0.0.1:5173/health  ·  /catalog
 
 默认 `app.jobs.enabled=false`。Compose 里唯一的 `server` 服务才设为 `true`。
 
-## Schema（Flyway V1–V3）
+## Schema（Flyway V1–V4）
 
-P0 全量 DDL 在 `server/src/main/resources/db/migration/`：`V1__init.sql`（双资源 slot **不分区**）、`V2__rbac_seed.sql`、`V3__demo_store.sql`（1 店 / 3 技师 / 2 床 / 周模板）。默认 profile 对 MySQL 开 Flyway。`dev` 的 H2 **关 Flyway**（DDL 含 VARBINARY / DATETIME(3) / JSON，不为 H2 削 schema）。无 Docker 时用 `SchemaContractTest` 断言 SQL 文本；有 compose MySQL 时跑 `scripts/verify-schema.sh`（**destructive**：DROP+CREATE 独立库 `muscle_master_verify`，不碰 `muscle_master` / Flyway 历史）。预览：`docs/test-cases/schema-preview.html`。
+P0 全量 DDL 在 `server/src/main/resources/db/migration/`：`V1__init.sql`（双资源 slot **不分区**）、`V2__rbac_seed.sql`、`V3__demo_store.sql`（1 店 / 3 技师 / 2 床 / 周模板）、`V4__locknew_free_indexes.sql`（FREE 行锁索引）。默认 profile 对 MySQL 开 Flyway。`dev` 的 H2 **关 Flyway**（DDL 含 VARBINARY / DATETIME(3) / JSON，不为 H2 削 schema）。无 Docker 时用 `SchemaContractTest` 断言 SQL 文本；有 compose MySQL 时跑 `scripts/verify-schema.sh`（**destructive**：DROP+CREATE 独立库 `muscle_master_verify`，不碰 `muscle_master` / Flyway 历史）。预览：`docs/test-cases/schema-preview.html`。
 
 ## Docker Compose（有 Docker 的机器）
 

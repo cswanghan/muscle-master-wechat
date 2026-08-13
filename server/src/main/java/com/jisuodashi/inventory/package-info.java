@@ -1,2 +1,2 @@
-/** Slot generation, dual-resource locks, release, availability. */
+/** Slot generation, dual-resource lockNew, release, availability. */
 package com.jisuodashi.inventory;

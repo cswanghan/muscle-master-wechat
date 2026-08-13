@@ -22,7 +22,7 @@
 <body>
   <header>
     <h1>SchemaContractTest</h1>
-    <span class="badge ">ALL PASS · 89 / 89</span>
+    <span class="badge ">ALL PASS · 91 / 91</span>
     <p style="margin:10px 0 0;opacity:.85">V1 dual-slot unique keys · occupancy · RBAC · demo store</p>
   </header>
   <main>
@@ -118,6 +118,8 @@
 <tr class='ok'><td>D16</td><td>outbox_event has no lease columns</td><td>PASS</td></tr>
 <tr class='ok'><td>SWAP</td><td>service_record has no UNIQUE on order_id</td><td>PASS</td></tr>
 <tr class='ok'><td>ENGINE</td><td>InnoDB utf8mb4 on store</td><td>PASS</td></tr>
+<tr class='ok'><td>PR3b</td><td>idx_ts_free (therapist_id, slot_date, status, slot_no)</td><td>PASS</td></tr>
+<tr class='ok'><td>PR3b</td><td>idx_bs_free (bed_id, slot_date, status, slot_no)</td><td>PASS</td></tr>
       </tbody>
     </table>
   </main>
