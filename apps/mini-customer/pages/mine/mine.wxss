@@ -1,0 +1,82 @@
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 28rpx;
+}
+
+.mark {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #1e5c4a;
+  color: #f4f1ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+}
+
+.title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.sec {
+  margin: 28rpx 0 12rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.order {
+  margin-bottom: 16rpx;
+}
+
+.order-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-no {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 24rpx;
+  color: #6b7a74;
+}
+
+.st {
+  font-size: 22rpx;
+  color: #a9752f;
+  background: #faf1e4;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.st.muted {
+  background: #e8f0ec;
+  color: #1e5c4a;
+}
+
+.price {
+  margin-top: 8rpx;
+  font-weight: 700;
+  color: #1e5c4a;
+}
+
+.empty {
+  padding: 28rpx;
+  text-align: center;
+  color: #8b948f;
+  background: #fff;
+  border-radius: 16rpx;
+  border: 1rpx dashed #c9cfcb;
+}
+
+.no-wallet {
+  margin-top: 36rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8b948f;
+}

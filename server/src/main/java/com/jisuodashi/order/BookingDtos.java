@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 public final class BookingDtos {
@@ -49,5 +50,25 @@ public final class BookingDtos {
     public record PayRequest(
             @NotBlank(message = "requestId 不能为空") String requestId
     ) {
+    }
+
+    public record BookingListItem(
+            String orderId,
+            String orderNo,
+            String status,
+            long payableFen,
+            String storeId,
+            String therapistId,
+            String date,
+            int startSlotNo,
+            String start,
+            String lockExpireAt
+    ) {
+    }
+
+    public record Page<T>(List<T> items, String nextCursor) {
+        public static <T> Page<T> of(List<T> items) {
+            return new Page<>(items, null);
+        }
     }
 }

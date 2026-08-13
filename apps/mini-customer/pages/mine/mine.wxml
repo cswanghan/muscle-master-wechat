@@ -1,0 +1,53 @@
+<view class="page" id="c6-mine">
+  <view class="hero card">
+    <view class="mark">我</view>
+    <view>
+      <view class="title">我的预约</view>
+      <view class="hint">{{logged ? ('已登录 · ' + customerId) : '未登录'}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint">加载中…</view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+
+  <view class="sec">进行中预约</view>
+  <view wx:if="{{!loading && ongoing.length===0}}" class="empty">暂无进行中的预约</view>
+  <view
+    wx:for="{{ongoing}}"
+    wx:key="orderId"
+    class="card order"
+    data-item="{{item}}"
+    bindtap="openOrder"
+  >
+    <view class="order-top">
+      <view class="order-no">{{item.orderNo}}</view>
+      <view class="st">{{item.statusLabel}}</view>
+    </view>
+    <view>{{item.storeLabel}}</view>
+    <view class="hint">{{item.therapistLabel}} · {{item.date}} {{item.start}}</view>
+    <view class="price">¥{{item.priceYuan}}</view>
+  </view>
+
+  <view class="sec">订单</view>
+  <view wx:if="{{!loading && orders.length===0}}" class="empty">暂无订单</view>
+  <view wx:for="{{orders}}" wx:key="orderId" class="card order">
+    <view class="order-top">
+      <view class="order-no">{{item.orderNo}}</view>
+      <view class="st muted">{{item.statusLabel}}</view>
+    </view>
+    <view class="hint">{{item.date}} {{item.start}} · ¥{{item.priceYuan}}</view>
+  </view>
+
+  <view class="no-wallet" id="no-wallet">P0 无资金总览 · 无储值 / 礼卡 / 券</view>
+
+  <view class="dock">
+    <view class="dock-item" bindtap="goHome">
+      <view class="dock-ico">约</view>
+      <view>预约</view>
+    </view>
+    <view class="dock-item on">
+      <view class="dock-ico">我</view>
+      <view>我的</view>
+    </view>
+  </view>
+</view>

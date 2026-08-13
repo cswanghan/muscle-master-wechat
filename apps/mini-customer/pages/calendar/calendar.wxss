@@ -1,0 +1,161 @@
+.cal-page {
+  padding-bottom: 180rpx;
+}
+
+.meta {
+  font-size: 24rpx;
+  color: #6b7a74;
+  margin-bottom: 16rpx;
+}
+
+.dates {
+  white-space: nowrap;
+  margin-bottom: 16rpx;
+}
+
+.date {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: 88rpx;
+  padding: 12rpx 0;
+  margin-right: 12rpx;
+  border-radius: 16rpx;
+  background: #fff;
+  border: 1rpx solid #d7e6df;
+}
+
+.date.on {
+  background: #1e5c4a;
+  color: #f4f1ea;
+  border-color: #1e5c4a;
+}
+
+.date-w {
+  font-size: 20rpx;
+}
+
+.date-d {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin: 8rpx 0 20rpx;
+}
+
+.lg {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.lg.free {
+  background: #e8f0ec;
+  color: #1e5c4a;
+}
+
+.lg.locked {
+  background: #faf1e4;
+  color: #a9752f;
+}
+
+.lg.booked {
+  background: #1e5c4a;
+  color: #fff;
+}
+
+.lg.busy {
+  background: #f4f2ee;
+  color: #8b948f;
+  border: 1rpx dashed #c9cfcb;
+}
+
+.th-block {
+  margin-bottom: 28rpx;
+}
+
+.th-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.th-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.slot {
+  width: 92rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 20rpx;
+  border-radius: 8rpx;
+}
+
+.slot.free {
+  background: #e8f0ec;
+  color: #1e5c4a;
+}
+
+.slot.locked {
+  background: #faf1e4;
+  color: #a9752f;
+}
+
+.slot.booked,
+.slot.sel {
+  background: #1e5c4a;
+  color: #fff;
+}
+
+.slot.busy {
+  background: #f4f2ee;
+  color: #8b948f;
+  border: 1rpx dashed #c9cfcb;
+}
+
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-top: 1rpx solid #d7e6df;
+  padding: 16rpx 32rpx 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bar-price {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1e5c4a;
+}
+
+.bar-sub {
+  font-size: 22rpx;
+  color: #6b7a74;
+}
+
+.bar-btn {
+  width: 240rpx;
+}
+
+.btn.dim {
+  opacity: 0.4;
+}

@@ -256,6 +256,10 @@ public class SlotOccupyService {
         return store.findOrderById(orderId);
     }
 
+    public List<SlotOccupyStore.BookingOrderRef> listOrdersByCustomer(long customerId) {
+        return store.listOrdersByCustomer(customerId);
+    }
+
     public void noteStalePaidLocked() {
         incStalePaid();
     }

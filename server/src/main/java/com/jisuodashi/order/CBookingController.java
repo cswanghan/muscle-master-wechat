@@ -8,10 +8,12 @@ import com.jisuodashi.payment.PaymentDtos;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -22,6 +24,18 @@ public class CBookingController {
 
     public CBookingController(BookingService bookings) {
         this.bookings = bookings;
+    }
+
+    @GetMapping
+    public ApiResponse<BookingDtos.Page<BookingDtos.BookingListItem>> list(
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit) {
+        return ApiResponse.ok(bookings.list(AuthContext.requireCustomer().subjectId(), cursor, limit));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<BookingDtos.BookingListItem> get(@PathVariable("id") String id) {
+        return ApiResponse.ok(bookings.get(AuthContext.requireCustomer().subjectId(), id));
     }
 
     @PostMapping

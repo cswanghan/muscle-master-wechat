@@ -1,0 +1,36 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.th.on {
+  border-color: #1e5c4a;
+  box-shadow: inset 0 0 0 2rpx #1e5c4a;
+}
+
+.th-name,
+.proj-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.sec {
+  margin: 28rpx 0 8rpx;
+  font-size: 24rpx;
+  color: #1e5c4a;
+  font-weight: 600;
+}
+
+.proj {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx 16rpx;
+}
+
+.price {
+  margin-left: auto;
+  font-weight: 700;
+  color: #1e5c4a;
+}
