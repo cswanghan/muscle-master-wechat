@@ -9,6 +9,13 @@ public final class ScopedStoreQueries {
             "SELECT id, code, name, status FROM store WHERE id=? AND deleted_at IS NULL";
     public static final String UPDATE_STATUS =
             "UPDATE store SET status=?, updated_at=? WHERE id=? AND deleted_at IS NULL";
+    public static final String INSERT =
+            "INSERT INTO store (id, code, name, business_start, business_end, timezone, status, created_at, updated_at) "
+                    + "VALUES (?,?,?,'10:00:00','22:00:00','Asia/Shanghai',?,?,?)";
+    public static final String UPDATE =
+            "UPDATE store SET name=?, status=?, updated_at=? WHERE id=? AND deleted_at IS NULL";
+    public static final String SOFT_DELETE =
+            "UPDATE store SET deleted_at=?, updated_at=? WHERE id=? AND deleted_at IS NULL";
 
     private ScopedStoreQueries() {
     }

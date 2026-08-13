@@ -7,9 +7,9 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /** H2 cannot apply V1; load the same IDs as V3__demo_store.sql. */
 @Repository
@@ -20,18 +20,32 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     private static final LocalTime TEN = LocalTime.of(10, 0);
     private static final LocalTime TWENTY_TWO = LocalTime.of(22, 0);
 
-    private final List<CatalogModels.Store> stores;
-    private final List<CatalogModels.Therapist> therapists;
-    private final List<CatalogModels.Project> projects;
-    private final List<CatalogModels.StoreProject> storeProjects;
-    private final List<CatalogModels.Symptom> symptoms;
-    private final List<CatalogModels.SymptomProject> symptomProjects;
-    private final List<CatalogModels.ScheduleTemplate> templates;
-    private final List<CatalogModels.Room> rooms;
-    private final List<CatalogModels.Bed> beds;
+    private final CopyOnWriteArrayList<CatalogModels.Store> stores = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Therapist> therapists = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Therapist> deletedTherapists = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Project> projects = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Project> deletedProjects = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.StoreProject> storeProjects = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Symptom> symptoms = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.SymptomProject> symptomProjects = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.ScheduleTemplate> templates = new CopyOnWriteArrayList<>();
 
     public InMemoryCatalogRepository() {
-        stores = List.of(new CatalogModels.Store(
+        seed();
+    }
+
+    private void seed() {
+        stores.clear();
+        therapists.clear();
+        deletedTherapists.clear();
+        projects.clear();
+        deletedProjects.clear();
+        storeProjects.clear();
+        symptoms.clear();
+        symptomProjects.clear();
+        templates.clear();
+
+        stores.add(new CatalogModels.Store(
                 DemoCatalogIds.STORE,
                 "DEMO01",
                 "肌松大师·演示旗舰店",
@@ -46,76 +60,65 @@ public class InMemoryCatalogRepository implements CatalogRepository {
 
         List<Long> allProjects = List.of(
                 DemoCatalogIds.PROJECT_P60, DemoCatalogIds.PROJECT_P45, DemoCatalogIds.PROJECT_P90);
-        therapists = List.of(
-                new CatalogModels.Therapist(
-                        DemoCatalogIds.THERAPIST_LIN, DemoStaffIds.T1, "T001", "林晓",
-                        DemoCatalogIds.STORE, "SENIOR", null, "首席技师，肩颈深层", 490, 1,
-                        allProjects, List.of(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_SORE)),
-                new CatalogModels.Therapist(
-                        DemoCatalogIds.THERAPIST_CHEN, DemoStaffIds.T2, "T002", "陈默",
-                        DemoCatalogIds.STORE, "MIDDLE", null, "腰背理筋", 480, 1,
-                        allProjects, List.of(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.SYMPTOM_SORE)),
-                new CatalogModels.Therapist(
-                        DemoCatalogIds.THERAPIST_ZHOU, DemoStaffIds.T3, "T003", "周可",
-                        DemoCatalogIds.STORE, "JUNIOR", null, "全身放松", 470, 1,
-                        allProjects, List.of(
-                                DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.SYMPTOM_SORE)));
+        therapists.add(new CatalogModels.Therapist(
+                DemoCatalogIds.THERAPIST_LIN, DemoStaffIds.T1, "T001", "林晓",
+                DemoCatalogIds.STORE, "SENIOR", null, "首席技师，肩颈深层", 490, 1,
+                allProjects, List.of(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_SORE)));
+        therapists.add(new CatalogModels.Therapist(
+                DemoCatalogIds.THERAPIST_CHEN, DemoStaffIds.T2, "T002", "陈默",
+                DemoCatalogIds.STORE, "MIDDLE", null, "腰背理筋", 480, 1,
+                allProjects, List.of(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.SYMPTOM_SORE)));
+        therapists.add(new CatalogModels.Therapist(
+                DemoCatalogIds.THERAPIST_ZHOU, DemoStaffIds.T3, "T003", "周可",
+                DemoCatalogIds.STORE, "JUNIOR", null, "全身放松", 470, 1,
+                allProjects, List.of(
+                        DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.SYMPTOM_SORE)));
 
-        projects = List.of(
-                new CatalogModels.Project(
-                        DemoCatalogIds.PROJECT_P60, "P60", "全身推拿放松", 60, 15, 19800,
-                        "全身推拿 60 分钟，缓冲 15 分钟", null, 1),
-                new CatalogModels.Project(
-                        DemoCatalogIds.PROJECT_P45, "P45", "肩颈专项疏通", 45, 15, 12800,
-                        "肩颈专项 45 分钟，缓冲 15 分钟", null, 1),
-                new CatalogModels.Project(
-                        DemoCatalogIds.PROJECT_P90, "P90", "腰背深层理筋", 90, 15, 26800,
-                        "腰背理筋 90 分钟，缓冲 15 分钟", null, 1));
+        projects.add(new CatalogModels.Project(
+                DemoCatalogIds.PROJECT_P60, "P60", "全身推拿放松", 60, 15, 19800,
+                "全身推拿 60 分钟，缓冲 15 分钟", null, 1));
+        projects.add(new CatalogModels.Project(
+                DemoCatalogIds.PROJECT_P45, "P45", "肩颈专项疏通", 45, 15, 12800,
+                "肩颈专项 45 分钟，缓冲 15 分钟", null, 1));
+        projects.add(new CatalogModels.Project(
+                DemoCatalogIds.PROJECT_P90, "P90", "腰背深层理筋", 90, 15, 26800,
+                "腰背理筋 90 分钟，缓冲 15 分钟", null, 1));
 
-        storeProjects = List.of(
-                new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P60, null, 1),
-                new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P45, null, 1),
-                new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P90, null, 1));
+        storeProjects.add(new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P60, null, 1));
+        storeProjects.add(new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P45, null, 1));
+        storeProjects.add(new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P90, null, 1));
 
-        symptoms = List.of(
-                new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_NECK, null, "BODY_PART", "肩颈", 1, 1),
-                new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_BACK, null, "BODY_PART", "腰骶", 2, 1),
-                new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_SORE, null, "DISCOMFORT", "酸胀", 3, 1),
-                new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_OTHER, null, "DISCOMFORT", "其他", 9, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_NECK, null, "BODY_PART", "肩颈", 1, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_BACK, null, "BODY_PART", "腰骶", 2, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_SORE, null, "DISCOMFORT", "酸胀", 3, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_OTHER, null, "DISCOMFORT", "其他", 9, 1));
 
-        symptomProjects = List.of(
-                new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.PROJECT_P60),
-                new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.PROJECT_P45),
-                new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.PROJECT_P60),
-                new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.PROJECT_P90),
-                new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P60),
-                new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P45),
-                new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P90));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.PROJECT_P60));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.PROJECT_P45));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.PROJECT_P60));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.PROJECT_P90));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P60));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P45));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P90));
 
-        List<CatalogModels.ScheduleTemplate> tpls = new ArrayList<>();
         for (long therapistId : List.of(
                 DemoCatalogIds.THERAPIST_LIN, DemoCatalogIds.THERAPIST_CHEN, DemoCatalogIds.THERAPIST_ZHOU)) {
             for (int weekday = 1; weekday <= 7; weekday++) {
-                tpls.add(new CatalogModels.ScheduleTemplate(
+                templates.add(new CatalogModels.ScheduleTemplate(
+                        DemoCatalogIds.templateId(therapistId, weekday),
                         therapistId, DemoCatalogIds.STORE, weekday, TEN, TWENTY_TWO, FROM, null, 1));
             }
         }
-        templates = List.copyOf(tpls);
+    }
 
-        rooms = List.of(new CatalogModels.Room(
-                3_100_000_000_000_000_101L, DemoCatalogIds.STORE, "一号房", 1, 1));
-        beds = List.of(
-                new CatalogModels.Bed(
-                        3_100_000_000_000_000_201L, DemoCatalogIds.STORE,
-                        3_100_000_000_000_000_101L, "1号床", 1, 1),
-                new CatalogModels.Bed(
-                        3_100_000_000_000_000_202L, DemoCatalogIds.STORE,
-                        3_100_000_000_000_000_101L, "2号床", 2, 1));
+    @Override
+    public synchronized void resetDemo() {
+        seed();
     }
 
     @Override
     public List<CatalogModels.Store> listStores() {
-        return stores;
+        return List.copyOf(stores);
     }
 
     @Override
@@ -125,12 +128,17 @@ public class InMemoryCatalogRepository implements CatalogRepository {
 
     @Override
     public List<CatalogModels.Therapist> listTherapists() {
-        return therapists;
+        return List.copyOf(therapists);
+    }
+
+    @Override
+    public Optional<CatalogModels.Therapist> findTherapist(long id) {
+        return therapists.stream().filter(t -> t.id() == id).findFirst();
     }
 
     @Override
     public List<CatalogModels.Project> listProjects() {
-        return projects;
+        return List.copyOf(projects);
     }
 
     @Override
@@ -140,12 +148,12 @@ public class InMemoryCatalogRepository implements CatalogRepository {
 
     @Override
     public List<CatalogModels.StoreProject> listStoreProjects() {
-        return storeProjects;
+        return List.copyOf(storeProjects);
     }
 
     @Override
     public List<CatalogModels.Symptom> listSymptoms() {
-        return symptoms;
+        return List.copyOf(symptoms);
     }
 
     @Override
@@ -155,21 +163,73 @@ public class InMemoryCatalogRepository implements CatalogRepository {
 
     @Override
     public List<CatalogModels.SymptomProject> listSymptomProjects() {
-        return symptomProjects;
+        return List.copyOf(symptomProjects);
     }
 
     @Override
     public List<CatalogModels.ScheduleTemplate> listTemplates() {
-        return templates;
+        return List.copyOf(templates);
     }
 
     @Override
-    public Optional<CatalogModels.Room> findRoom(long id) {
-        return rooms.stream().filter(r -> r.id() == id).findFirst();
+    public Optional<CatalogModels.ScheduleTemplate> findTemplate(long id) {
+        return templates.stream().filter(t -> t.id() == id).findFirst();
     }
 
     @Override
-    public Optional<CatalogModels.Bed> findBed(long id) {
-        return beds.stream().filter(b -> b.id() == id).findFirst();
+    public synchronized void upsertTherapist(CatalogModels.Therapist therapist) {
+        therapists.removeIf(t -> t.id() == therapist.id());
+        deletedTherapists.removeIf(t -> t.id() == therapist.id());
+        therapists.add(therapist);
+    }
+
+    @Override
+    public synchronized void softDeleteTherapist(long id) {
+        therapists.stream().filter(t -> t.id() == id).findFirst().ifPresent(t -> {
+            therapists.remove(t);
+            deletedTherapists.add(new CatalogModels.Therapist(
+                    t.id(), t.staffUserId(), t.employeeNo(), t.name(), t.homeStoreId(), t.level(),
+                    t.avatarUrl(), t.intro(), t.ratingX100(), 0, t.projectIds(), t.symptomIds()));
+        });
+    }
+
+    @Override
+    public synchronized void upsertProject(CatalogModels.Project project) {
+        projects.removeIf(p -> p.id() == project.id());
+        deletedProjects.removeIf(p -> p.id() == project.id());
+        projects.add(project);
+    }
+
+    @Override
+    public synchronized void softDeleteProject(long id) {
+        projects.stream().filter(p -> p.id() == id).findFirst().ifPresent(p -> {
+            projects.remove(p);
+            deletedProjects.add(new CatalogModels.Project(
+                    p.id(), p.code(), p.name(), p.durationMinutes(), p.bufferMinutes(),
+                    p.priceFen(), p.description(), p.coverUrl(), 0));
+        });
+    }
+
+    @Override
+    public boolean employeeNoTaken(String employeeNo, long ignoreId) {
+        return therapists.stream().anyMatch(t -> t.id() != ignoreId && employeeNo.equals(t.employeeNo()))
+                || deletedTherapists.stream().anyMatch(t -> t.id() != ignoreId && employeeNo.equals(t.employeeNo()));
+    }
+
+    @Override
+    public boolean projectCodeTaken(String code, long ignoreId) {
+        return projects.stream().anyMatch(p -> p.id() != ignoreId && code.equals(p.code()))
+                || deletedProjects.stream().anyMatch(p -> p.id() != ignoreId && code.equals(p.code()));
+    }
+
+    @Override
+    public synchronized void upsertTemplate(CatalogModels.ScheduleTemplate template) {
+        templates.removeIf(t -> t.id() == template.id());
+        templates.add(template);
+    }
+
+    @Override
+    public synchronized void deleteTemplate(long id) {
+        templates.removeIf(t -> t.id() == id);
     }
 }

@@ -26,12 +26,28 @@ public interface CatalogRepository {
 
     List<CatalogModels.ScheduleTemplate> listTemplates();
 
-    default Optional<CatalogModels.Room> findRoom(long id) {
-        return Optional.empty();
-    }
+    Optional<CatalogModels.Therapist> findTherapist(long id);
 
-    default Optional<CatalogModels.Bed> findBed(long id) {
-        return Optional.empty();
+    Optional<CatalogModels.ScheduleTemplate> findTemplate(long id);
+
+    void upsertTherapist(CatalogModels.Therapist therapist);
+
+    void softDeleteTherapist(long id);
+
+    void upsertProject(CatalogModels.Project project);
+
+    void softDeleteProject(long id);
+
+    void upsertTemplate(CatalogModels.ScheduleTemplate template);
+
+    void deleteTemplate(long id);
+
+    /** Live + soft-deleted. employee_no / code are never reused. */
+    boolean employeeNoTaken(String employeeNo, long ignoreId);
+
+    boolean projectCodeTaken(String code, long ignoreId);
+
+    default void resetDemo() {
     }
 
     /** True when inventory has generated any slot for the date. */
@@ -42,5 +58,13 @@ public interface CatalogRepository {
     /** therapist_slot.store_id that day, status <> REST. Empty until inventory generates. */
     default List<Long> therapistIdsOnDutySlots(Long storeId, LocalDate date) {
         return List.of();
+    }
+
+    default Optional<CatalogModels.Room> findRoom(long id) {
+        return Optional.empty();
+    }
+
+    default Optional<CatalogModels.Bed> findBed(long id) {
+        return Optional.empty();
     }
 }

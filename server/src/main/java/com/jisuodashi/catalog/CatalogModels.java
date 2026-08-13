@@ -70,6 +70,7 @@ public final class CatalogModels {
     }
 
     public record ScheduleTemplate(
+            long id,
             long therapistId,
             long storeId,
             int weekday,

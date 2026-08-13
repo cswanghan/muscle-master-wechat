@@ -10,4 +10,16 @@ public interface ScopedStoreDirectory {
     Optional<ScopedStore> find(long id);
 
     void updateStatus(long id, int status);
+
+    void insert(ScopedStore store);
+
+    void update(ScopedStore store);
+
+    void softDelete(long id);
+
+    /** Live + soft-deleted. Codes are never reused. */
+    boolean codeTaken(String code);
+
+    default void resetDemo() {
+    }
 }

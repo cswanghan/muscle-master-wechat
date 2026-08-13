@@ -69,6 +69,37 @@ body,
   font-weight: 600;
 }
 
+.auth {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.staff-name {
+  font-size: 13px;
+  color: #cce0da;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+
+.hl-tag {
+  margin-left: 6px;
+}
+
+.el-table .abnormal-row > td.el-table__cell {
+  background: #fde8e8 !important;
+}
+
+.el-table .abnormal-row:hover > td.el-table__cell {
+  background: #f8d0d0 !important;
+}
+
 .catalog {
   display: flex;
   flex-direction: column;
@@ -124,7 +155,7 @@ body,
 }
 
 .main {
-  max-width: 880px;
+  max-width: 1120px;
   margin: 0 auto;
 }
 

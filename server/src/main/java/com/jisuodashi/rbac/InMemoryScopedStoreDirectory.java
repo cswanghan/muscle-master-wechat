@@ -15,6 +15,7 @@ public class InMemoryScopedStoreDirectory implements ScopedStoreDirectory {
     private final CopyOnWriteArrayList<ScopedStore> stores = new CopyOnWriteArrayList<>(List.of(
             new ScopedStore(RbacDemoIds.STORE, "DEMO01", "肌松大师·演示旗舰店", 1),
             new ScopedStore(RbacDemoIds.STORE_EAST, "DEMO02", "肌松大师·演示二分店", 1)));
+    private final CopyOnWriteArrayList<ScopedStore> deleted = new CopyOnWriteArrayList<>();
 
     @Override
     public List<ScopedStore> list() {
@@ -39,5 +40,40 @@ public class InMemoryScopedStoreDirectory implements ScopedStoreDirectory {
             scope.assertContains(id);
         }
         stores.replaceAll(s -> s.id() == id ? s.withStatus(status) : s);
+    }
+
+    @Override
+    public void insert(ScopedStore store) {
+        stores.add(store);
+    }
+
+    @Override
+    public void update(ScopedStore store) {
+        stores.replaceAll(s -> s.id() == store.id() ? store : s);
+    }
+
+    @Override
+    public void softDelete(long id) {
+        stores.stream().filter(s -> s.id() == id).findFirst().ifPresent(s -> {
+            stores.remove(s);
+            deleted.add(s);
+        });
+    }
+
+    @Override
+    public boolean codeTaken(String code) {
+        if (code == null) {
+            return false;
+        }
+        return stores.stream().anyMatch(s -> code.equals(s.code()))
+                || deleted.stream().anyMatch(s -> code.equals(s.code()));
+    }
+
+    @Override
+    public void resetDemo() {
+        stores.clear();
+        deleted.clear();
+        stores.add(new ScopedStore(RbacDemoIds.STORE, "DEMO01", "肌松大师·演示旗舰店", 1));
+        stores.add(new ScopedStore(RbacDemoIds.STORE_EAST, "DEMO02", "肌松大师·演示二分店", 1));
     }
 }

@@ -23,11 +23,13 @@ public class JdbcScopedStoreDirectory implements ScopedStoreDirectory {
 
     private final ScopedStoreMapper mapper;
     private final ScopeAwareJdbc jdbc;
+    private final JdbcTemplate raw;
     private final Clock clock;
 
     public JdbcScopedStoreDirectory(ScopedStoreMapper mapper, JdbcTemplate jdbcTemplate, Clock clock) {
         this.mapper = mapper;
         this.jdbc = new ScopeAwareJdbc(jdbcTemplate);
+        this.raw = jdbcTemplate;
         this.clock = clock;
     }
 
@@ -49,5 +51,43 @@ public class JdbcScopedStoreDirectory implements ScopedStoreDirectory {
     @Override
     public void updateStatus(long id, int status) {
         jdbc.update(ScopedStoreQueries.UPDATE_STATUS, status, JdbcTimes.ts(Instant.now(clock)), id);
+    }
+
+    @Override
+    public void insert(ScopedStore store) {
+        Instant now = Instant.now(clock);
+        jdbc.update(
+                ScopedStoreQueries.INSERT,
+                store.id(),
+                store.code(),
+                store.name(),
+                store.status(),
+                JdbcTimes.ts(now),
+                JdbcTimes.ts(now));
+    }
+
+    @Override
+    public void update(ScopedStore store) {
+        jdbc.update(
+                ScopedStoreQueries.UPDATE,
+                store.name(),
+                store.status(),
+                JdbcTimes.ts(Instant.now(clock)),
+                store.id());
+    }
+
+    @Override
+    public void softDelete(long id) {
+        Instant now = Instant.now(clock);
+        jdbc.update(ScopedStoreQueries.SOFT_DELETE, JdbcTimes.ts(now), JdbcTimes.ts(now), id);
+    }
+
+    @Override
+    public boolean codeTaken(String code) {
+        Integer one = raw.query(
+                "SELECT 1 FROM store WHERE code=? LIMIT 1",
+                rs -> rs.next() ? 1 : null,
+                code);
+        return one != null;
     }
 }
