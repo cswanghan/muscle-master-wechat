@@ -16,4 +16,12 @@ public interface TreatmentNoteRepository {
             long id, long orderId, long therapistId, long customerId, long storeId, Instant now);
 
     void markLatestEnded(long orderId, Instant endedAt);
+
+    ServiceRecord insertServiceRecord(
+            long id, long orderId, long therapistId, long customerId, long storeId, Instant now);
+
+    List<ServiceRecord> listServiceRecords(long orderId);
+
+    void insertSystemNote(
+            long id, long orderId, long storeId, long therapistId, long authorStaffId, String content, Instant now);
 }

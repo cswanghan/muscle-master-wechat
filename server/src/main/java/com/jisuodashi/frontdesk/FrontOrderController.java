@@ -48,4 +48,13 @@ public class FrontOrderController {
             @Valid @RequestBody FrontDeskDtos.AddOnRequest request) {
         return ApiResponse.ok(desk.addOn(id, request));
     }
+
+    @PostMapping("/{id}/swap-therapist")
+    @StoreScoped
+    @RequirePerm("frontdesk:order:*")
+    public ApiResponse<FrontDeskDtos.SwapTherapistResponse> swapTherapist(
+            @PathVariable("id") String id,
+            @Valid @RequestBody FrontDeskDtos.SwapTherapistRequest request) {
+        return ApiResponse.ok(desk.swapTherapist(id, request));
+    }
 }

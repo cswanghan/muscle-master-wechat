@@ -1421,6 +1421,96 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         }
     }
 
+    @Override
+    public List<SlotRow> listTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos) {
+        List<SlotRow> rows = new ArrayList<>();
+        for (int slotNo : slotNos.stream().sorted().toList()) {
+            MutableSlot slot = therapistSlots.get(tkey(therapistId, date, slotNo));
+            if (slot != null) {
+                rows.add(new SlotRow(slotNo, slot.status));
+            }
+        }
+        return rows;
+    }
+
+    @Override
+    public int assignTherapistSlot(
+            long therapistId, LocalDate date, int slotNo, String status,
+            long orderId, long holdId, LocalDateTime lockExpireAt, LocalDateTime now) {
+        Work w = requireWork();
+        MutableSlot slot = therapistSlots.get(tkey(therapistId, date, slotNo));
+        if (slot == null || !SlotStatus.FREE.equals(slot.status)) {
+            return 0;
+        }
+        Snapshot snap = slot.snapshot();
+        slot.status = status;
+        slot.orderId = orderId;
+        slot.holdId = holdId;
+        slot.lockExpireAt = lockExpireAt;
+        w.undos.add(() -> slot.restore(snap));
+        return 1;
+    }
+
+    @Override
+    public int deleteTherapistOccupancy(long therapistId, LocalDate date, List<Integer> slotNos) {
+        Work w = requireWork();
+        List<Map.Entry<String, OccupancyInsert>> removed = new ArrayList<>();
+        for (int slotNo : slotNos) {
+            String key = okey(ResourceType.THERAPIST, therapistId, date, slotNo);
+            OccupancyInsert prev = occupancies.remove(key);
+            if (prev != null) {
+                removed.add(Map.entry(key, prev));
+            }
+        }
+        w.undos.add(() -> {
+            for (Map.Entry<String, OccupancyInsert> e : removed) {
+                occupancies.putIfAbsent(e.getKey(), e.getValue());
+            }
+        });
+        return removed.size();
+    }
+
+    @Override
+    public int freeTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos, LocalDateTime now) {
+        Work w = requireWork();
+        int n = 0;
+        for (int slotNo : slotNos) {
+            MutableSlot slot = therapistSlots.get(tkey(therapistId, date, slotNo));
+            if (slot == null) {
+                continue;
+            }
+            Snapshot snap = slot.snapshot();
+            slot.status = SlotStatus.FREE;
+            slot.orderId = null;
+            slot.holdId = null;
+            slot.lockExpireAt = null;
+            w.undos.add(() -> slot.restore(snap));
+            n++;
+        }
+        return n;
+    }
+
+    @Override
+    public int updateTherapist(long orderId, long newTherapistId, long newHomeStoreId, LocalDateTime now) {
+        BookingOrderInsert prev = orders.get(orderId);
+        if (prev == null) {
+            return 0;
+        }
+        BookingOrderInsert next = new BookingOrderInsert(
+                prev.id(), prev.orderNo(), prev.requestId(), prev.holdId(),
+                prev.customerId(), prev.storeId(), newTherapistId, newHomeStoreId,
+                prev.bedId(), prev.roomId(), prev.status(), prev.source(),
+                prev.serviceDate(), prev.startSlotNo(), prev.endSlotNo(), prev.bufferSlots(),
+                prev.originPriceFen(), prev.payableFen(), prev.lockExpireAt(), prev.createdAt());
+        orders.put(orderId, next);
+        ordersByRequest.put(next.requestId(), next);
+        requireWork().undos.add(() -> {
+            orders.put(orderId, prev);
+            ordersByRequest.put(prev.requestId(), prev);
+        });
+        return 1;
+    }
+
     private static final class Work {
         final List<Runnable> undos = new ArrayList<>();
         final List<ReentrantLock> locks = new ArrayList<>();

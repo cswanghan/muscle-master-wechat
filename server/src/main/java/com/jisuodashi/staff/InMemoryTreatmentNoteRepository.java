@@ -74,4 +74,29 @@ public class InMemoryTreatmentNoteRepository implements TreatmentNoteRepository 
         notes.removeIf(n -> n.id() != RbacDemoIds.NOTE_ID);
         records.clear();
     }
+
+    @Override
+    public ServiceRecord insertServiceRecord(
+            long id, long orderId, long therapistId, long customerId, long storeId, Instant now) {
+        ServiceRecord created = new ServiceRecord(id, orderId, therapistId, customerId, storeId, now, null, now);
+        records.put(id, created);
+        return created;
+    }
+
+    @Override
+    public List<ServiceRecord> listServiceRecords(long orderId) {
+        return records.values().stream()
+                .filter(r -> r.orderId() == orderId)
+                .sorted(Comparator.comparingLong(ServiceRecord::id))
+                .toList();
+    }
+
+    @Override
+    public void insertSystemNote(
+            long id, long orderId, long storeId, long therapistId, long authorStaffId, String content, Instant now) {
+        if (findLatestServiceRecord(orderId).isEmpty()) {
+            return;
+        }
+        notes.add(new TreatmentNote(id, orderId, storeId, therapistId, authorStaffId, content, now));
+    }
 }

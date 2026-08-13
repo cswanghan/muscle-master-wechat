@@ -281,4 +281,16 @@ public interface SlotOccupyStore extends DelayedJobStore {
     OrderItemInsert findLatestAddOnItem(long orderId);
 
     void insertCashPayment(long id, String paymentNo, long orderId, long amountFen, LocalDateTime now);
+
+    List<SlotRow> listTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos);
+
+    int assignTherapistSlot(
+            long therapistId, LocalDate date, int slotNo, String status,
+            long orderId, long holdId, LocalDateTime lockExpireAt, LocalDateTime now);
+
+    int deleteTherapistOccupancy(long therapistId, LocalDate date, List<Integer> slotNos);
+
+    int freeTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos, LocalDateTime now);
+
+    int updateTherapist(long orderId, long newTherapistId, long newHomeStoreId, LocalDateTime now);
 }

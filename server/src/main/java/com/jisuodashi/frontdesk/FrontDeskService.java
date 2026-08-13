@@ -15,6 +15,7 @@ import com.jisuodashi.inventory.LockNewCommand;
 import com.jisuodashi.inventory.LockNewResult;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore;
+import com.jisuodashi.inventory.SwapTherapistResult;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.order.FireContext;
 import com.jisuodashi.order.FireResult;
@@ -404,5 +405,31 @@ public class FrontDeskService {
                 ext.amountFen(),
                 latest == null ? ext.newEndSlotNo() : latest.endSlotNo(),
                 replay);
+    }
+
+    public FrontDeskDtos.SwapTherapistResponse swapTherapist(
+            String orderIdRaw, FrontDeskDtos.SwapTherapistRequest req) {
+        AuthContext.requireStaff();
+        long orderId = parseId(orderIdRaw, "orderId");
+        if (req == null || req.requestId() == null || req.requestId().isBlank()) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        if (req.newTherapistId() == null || req.newTherapistId().isBlank()) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "newTherapistId 不能为空");
+        }
+        BookingOrderRef order = requireScopedOrder(orders.findOrderById(orderId));
+        long newTherapistId = parseId(req.newTherapistId(), "newTherapistId");
+        SwapTherapistResult swapped = occupy.swapTherapist(
+                req.requestId(), order.id(), newTherapistId, req.reason());
+        machine.fire(order.id(), OrderEvent.SWAP_THERAPIST, deskContext().withSwapOk());
+        BookingOrderRef after = orders.findOrderById(order.id());
+        String status = after == null ? order.status() : after.status();
+        return new FrontDeskDtos.SwapTherapistResponse(
+                String.valueOf(swapped.orderId()),
+                status,
+                String.valueOf(swapped.oldTherapistId()),
+                String.valueOf(swapped.newTherapistId()),
+                swapped.fromSlotNo(),
+                swapped.replay());
     }
 }
