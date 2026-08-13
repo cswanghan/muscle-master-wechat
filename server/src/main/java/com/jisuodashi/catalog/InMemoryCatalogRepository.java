@@ -29,6 +29,8 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     private final CopyOnWriteArrayList<CatalogModels.Symptom> symptoms = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<CatalogModels.SymptomProject> symptomProjects = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<CatalogModels.ScheduleTemplate> templates = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Room> rooms = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<CatalogModels.Bed> beds = new CopyOnWriteArrayList<>();
 
     public InMemoryCatalogRepository() {
         seed();
@@ -44,6 +46,8 @@ public class InMemoryCatalogRepository implements CatalogRepository {
         symptoms.clear();
         symptomProjects.clear();
         templates.clear();
+        rooms.clear();
+        beds.clear();
 
         stores.add(new CatalogModels.Store(
                 DemoCatalogIds.STORE,
@@ -109,6 +113,15 @@ public class InMemoryCatalogRepository implements CatalogRepository {
                         therapistId, DemoCatalogIds.STORE, weekday, TEN, TWENTY_TWO, FROM, null, 1));
             }
         }
+
+        rooms.add(new CatalogModels.Room(
+                3_100_000_000_000_000_101L, DemoCatalogIds.STORE, "一号房", 1, 1));
+        beds.add(new CatalogModels.Bed(
+                3_100_000_000_000_000_201L, DemoCatalogIds.STORE,
+                3_100_000_000_000_000_101L, "1号床", 1, 1));
+        beds.add(new CatalogModels.Bed(
+                3_100_000_000_000_000_202L, DemoCatalogIds.STORE,
+                3_100_000_000_000_000_101L, "2号床", 2, 1));
     }
 
     @Override
@@ -124,6 +137,16 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     @Override
     public Optional<CatalogModels.Store> findStore(long id) {
         return stores.stream().filter(s -> s.id() == id).findFirst();
+    }
+
+    @Override
+    public Optional<CatalogModels.Room> findRoom(long id) {
+        return rooms.stream().filter(r -> r.id() == id).findFirst();
+    }
+
+    @Override
+    public Optional<CatalogModels.Bed> findBed(long id) {
+        return beds.stream().filter(b -> b.id() == id).findFirst();
     }
 
     @Override
