@@ -20,6 +20,7 @@ import com.jisuodashi.inventory.InMemorySlotOccupyStore;
 import com.jisuodashi.inventory.InMemoryTherapistDayLock;
 import com.jisuodashi.inventory.OccupyFixtures;
 import com.jisuodashi.inventory.SlotOccupyService;
+import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.inventory.SlotStatus;
 import com.jisuodashi.inventory.SwapTherapistResult;
 import com.jisuodashi.order.FireContext;
@@ -131,6 +132,15 @@ class FrontDeskSwapReportTest {
                         && segs.get(1).therapistId() == DemoCatalogIds.THERAPIST_CHEN
                         && segs.get(1).endedAt() == null,
                 "from=" + inSvc.fromSlotNo() + " segs=" + segs.size()));
+
+        BookingOrderRef inSvcRef = new BookingOrderRef(
+                1L, "n", 1L, 1L, 1L, "IN_SERVICE", null, 0L, 78, 83, 1, null,
+                DemoCatalogIds.STORE, TODAY, 1L, DemoCatalogIds.THERAPIST_LIN);
+        int afterEnd = SlotOccupyService.remainFrom(inSvcRef, TODAY.atTime(21, 0));
+        int nextMorning = SlotOccupyService.remainFrom(inSvcRef, TODAY.plusDays(1).atTime(8, 0));
+        rows.add(row("OVERNIGHT", "跨日 / 结束后 fromNo=end，不回退到 start",
+                afterEnd == 83 && nextMorning == 83,
+                "afterEnd=" + afterEnd + " nextMorning=" + nextMorning));
 
         String html = render(rows);
         Path docs = resolveRepoRoot().resolve("docs/test-cases");

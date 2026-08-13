@@ -733,11 +733,7 @@ public class SlotOccupyService {
         this.notes = notes;
     }
 
-    /**
-     * Move remain therapist slots to {@code newTherapistId}. Never CAS/locks the bed.
-     * Must not {@code fire()} (Law A). Caller then {@code fire(SWAP_THERAPIST, ctx.withSwapOk())};
-     * the SWAP_THERAPIST side is a no-op so audit is recorded without a second occupy.
-     */
+    /** Move remain therapist slots; do not touch the bed. */
     public SwapTherapistResult swapTherapist(String requestId, long orderId, long newTherapistId, String reason) {
         if (requestId == null || requestId.isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
@@ -783,15 +779,9 @@ public class SlotOccupyService {
                 throw new ApiException(ErrorCodes.NOT_FOUND, "技师不存在");
             }
 
-            int fromNo = order.startSlotNo();
-            if (ORDER_IN_SERVICE.equals(order.status())) {
-                fromNo = Math.max(currentSlotNo(clock.now()), order.startSlotNo());
-            }
-            if (fromNo > order.endSlotNo()) {
-                fromNo = order.endSlotNo();
-            }
-            List<Integer> remain = slotRange(fromNo, order.endSlotNo());
             LocalDateTime now = clock.now();
+            int fromNo = remainFrom(order, now);
+            List<Integer> remain = slotRange(fromNo, order.endSlotNo());
             if (!remain.isEmpty()) {
                 moveRemainTherapist(order, newTherapistId, remain, now);
             }
@@ -839,15 +829,28 @@ public class SlotOccupyService {
         if (notes == null) {
             return;
         }
-        java.time.Instant at = now.atZone(AppClock.SHANGHAI).toInstant();
-        if (ORDER_IN_SERVICE.equals(order.status())) {
-            notes.markLatestEnded(order.id(), at);
-            notes.insertServiceRecord(
-                    ids.getAsLong(), order.id(), newTherapistId,
-                    order.customerId(), order.storeId(), at);
+        if (!ORDER_IN_SERVICE.equals(order.status())) {
+            return;
         }
+        java.time.Instant at = now.atZone(AppClock.SHANGHAI).toInstant();
+        notes.markLatestEnded(order.id(), at);
+        notes.insertServiceRecord(
+                ids.getAsLong(), order.id(), newTherapistId,
+                order.customerId(), order.storeId(), at);
         String content = (reason == null || reason.isBlank()) ? "中途换师" : "中途换师：" + reason.trim();
-        notes.insertSystemNote(ids.getAsLong(), order.id(), 0L, content, at);
+        notes.insertSystemNote(
+                ids.getAsLong(), order.id(), order.storeId(), newTherapistId, 0L, content, at);
+    }
+
+    public static int remainFrom(BookingOrderRef order, LocalDateTime now) {
+        if (!ORDER_IN_SERVICE.equals(order.status())) {
+            return order.startSlotNo();
+        }
+        int current = currentSlotNo(now);
+        if (now.toLocalDate().isAfter(order.serviceDate()) || current >= order.endSlotNo()) {
+            return order.endSlotNo();
+        }
+        return Math.max(current, order.startSlotNo());
     }
 
     private SwapIdem beginSwapIdempotent(String requestId) {

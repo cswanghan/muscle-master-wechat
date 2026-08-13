@@ -355,10 +355,6 @@ public class FrontDeskService {
         }
     }
 
-    /**
-     * occupy.swapTherapist does inventory + service_record/note; then fire(SWAP_THERAPIST)
-     * with swapOk so the state-machine audit is written. SWAP_THERAPIST side is a no-op.
-     */
     public FrontDeskDtos.SwapTherapistResponse swapTherapist(
             String orderIdRaw, FrontDeskDtos.SwapTherapistRequest req) {
         AuthContext.requireStaff();

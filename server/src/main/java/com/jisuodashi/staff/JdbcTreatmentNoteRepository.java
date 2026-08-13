@@ -155,14 +155,18 @@ public class JdbcTreatmentNoteRepository implements TreatmentNoteRepository {
     }
 
     @Override
-    public void insertSystemNote(long id, long orderId, long authorStaffId, String content, Instant now) {
-        long recordId = findLatestServiceRecord(orderId).map(ServiceRecord::id).orElse(0L);
+    public void insertSystemNote(
+            long id, long orderId, long storeId, long therapistId, long authorStaffId, String content, Instant now) {
+        Optional<ServiceRecord> latest = findLatestServiceRecord(orderId);
+        if (latest.isEmpty()) {
+            return;
+        }
         jdbc.update(
                 """
                 INSERT INTO treatment_note
                   (id, service_record_id, order_id, author_staff_id, content, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                id, recordId, orderId, authorStaffId, content, JdbcTimes.ts(now));
+                id, latest.get().id(), orderId, authorStaffId, content, JdbcTimes.ts(now));
     }
 }

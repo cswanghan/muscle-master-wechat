@@ -5,11 +5,13 @@ import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.inventory.InMemorySlotOccupyStore.MutableSlot;
 import com.jisuodashi.inventory.SlotOccupyStore.OccupancyInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
 import com.jisuodashi.staff.InMemoryTreatmentNoteRepository;
 import com.jisuodashi.staff.ServiceRecord;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +77,7 @@ class SwapTherapistServiceTest {
                 .isEqualTo(pinsBefore.stream().filter(k -> k.startsWith("B|")).collect(Collectors.toSet()));
         assertThat(notes.listServiceRecords(locked.orderId())).isEmpty();
         assertThat(notes.findByOrderId(locked.orderId()))
-                .anyMatch(n -> n.content().contains("中途换师"));
+                .noneMatch(n -> n.content().contains("中途换师"));
 
         SwapTherapistResult replay = service.swapTherapist("sw-ci-1", locked.orderId(), T2, "指定技师请假");
         assertThat(replay.replay()).isTrue();
@@ -124,7 +126,71 @@ class SwapTherapistServiceTest {
         assertThat(segments.get(1).therapistId()).isEqualTo(T2);
         assertThat(segments.get(1).endedAt()).isNull();
         assertThat(notes.findByOrderId(locked.orderId()))
-                .anyMatch(n -> n.content().contains("中途换师"));
+                .anyMatch(n -> n.content().contains("中途换师")
+                        && n.storeId() == OccupyFixtures.STORE
+                        && n.therapistId() == T2);
+    }
+
+    @Test
+    void swapWritesNewTherapistHomeStoreId() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        long homeOther = 3_199_000_000_000_000_001L;
+        store.seedTherapist(new TherapistRef(T2, homeOther));
+        SlotOccupyService service = OccupyFixtures.service(store);
+        LockNewResult locked = service.lockNew(OccupyFixtures.cmd("sw-home", T1, START_1930));
+        service.confirmPaidSlots(locked.orderId());
+        store.setOrderStatus(locked.orderId(), "CHECKED_IN");
+        Map<String, OccupancyInsert> bedsBefore = bedOccupancy(store);
+        assertThat(store.orders.get(locked.orderId()).therapistHomeStoreId()).isEqualTo(OccupyFixtures.STORE);
+
+        service.swapTherapist("sw-home-1", locked.orderId(), T2, "x");
+
+        assertThat(store.orders.get(locked.orderId()).therapistHomeStoreId()).isEqualTo(homeOther);
+        assertThat(store.findOrderById(locked.orderId()).storeId()).isEqualTo(OccupyFixtures.STORE);
+        assertThat(store.findOrderById(locked.orderId()).therapistId()).isEqualTo(T2);
+        assertThat(bedOccupancy(store)).isEqualTo(bedsBefore);
+    }
+
+    @Test
+    void inServiceAfterEndOrNextDayDoesNotMovePastSlots() {
+        InMemorySlotOccupyStore afterEnd = OccupyFixtures.demoStore();
+        InMemoryTreatmentNoteRepository notes = new InMemoryTreatmentNoteRepository();
+        SlotOccupyService evening = serviceAt(afterEnd, TODAY, LocalTime.of(21, 0));
+        evening.setTreatmentNotes(notes);
+        LockNewResult late = evening.lockNew(OccupyFixtures.cmd("sw-late", T1, START_1930));
+        evening.confirmPaidSlots(late.orderId());
+        afterEnd.setOrderStatus(late.orderId(), "IN_SERVICE");
+        notes.insertServiceRecord(
+                2L, late.orderId(), T1, OccupyFixtures.CUSTOMER, OccupyFixtures.STORE,
+                TODAY.atTime(19, 30).atZone(AppClock.SHANGHAI).toInstant());
+
+        SwapTherapistResult lateSwap = evening.swapTherapist("sw-late-1", late.orderId(), T2, "x");
+        assertThat(lateSwap.fromSlotNo()).isEqualTo(83);
+        for (int slot = 78; slot <= 82; slot++) {
+            assertThat(afterEnd.therapistSlot(T1, TODAY, slot).orderId).isEqualTo(late.orderId());
+            assertThat(afterEnd.therapistSlot(T2, TODAY, slot).status).isEqualTo(SlotStatus.FREE);
+        }
+        assertThat(afterEnd.findOrderById(late.orderId()).therapistId()).isEqualTo(T2);
+        assertThat(notes.listServiceRecords(late.orderId())).hasSize(2);
+
+        InMemorySlotOccupyStore nextDay = OccupyFixtures.demoStore();
+        InMemoryTreatmentNoteRepository nextNotes = new InMemoryTreatmentNoteRepository();
+        SlotOccupyService morning = serviceAt(nextDay, TODAY.plusDays(1), LocalTime.of(8, 0));
+        morning.setTreatmentNotes(nextNotes);
+        LockNewResult overnight = morning.lockNew(OccupyFixtures.cmd("sw-next", T1, START_1930));
+        morning.confirmPaidSlots(overnight.orderId());
+        nextDay.setOrderStatus(overnight.orderId(), "IN_SERVICE");
+        nextNotes.insertServiceRecord(
+                3L, overnight.orderId(), T1, OccupyFixtures.CUSTOMER, OccupyFixtures.STORE,
+                TODAY.atTime(19, 30).atZone(AppClock.SHANGHAI).toInstant());
+
+        SwapTherapistResult nextSwap = morning.swapTherapist("sw-next-1", overnight.orderId(), T2, "x");
+        assertThat(nextSwap.fromSlotNo()).isEqualTo(83);
+        for (int slot = 78; slot <= 82; slot++) {
+            assertThat(nextDay.therapistSlot(T1, TODAY, slot).orderId).isEqualTo(overnight.orderId());
+            assertThat(nextDay.therapistSlot(T2, TODAY, slot).status).isEqualTo(SlotStatus.FREE);
+        }
+        assertThat(nextDay.findOrderById(overnight.orderId()).therapistId()).isEqualTo(T2);
     }
 
     @Test
@@ -169,9 +235,13 @@ class SwapTherapistServiceTest {
     }
 
     private static SlotOccupyService serviceAt(InMemorySlotOccupyStore store, LocalTime time) {
+        return serviceAt(store, TODAY, time);
+    }
+
+    private static SlotOccupyService serviceAt(InMemorySlotOccupyStore store, LocalDate date, LocalTime time) {
         AtomicLong ids = new AtomicLong(9_100_000_000_000_000_000L);
         AppClock clock = new AppClock(Clock.fixed(
-                TODAY.atTime(time).atZone(AppClock.SHANGHAI).toInstant(), AppClock.SHANGHAI));
+                date.atTime(time).atZone(AppClock.SHANGHAI).toInstant(), AppClock.SHANGHAI));
         return new SlotOccupyService(store, new InMemoryTherapistDayLock(), ids::incrementAndGet, clock);
     }
 

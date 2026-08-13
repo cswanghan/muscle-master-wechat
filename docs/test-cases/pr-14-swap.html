@@ -48,7 +48,7 @@
   <header>
     <h1>PR14 · 换技师 swapTherapist</h1>
     <p>POST /f/orders/{id}/swap-therapist · 只锁新技师 remain · 不重锁本单床 · 多段 service_record</p>
-    <span class="badge ">ALL PASS · 5 / 5</span>
+    <span class="badge ">ALL PASS · 6 / 6</span>
   </header>
   <main>
     <div class="flow">
@@ -92,6 +92,7 @@
 <tr class='ok'><td>40901</td><td>新技师占用 → 40901 无部分更新</td><td>code=40901</td><td>PASS</td></tr>
 <tr class='ok'><td>40904</td><td>BOOKED / PENDING_PAY 不可换师</td><td>status=BOOKED</td><td>PASS</td></tr>
 <tr class='ok'><td>IN_SERVICE</td><td>fromNo=currentSlotNo · 过去格留旧师 · 新 service_record 段</td><td>from=80 segs=2</td><td>PASS</td></tr>
+<tr class='ok'><td>OVERNIGHT</td><td>跨日 / 结束后 fromNo=end，不回退到 start</td><td>afterEnd=83 nextMorning=83</td><td>PASS</td></tr>
       </tbody>
     </table>
   </main>

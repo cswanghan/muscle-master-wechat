@@ -92,9 +92,11 @@ public class InMemoryTreatmentNoteRepository implements TreatmentNoteRepository 
     }
 
     @Override
-    public void insertSystemNote(long id, long orderId, long authorStaffId, String content, Instant now) {
-        long therapistId = findLatestServiceRecord(orderId).map(ServiceRecord::therapistId).orElse(0L);
-        long storeId = findLatestServiceRecord(orderId).map(ServiceRecord::storeId).orElse(0L);
+    public void insertSystemNote(
+            long id, long orderId, long storeId, long therapistId, long authorStaffId, String content, Instant now) {
+        if (findLatestServiceRecord(orderId).isEmpty()) {
+            return;
+        }
         notes.add(new TreatmentNote(id, orderId, storeId, therapistId, authorStaffId, content, now));
     }
 }
