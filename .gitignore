@@ -1,0 +1,13 @@
+.DS_Store
+.idea/
+*.iml
+.vscode/
+target/
+node_modules/
+dist/
+.miniprogram/
+.turbo/
+*.log
+.env
+.env.local
+server/.mvn/wrapper/maven-wrapper.jar

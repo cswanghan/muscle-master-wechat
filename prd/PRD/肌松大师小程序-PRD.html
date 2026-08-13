@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>肌松大师小程序 · 产品需求文档（PRD）</title>
+<template id="__bundler_thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 56"><rect width="120" height="56" fill="#1E5C4A"/><text x="60" y="34" font-size="22" fill="#fff" text-anchor="middle" font-family="serif">松</text></svg>
+</template>
+<style>doc-page:not(:defined){visibility:hidden}</style>
+<style>
+  @font-face{font-family:'sysfont';src:local('sans-serif')}
+  body{margin:0;font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;color:#17211D;}
+  h1,h2,h3,h4{font-family:"Noto Serif SC","Songti SC",serif;color:#17211D;margin:0 0 .5em;}
+  h1{font-size:30px;line-height:1.3;border-bottom:3px solid #1E5C4A;padding-bottom:14px;margin-bottom:6px;}
+  h1 + .subtitle{font-size:13px;color:#8B948F;margin:0 0 28px;font-family:monospace;}
+  h2{font-size:21px;margin-top:36px;padding-top:8px;border-top:1px solid #E7E3DC;color:#1E5C4A;}
+  h3{font-size:16px;margin-top:22px;color:#17211D;}
+  h4{font-size:14px;margin-top:16px;color:#4A544F;}
+  p{font-size:14px;line-height:1.7;color:#33403A;margin:0 0 10px;text-wrap:pretty;orphans:3;widows:3;}
+  ul,ol{font-size:14px;line-height:1.7;color:#33403A;padding-left:22px;margin:0 0 12px;}
+  li{margin-bottom:4px;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0 18px;break-inside:avoid;}
+  thead{display:table-header-group;}
+  th,td{border:1px solid #E0DCD4;padding:7px 9px;text-align:left;vertical-align:top;}
+  th{background:#F4F2EE;font-weight:600;color:#17211D;}
+  tr{break-inside:avoid;}
+  code, .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#F4F2EE;padding:1px 5px;border-radius:4px;color:#1E5C4A;}
+  pre{background:#17211D;color:#E8F0EC;padding:14px 16px;border-radius:8px;font-size:12px;line-height:1.6;overflow-x:auto;break-inside:avoid;font-family:ui-monospace,monospace;}
+  .callout{background:#F8FBF9;border:1px solid #E8F0EC;border-left:4px solid #1E5C4A;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:13px;line-height:1.65;break-inside:avoid;}
+  .callout.warn{background:#FCF3F1;border-color:#EBC7BF;border-left-color:#B3452F;}
+  .callout b{color:#1E5C4A;}
+  .callout.warn b{color:#B3452F;}
+  .tag{display:inline-block;background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:2px 8px;font-size:11.5px;font-weight:500;margin-right:4px;}
+  .cover{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+  .cover-meta{display:flex;gap:28px;font-size:12px;color:#8B948F;font-family:monospace;margin-bottom:26px;flex-wrap:wrap;}
+  .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;border:1px solid rgba(0,0,0,.08);}
+  .toc{background:#F7F6F3;border-radius:10px;padding:16px 22px;margin-bottom:8px;}
+  .toc a{color:#1E5C4A;text-decoration:none;font-size:13.5px;}
+  .toc a:hover{color:#C0803A;}
+  .toc ol{margin:0;}
+  .toc li{margin-bottom:3px;}
+  a{color:#1E5C4A;}
+  a:hover{color:#C0803A;}
+  .figure-note{font-size:11.5px;color:#8B948F;margin-top:-6px;margin-bottom:14px;}
+</style>
+</head>
+<body>
+<doc-page margin="0.85in">
+
+<div class="cover">
+  <h1>肌松大师小程序 · 产品需求文档（PRD）</h1>
+  <div class="cover-meta">
+    <span>版本 v1.0</span>
+    <span>2026-08-13</span>
+    <span>范围：客户端小程序 · 技师端 · 管理后台（PC + 小程序）</span>
+    <span>状态：待评审</span>
+  </div>
+</div>
+
+<div class="toc">
+<ol>
+<li><a href="#s1">产品背景与目标</a></li>
+<li><a href="#s2">用户与角色</a></li>
+<li><a href="#s3">信息架构 · 三端页面清单</a></li>
+<li><a href="#s4">产品逻辑说明</a></li>
+<li><a href="#s5">UED 设计说明</a></li>
+<li><a href="#s6">非功能需求</a></li>
+<li><a href="#s7">实施路线图</a></li>
+<li><a href="#s8">风险与对策</a></li>
+<li><a href="#s9">遗留待确认问题</a></li>
+</ol>
+</div>
+
+<h2 id="s1">1. 产品背景与目标</h2>
+
+<h3>1.1 业务形态</h3>
+<p>肌松大师是「连锁门店 + 手艺人（技师）+ 预付卡」三要素叠加的到店推拿服务业务，不是单纯的预约工具。核心观察：</p>
+<table>
+<thead><tr><th>业务现象</th><th>对应能力要求</th></tr></thead>
+<tbody>
+<tr><td>首页三个并列入口：症状 / 门店 / 技师</td><td>同一份「技师 × 时段」库存的三种检索切片</td></tr>
+<tr><td>特惠卡片精确到「郑世明 · 今天19:30-20:30 · 9.5折」</td><td>按 15 分钟 slot 粒度的动态定价 / 空档甩卖</td></tr>
+<tr><td>技师带擅长症状标签 + 评分</td><td>症状路由 + 评价体系</td></tr>
+<tr><td>储值余额 + 电子/实体礼卡</td><td>单用途预付费资金池，需独立账务模型</td></tr>
+<tr><td>限时优惠券，限定星期/时段</td><td>规则化券引擎</td></tr>
+<tr><td>门店营业时间、LBS 距离、"就近"标签</td><td>多门店 + 地理围栏排序</td></tr>
+</tbody>
+</table>
+
+<h3>1.2 产品目标</h3>
+<ol>
+<li><b>满班率是唯一核心指标。</b>技师工时不可库存，空一个 slot 就是永久损失。三端所有设计优先级都服务于「让 slot 卖掉」。</li>
+<li><b>门店前台是交易主战场。</b>线上预约只是入口，到店散客、加钟、临时换技师大量发生在前台，系统必须以门店为中心设计，而非只服务小程序下单路径。</li>
+<li><b>资金合规优先。</b>储值与礼卡涉及《单用途商业预付卡管理办法》，账务必须与普通订单彻底分离，不能用一张余额表笼统表示。</li>
+</ol>
+
+<h3>1.3 规模假设（容量与技术选型依据）</h3>
+<table>
+<thead><tr><th>指标</th><th>假设值</th></tr></thead>
+<tbody>
+<tr><td>门店数</td><td>首年 20 家，三年 200 家</td></tr>
+<tr><td>单店技师 / 床位</td><td>15~25 人 / 8~15 张</td></tr>
+<tr><td>日订单</td><td>单店 60~120 单，全国峰值 2 万单/日</td></tr>
+<tr><td>峰值 QPS</td><td>读 800，写 80（周五晚 + 大促开抢）</td></tr>
+</tbody>
+</table>
+<div class="callout"><b>结论：</b>这是低并发、高一致性要求的系统，不需要复杂分布式架构，但「不能超卖、不能算错提成、不能丢余额」的要求接近金融系统，设计与技术选型都应向可靠性倾斜。</div>
+
+<h2 id="s2">2. 用户与角色</h2>
+
+<table>
+<thead><tr><th>角色</th><th>使用端</th><th>核心诉求</th><th>关键约束</th></tr></thead>
+<tbody>
+<tr><td>到店客户</td><td>客户端小程序</td><td>快速找到能解决自己问题的技师/项目，价格清楚，改约方便</td><td>低信任成本，需要清晰的评价与折扣解释</td></tr>
+<tr><td>技师</td><td>技师端小程序</td><td>三秒看懂下一单、业绩不出错、能自主填满空档</td><td>手在工作台，看屏幕时间以秒计；部分为视障从业者，需无障碍适配</td></tr>
+<tr><td>门店前台</td><td>门店前台端（PAD/收银机）</td><td>到店核销、散客开单、加钟、收银不能卡</td><td>门店网络不稳，查单需支持离线</td></tr>
+<tr><td>店长</td><td>管理后台 PC + 小程序</td><td>本店满班率、异常单、请假审批</td><td>数据域限定本店</td></tr>
+<tr><td>区域经理</td><td>管理后台 PC + 小程序</td><td>跨店对比、退款复核、人力调配</td><td>数据域限定名下门店</td></tr>
+<tr><td>运营/财务/超管</td><td>管理后台 PC</td><td>券规则、提成规则、账务结算、系统配置</td><td>敏感操作需双人复核并留痕</td></tr>
+</tbody>
+</table>
+
+<h2 id="s3">3. 信息架构 · 三端页面清单</h2>
+
+<h3>3.1 客户端小程序（7 屏）</h3>
+<table>
+<thead><tr><th>编号</th><th>页面</th><th>核心任务</th></tr></thead>
+<tbody>
+<tr><td class="mono">C1</td><td>预约首页</td><td>症状/门店/技师三入口 + 特惠 slot 卡片，承担绝大多数流量分发</td></tr>
+<tr><td class="mono">C2</td><td>症状路由</td><td>按部位/不适选择，收敛到具体项目 SKU，兜底"面诊后调整"</td></tr>
+<tr><td class="mono">C3</td><td>技师详情 · 选时段</td><td>技师资质展示 + slot 日历，四态色块（可约/锁定中/已选/不可约）</td></tr>
+<tr><td class="mono">C4</td><td>确认下单 · 支付</td><td>倒计时锁单、优惠叠加计算、组合支付</td></tr>
+<tr><td class="mono">C5</td><td>我的券包</td><td>券状态分组、使用规则就地展开，避免用户到店才发现不可用</td></tr>
+<tr><td class="mono">C6</td><td>我的</td><td>资金总览（储值/礼卡/券三笔独立展示）、进行中预约、订单入口</td></tr>
+<tr><td class="mono">C7</td><td>好礼商城</td><td>实物/权益兑换，与主预约动线弱耦合</td></tr>
+</tbody>
+</table>
+
+<h3>3.2 技师端小程序（4 屏）</h3>
+<table>
+<thead><tr><th>编号</th><th>页面</th><th>核心任务</th></tr></thead>
+<tbody>
+<tr><td class="mono">T1</td><td>今日工作台</td><td>下一单倒计时卡片 + 时间轴，三秒看懂下一单是谁/几点/在哪张床</td></tr>
+<tr><td class="mono">T2</td><td>服务中 · 理疗记录</td><td>开始/结束服务计时，填写只增不改的理疗记录</td></tr>
+<tr><td class="mono">T3</td><td>空档营销</td><td>把自己的空档一键生成折扣分享卡片，发给老客</td></tr>
+<tr><td class="mono">T4</td><td>业绩明细</td><td>钟数/加钟/卡销提成可下钻到单，退款回滚清晰可查</td></tr>
+</tbody>
+</table>
+
+<h3>3.3 管理后台（PC 4 屏 + 小程序 2 屏）</h3>
+<table>
+<thead><tr><th>编号</th><th>页面</th><th>核心任务</th></tr></thead>
+<tbody>
+<tr><td class="mono">A1</td><td>数据看板（PC）</td><td>满班率为首要指标，分时热力图定位空置时段，待办事项直达处理</td></tr>
+<tr><td class="mono">A2</td><td>排班中心（PC）</td><td>技师×床位双轨甘特视图，拖拽改约/换技师，请假冲突强提示</td></tr>
+<tr><td class="mono">A3</td><td>订单中心（PC）</td><td>全状态订单查询，异常单高亮置顶，游标分页 + 异步导出</td></tr>
+<tr><td class="mono">A4</td><td>券规则配置（PC）</td><td>规则引擎表单化配置，提交前生成 C 端展示文案预览</td></tr>
+<tr><td class="mono">M1</td><td>经营概览（小程序）</td><td>实时满班率/营收 + 待我审批（退款复核、请假审批）</td></tr>
+<tr><td class="mono">M2</td><td>门店排班只读（小程序）</td><td>技师占用一览、今晚空档提醒，不含任何配置类操作</td></tr>
+</tbody>
+</table>
+<div class="callout">管理后台 PC 与小程序共用同一套权限（功能权限 × 数据域），小程序端是功能权限的子集：只负责「看与批」，配置与执行（券规则、提成规则、排班模板、退款执行）留在 PC。</div>
+
+<h2 id="s4">4. 产品逻辑说明</h2>
+
+<h3>4.1 核心资源模型：双资源约束</h3>
+<p>一次预约同时占用两个独立资源，这是整个系统最容易做错的地方：</p>
+<pre>一次服务 = 技师(1人) × 床位/房间(1间) × 时间段(N个15分钟粒度)</pre>
+<p>大量同类系统只锁技师，会出现"3 位技师都有空但店里只剩 2 张床"的超卖。<b>必须双资源同时校验。</b>时间粒度统一切成 15 分钟为最小单位（slot），60 分钟项目占用连续 4 个 slot；项目需预留 <code>buffer_minutes</code>（建议 10~15 分钟）作为换床/洗手缓冲。</p>
+
+<h4>库存唯一性约束</h4>
+<p>技师 slot 表与床位 slot 表均对 <code>(资源ID, 日期, slot序号)</code> 建唯一索引。<b>这是最后一道防线</b>——即使分布式锁失效、代码写错，数据库也不会让同一 slot 被两个订单占用，比任何应用层逻辑更可靠。</p>
+
+<h3>4.2 下单锁定流程</h3>
+<pre>用户点「预约」
+   → 幂等校验（requestId + 30s 防重）
+   → 分布式锁 lock:slot:{技师ID}:{日期}（超时 5s）
+   → 事务：校验技师 slot 全部空闲 → 择优选一间空闲床位
+           → 两组 slot 置为「锁定中」，lock_expire_at = now+15min
+           → 生成待支付订单
+   → 延时消息（15 分钟）：到期未支付则释放
+   → 返回支付参数</pre>
+<p>支付回调（需按 <code>payment_no</code> 唯一索引做幂等）成功后，slot 转为「已预约」，写服务记录，通知用户与技师。<b>释放路径必须有三条兜底</b>：延时消息到期、用户主动取消、定时任务每 5 分钟扫描超时未释放的锁定 slot——延时消息可能丢失，卡死的 slot 是直接的收入损失，兜底扫描不能省。</p>
+
+<h3>4.3 订单状态机</h3>
+<pre>待支付 ──支付──> 已预约 ──到店──> 服务中 ──完成──> 已完成 ──> 已评价
+   │                 │              │
+   │超时             │取消/改约      │中止
+   ▼                 ▼              ▼
+ 已关闭            已取消          异常单(人工介入)
+                     │
+                  未到店 → 爽约（计入客户信用分）</pre>
+<p>建议用状态机框架实现而非 if-else 散落各处——不完整的状态机是这类系统 bug 的主要来源。改约、加钟、换技师、退款是四个"脏流程"，需求文档常只有一行字，但占系统 80% 的复杂度，建议 P0 阶段在真实门店灰度跑顺再推广。</p>
+
+<h3>4.4 排班生成</h3>
+<pre>技师排班模板(周维度) → 定时任务每日凌晨滚动生成第15天的 slot → 例外调整(请假/调休/跨店支援)</pre>
+<p>请假会把对应 slot 置为「休息」，若已有订单必须先走改约流程，<b>不能直接覆盖</b>。跨店支援时，slot 的门店归属与技师归属可以不同：报表按 slot 所属门店计算业绩，提成按技师归属店的分成规则计算。</p>
+
+<h3>4.5 券规则引擎</h3>
+<p>券的适用条件（星期、时段、门店、项目、职级、是否可叠加会员价、是否排除节假日等）是规则组合，<b>必须一开始就做成规则引擎</b>，后期硬编码改造成本极高。示例结构：</p>
+<pre>{
+  "type": "CASH",            // 满减 / 折扣 / 兑换
+  "face_value": 2000,        // 单位：分
+  "threshold": 0,
+  "rules": {
+    "weekdays": [1,2,3,4,5],
+    "time_ranges": [["10:00","17:00"]],
+    "store_scope": {"mode":"INCLUDE","ids":[1,2,3]},
+    "project_scope": {"mode":"EXCLUDE","ids":[88]},
+    "therapist_level_scope": ["JUNIOR","SENIOR"],
+    "stackable_with": ["MEMBER_PRICE"],
+    "exclude_holiday": true
+  },
+  "valid": {"type":"RELATIVE","days":60},
+  "issue_limit": {"per_user": 3, "total": 100000}
+}</pre>
+<p><b>校验时机有三处，必须共用同一套求值器</b>：领券时（是否可领）、下单选券时（是否可用）、支付时（服务端二次校验，防止前端篡改）。三处各写一份判定逻辑是长期埋雷。</p>
+
+<h3>4.6 技师"空档营销"逻辑</h3>
+<p>把首页特惠卡片的生成能力下放给技师本人，而非运营手工配置：</p>
+<pre>技师端看到未来空档 → 点「填满它」
+  → 系统按总部锁定的折扣区间（如8.5~9.5折）供技师选择
+  → 生成带技师归因的分享卡片 → 技师发给老客
+  → 成交后仍计技师提成，折扣损失按规则由总部/门店/技师分摊</pre>
+<p>好处：技师有动力（空档=零收入）、老客转化率高于泛投放、归因清晰。风控手段：折扣区间由总部锁定、每周发起次数上限、仅 48 小时内空档可发起、同一客户 30 天内限享 1 次。</p>
+
+<h3>4.7 权限模型：功能权限 × 数据域</h3>
+<pre>角色：超管 / 财务 / 运营 / 区域经理 / 店长 / 前台 / 技师
+数据域：全国 → 区域 → 门店 → 个人</pre>
+<p>权限 = 功能权限 × 数据域。店长有"查看订单"功能权限，数据域限定本店；区域经理同样功能权限，数据域是名下多家门店。<b>建议用统一注解 + ORM 拦截器在 SQL 层自动注入 <code>store_id IN (...)</code></b>，不要靠业务代码自觉过滤——那一定会漏。</p>
+<p>敏感操作（退款 &gt; ¥500、储值余额手工调整、券批量发放 &gt; 1000 张、提成规则变更）全部走审批流并留痕，这正是管理后台小程序端"待我审批"的主要来源。</p>
+
+<h3>4.8 技师端数据可见性</h3>
+<ul>
+<li>技师只能看到自己服务过的客户档案，不能浏览门店客户全量列表。</li>
+<li>客户手机号对技师默认脱敏（如 186****7752），联系需求走平台内消息中转，防止飞单私加微信带走客户。</li>
+<li>业绩数据只本人可见，店长可见全店。</li>
+<li>理疗记录只可增不可删，修改留痕——医疗相关记录的基本要求，也是纠纷证据。</li>
+</ul>
+
+<h3>4.9 提成规则</h3>
+<table>
+<thead><tr><th>维度</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>钟数提成</td><td>按项目 × 职级的固定金额或比例</td></tr>
+<tr><td>加钟提成</td><td>通常高于正常钟提成</td></tr>
+<tr><td>卡销提成</td><td>技师推储值/礼卡的销售提成，与钟提成分开计算</td></tr>
+<tr><td>指定加成</td><td>客户点名指定该技师，额外加成</td></tr>
+<tr><td>折扣分摊</td><td>打折订单提成基数按实收计算（否则技师会滥发折扣）</td></tr>
+<tr><td>退款回滚</td><td>退款时必须回滚已计提成，需支持跨月退款（本月扣回）</td></tr>
+</tbody>
+</table>
+<p>提成走 <b>T+1 异步批处理</b>而非实时计算，日终跑批生成提成流水，可重算、可审计、可追溯——实时算会在退款、改单、加钟场景下产生极难排查的对不上账。</p>
+
+<h3>4.10 资金账务模型</h3>
+<p>严格区分三类资金，不能混在一张余额表里：</p>
+<table>
+<thead><tr><th>类型</th><th>性质</th><th>特点</th></tr></thead>
+<tbody>
+<tr><td>储值本金</td><td>用户预付款（负债）</td><td>可退，需资金存管</td></tr>
+<tr><td>储值赠金</td><td>营销赠送</td><td>不可退，消费时按比例核销</td></tr>
+<tr><td>礼卡余额</td><td>预付卡</td><td>可转赠，有独立卡号与状态机</td></tr>
+</tbody>
+</table>
+<p>采用复式记账思路：每笔资金变动写一条流水（含变动前余额/变动值/变动后余额/业务类型/业务单号），余额字段只是快照，任何时候可由流水重算校验。</p>
+<div class="callout warn"><b>合规红线：</b>储值卡与礼卡属单用途商业预付卡，需按《单用途商业预付卡管理办法（试行）》备案；记名卡不得设有效期，不记名卡有效期不少于 3 年；系统必须支持余额可退（按未消费本金退，赠金不退）。建议立项时即拉法务确认，已发行卡后期改规则几乎不可能。</div>
+
+<h2 id="s5">5. UED 设计说明</h2>
+
+<h3>5.1 设计原则</h3>
+<ul>
+<li><b>状态色全端统一，不可自定义：</b>空闲=玉底色、锁定中=暖铜色、已预约=玉墨实心、异常=警示色。这套语义在客户端、技师端、后台排班视图上必须一致，否则跨端排障成本会很高。</li>
+<li><b>时间与金额一律等宽字体对齐</b>，便于门店场景下的快速扫读核对。</li>
+<li><b>技师端三秒原则：</b>下一单是谁、几点、在哪张床，其余信息全部折叠；技师看屏幕以秒计。</li>
+<li><b>无障碍适配：</b>推拿行业视障从业者占比不低，技师端最小字号 15px、点击热区 ≥ 48px，避免纯图形按钮无文字标签。</li>
+<li><b>后台配置与执行分层：</b>PC 负责配置类操作（券规则、提成规则、排班模板、退款执行），小程序端只负责看与批，避免误触成本过高的操作出现在小屏幕上。</li>
+</ul>
+
+<h3>5.2 视觉规范</h3>
+<h4>色彩</h4>
+<ul>
+<li><span class="swatch" style="background:#1E5C4A"></span><b>玉墨 #1E5C4A</b> — 主色，用于品牌、主按钮、"已预约"状态</li>
+<li><span class="swatch" style="background:#143F34"></span><b>深玉 #143F34</b> — 按压态、技师端顶栏</li>
+<li><span class="swatch" style="background:#C0803A"></span><b>暖铜 #C0803A</b> — 价格、折扣标签、"锁定中"提示色</li>
+<li><span class="swatch" style="background:#17211D"></span><b>墨 #17211D</b> — 正文文字</li>
+<li><span class="swatch" style="background:#F4F2EE"></span><b>砂 #F4F2EE</b> — 全端背景色</li>
+<li><span class="swatch" style="background:#B3452F"></span><b>警示 #B3452F</b> — 异常单、驳回、超额退款</li>
+<li><span class="swatch" style="background:#8B948F"></span><b>灰 #8B948F</b> — 次要文字与说明</li>
+</ul>
+<h4>字体</h4>
+<p>标题与品牌名用 Noto Serif SC 600（衬线，传递手艺感）；正文与界面文字用 Noto Sans SC 400/500；时间、金额、订单号等结构化数据统一用等宽字体，便于纵向扫读对齐。</p>
+<h4>组件与状态色块</h4>
+<p>四态时段色块贯穿客户端选时段、技师端排班、后台排班中心三处：<span class="tag" style="background:#E8F0EC">可约</span><span class="tag" style="background:#FAF1E4;color:#A9752F">锁定中</span><span class="tag" style="background:#1E5C4A;color:#fff">已选/已预约</span><span class="tag" style="background:#F4F2EE;color:#8B948F;border:1px dashed #C9CFCB">不可约/休息</span></p>
+
+<h3>5.3 客户端关键页面设计说明</h3>
+<h4>C1 预约首页</h4>
+<p>三个并列模块（特惠预约 / 门店预约 / 推拿师预约）对应同一份库存的三种切片，用户从任意入口进入都能收敛到同一张选时段页，降低流失。特惠卡片精确到单个技师单个 slot，价格用等宽字体加删除线原价强化折扣感。</p>
+<h4>C2 症状路由</h4>
+<p>按部位/按不适双路径选择，收敛到具体项目后展示"今晚可约"提示与技师承接人数，缓解决策焦虑；提供"面诊后调整项目、差价按实际结算"的兜底说明，降低选择错误的心理成本。</p>
+<h4>C3 技师详情 · 选时段</h4>
+<p>技师资质（职级、评分、服务次数、擅长标签）与 slot 日历在同一屏，日历用四态色块 + 图例，用户无需跳转即可完成"选人-选时"决策；底部悬浮价格与操作栏常驻，避免长列表滚动后丢失价格上下文。</p>
+<h4>C4 确认下单 · 支付</h4>
+<p>顶部倒计时条强化"slot 已锁定"的紧迫感，避免用户拖延导致释放；优惠明细逐项列出（券/时段折扣），金额变化可追溯，降低支付页的信任门槛。</p>
+<h4>C5 我的券包</h4>
+<p>按未使用/已使用/已过期分组；使用规则以"详情展开"形式就地呈现，而非要求用户到店才发现不可用——这是券规则引擎在前端的直接呈现，规则文案与后台配置的规则预览共用同一套生成逻辑。</p>
+<h4>C6 我的</h4>
+<p>资金总览刻意把储值余额、礼卡余额、券数量三笔分开展示，对应账务模型里三类资金不可混同的原则，即使是最基础的余额展示也要在 UI 上体现账务边界。</p>
+
+<h3>5.4 技师端关键页面设计说明</h3>
+<h4>T1 今日工作台</h4>
+<p>深色顶栏（深玉色）与客户端浅色背景形成端别区分，避免技师误把两端截图混淆；下一单卡片信息密度刻意压低，只保留客户称呼、项目、时长、房间号、是否新客五项，其余下沉到点击后的详情。</p>
+<h4>T2 服务中 · 理疗记录</h4>
+<p>开始/结束服务用大按钮 + 计时器强化状态感，理疗记录表单默认带上次记录作为参考（力度偏好、禁忌），减少重复问诊；记录提交后不可编辑，仅可追加。</p>
+<h4>T3 空档营销</h4>
+<p>折扣区间以滑块形式限制在总部锁定范围内，技师无法超出区间自主定价；生成的分享卡片预览与客户端 C1 特惠卡片视觉一致，确保技师分享出去的内容与平台展示口径统一。</p>
+<h4>T4 业绩明细</h4>
+<p>每笔提成可下钻到具体订单，退款回滚记录单独列示并标注扣回月份，避免技师因为"钱莫名变少"产生信任危机。</p>
+
+<h3>5.5 管理后台关键页面设计说明</h3>
+<h4>A1 数据看板</h4>
+<p>满班率作为唯一强调色（玉墨实心背景）卡片置于首位，其余指标为白底弱化展示，明确指标优先级；分时柱状图用暖铜色高亮低谷时段并直接给出"去配置"入口，将数据洞察与行动路径打通，而非停留在只读报表。</p>
+<h4>A2 排班中心</h4>
+<p>技师与床位甘特图双轨对照，拖拽改约时前端即时提示双资源冲突；请假申请与已有订单冲突时用警示色块直接嵌入排班行内，而非另开弹窗，保证处理链路不跳出上下文。</p>
+<h4>A3 订单中心</h4>
+<p>异常单整行使用警示底色置于列表中，无需筛选即可发现；采用游标分页而非跳页，避免深度分页在大数据量下的性能问题；导出走异步任务，避免阻塞界面。</p>
+<h4>A4 券规则配置</h4>
+<p>表单结构与规则引擎 JSON 字段一一对应，避免"表单能配、后端不认"的错位；提交前生成 C 端展示文案预览，让运营在配置阶段即可核对客户看到的文案是否清楚，减少上线后客诉。</p>
+<h4>M1/M2 管理后台小程序</h4>
+<p>只承载"看与批"：经营概览用深色顶栏 + 大字号满班率数字，适配移动场景下的快速扫读；审批卡片直接携带决策所需的全部上下文（冲突提示、金额、原因），减少审批人跳转查证的次数。</p>
+
+<h2 id="s6">6. 非功能需求</h2>
+
+<h3>6.1 性能</h3>
+<ul>
+<li>门店/技师/项目列表缓存 5 分钟，变更主动失效。</li>
+<li>可预约时段查询是最高频接口，按门店+日期聚合缓存 30 秒，写操作主动失效——首页秒开依赖此项。</li>
+<li>分页一律用游标，后台导出走异步任务 + 消息推送结果。</li>
+</ul>
+<h3>6.2 可靠性</h3>
+<ul>
+<li>支付、退款、提成三条链路的所有接口必须幂等，用业务唯一键实现，不依赖分布式锁兜底。</li>
+<li>消息队列消费幂等 + 死信队列 + 人工重投后台。</li>
+<li>资金操作每日对账：第三方支付流水 vs 系统流水，T+1 自动比对并告警。</li>
+</ul>
+<h3>6.3 监控告警</h3>
+<p>业务指标告警优先于技术指标：支付成功率下跌 &gt; 5%；slot 锁定超 30 分钟未释放数量 &gt; 10；资金流水与余额快照不一致；某门店 2 小时无订单（可能设备/网络故障）。</p>
+<h3>6.4 安全与合规</h3>
+<ul>
+<li>手机号、地址加密存储，日志脱敏。</li>
+<li>理疗记录属健康相关敏感个人信息，需单独告知同意、最小化收集、访问全量留痕。</li>
+<li>抢购类接口加验证码 + 单用户频控。</li>
+<li>后台操作日志不可删除，保留 3 年。</li>
+</ul>
+
+<h2 id="s7">7. 实施路线图</h2>
+<table>
+<thead><tr><th>阶段</th><th>周期</th><th>交付内容</th></tr></thead>
+<tbody>
+<tr><td>P0 跑通闭环</td><td>8 周</td><td>登录、门店/技师/项目浏览、预约下单支付、双资源库存、技师端工作台+接单+完成、前台核销与散客开单、基础后台（门店/技师/项目/订单）</td></tr>
+<tr><td>P1 商业化</td><td>6 周</td><td>券引擎、储值与礼卡、提成结算、评价体系、订阅消息、会员标签、理疗档案</td></tr>
+<tr><td>P2 增长</td><td>6 周</td><td>特惠时段与技师空档营销、邀请有奖、好礼商城与实物履约、电子礼卡转赠</td></tr>
+<tr><td>P3 精细化</td><td>持续</td><td>BI 看板、智能排班建议、症状-技师推荐、多区域组织架构</td></tr>
+</tbody>
+</table>
+<div class="callout"><b>建议：</b>P0 只上 1~2 家门店灰度，把改约、加钟、换技师、退款这四个"脏流程"在真实门店跑顺再推广——它们占系统 80% 的复杂度。</div>
+
+<h2 id="s8">8. 风险与对策</h2>
+<table>
+<thead><tr><th>风险</th><th>影响</th><th>对策</th></tr></thead>
+<tbody>
+<tr><td>双资源库存超卖</td><td>客户到店无床/无人，直接投诉</td><td>数据库唯一索引兜底 + 分布式锁 + 兜底扫描任务</td></tr>
+<tr><td>退款链路回滚不全</td><td>提成算错、券没退回、slot 没释放</td><td>退款做成编排事务，每一步可补偿，失败进人工队列</td></tr>
+<tr><td>券规则后期扩展</td><td>硬编码后每加一种券都要发版</td><td>首版即上规则引擎 + 三处共用求值器</td></tr>
+<tr><td>预付卡合规</td><td>监管处罚、资金风险</td><td>立项期法务介入，备案与资金存管前置</td></tr>
+<tr><td>技师飞单</td><td>客户被带走，平台空转</td><td>客户信息脱敏、平台内中转联系、提成设计让留在平台更划算</td></tr>
+<tr><td>门店网络不稳</td><td>前台开不了单</td><td>前台端离线查单 + 本地缓存 + 补同步</td></tr>
+<tr><td>提成算错</td><td>技师信任崩塌、集体离职</td><td>T+1 批处理可重算、明细可下钻到单、争议申诉通道</td></tr>
+</tbody>
+</table>
+
+<h2 id="s9">9. 遗留待确认问题</h2>
+<ol>
+<li>是否有集团既有会员体系/CRM 需要打通？决定用户中心是自建还是对接。</li>
+<li>是否需要上门服务（技师到家）？如需要，库存模型要加入路程时间与地理约束，复杂度上升一个量级。</li>
+<li>医疗资质边界："对症调理"的宣传口径与实际服务范围，是否涉及医疗机构执业许可，直接影响理疗档案的合规等级。</li>
+<li>实体礼卡的印刷、激活、防伪方案由谁承担。</li>
+<li>是否需要对接美团/大众点评的团购券核销。</li>
+</ol>
+
+</doc-page>
+<script src="../doc-page.js"></script>
+</body>
+</html>
