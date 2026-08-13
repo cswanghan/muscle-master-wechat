@@ -81,6 +81,14 @@ public class JdbcPaymentStore implements PaymentStore {
     }
 
     @Override
+    public Payment lockPendingByOrderId(long orderId) {
+        List<Payment> rows = jdbc.query(
+                "SELECT * FROM payment WHERE order_id=? AND status='PENDING' LIMIT 1 FOR UPDATE",
+                paymentMapper, orderId);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
     public void insert(Payment payment) {
         jdbc.update(
                 """

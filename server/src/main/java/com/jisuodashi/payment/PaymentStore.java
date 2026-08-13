@@ -22,6 +22,9 @@ public interface PaymentStore {
 
     Payment findPendingByOrderId(long orderId);
 
+    /** {@code SELECT … FOR UPDATE} the at-most-one PENDING row of the order. */
+    Payment lockPendingByOrderId(long orderId);
+
     void insert(Payment payment);
 
     void update(Payment payment);

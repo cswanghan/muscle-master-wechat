@@ -7,6 +7,7 @@ import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.inventory.DelayedJobStore;
 import com.jisuodashi.inventory.DelayedJobStore.DelayedJobRow;
 import com.jisuodashi.inventory.SlotOccupyService;
+import com.jisuodashi.inventory.SlotOccupyStore;
 import com.jisuodashi.order.FireContext;
 import com.jisuodashi.order.OrderEvent;
 import com.jisuodashi.order.OrderStateMachine;
@@ -41,6 +42,8 @@ public class JobRunner {
 
     private static final Logger log = LoggerFactory.getLogger(JobRunner.class);
     private static final Pattern ORDER_ID = Pattern.compile("\"orderId\"\\s*:\\s*(\\d+)");
+    private static final Pattern HOLD_BIZ = Pattern.compile("^hold:(\\d+)$");
+    static final int LAST_ERROR_MAX = 512;
 
     private final SlotGenerateJob slotGenerateJob;
     private final SlotScanJob slotScanJob;
@@ -123,11 +126,29 @@ public class JobRunner {
             if (job == null) {
                 continue;
             }
-            int code = dispatch(job);
-            completeJob(job, code, null);
+            runClaimedJob(job);
             n++;
         }
         return n;
+    }
+
+    /**
+     * Isolate one claimed row. {@code ApiException} (incl. 40904) completes;
+     * any other failure is {@code FAILED} + {@code last_error} and the batch continues.
+     */
+    public int runClaimedJob(DelayedJobRow job) {
+        try {
+            int code = dispatch(job);
+            completeJob(job, code, isJobSuccess(code) ? null : "code=" + code);
+            return code;
+        } catch (ApiException ex) {
+            completeJob(job, ex.getCode(), ex.getMessage());
+            return ex.getCode();
+        } catch (RuntimeException ex) {
+            log.warn("job {} {} failed", job.id(), job.jobType(), ex);
+            completeJob(job, ErrorCodes.INTERNAL, ex.getMessage());
+            return ErrorCodes.INTERNAL;
+        }
     }
 
     public List<Long> claimDueJobs() {
@@ -146,7 +167,7 @@ public class JobRunner {
             delayedJobs.completeJob(job.id(), "DONE", null, clock.now());
             return;
         }
-        delayedJobs.completeJob(job.id(), "FAILED", lastError, clock.now());
+        delayedJobs.completeJob(job.id(), "FAILED", trimError(lastError), clock.now());
     }
 
     public static boolean isJobSuccess(int fireResultCode) {
@@ -170,10 +191,10 @@ public class JobRunner {
         if (machine == null) {
             return ErrorCodes.OK;
         }
-        Long orderId = orderIdFromPayload(job.payload());
+        Long orderId = resolveOrderId(job);
         if (orderId == null) {
-            log.warn("RELEASE_LOCK missing orderId job={}", job.id());
-            return ErrorCodes.OK;
+            log.warn("RELEASE_LOCK missing orderId job={} biz={}", job.id(), job.bizKey());
+            return ErrorCodes.INTERNAL;
         }
         try {
             machine.fire(orderId, OrderEvent.PAY_TIMEOUT, FireContext.job());
@@ -181,6 +202,19 @@ public class JobRunner {
         } catch (ApiException ex) {
             return ex.getCode();
         }
+    }
+
+    Long resolveOrderId(DelayedJobRow job) {
+        Long fromPayload = orderIdFromPayload(job.payload());
+        if (fromPayload != null) {
+            return fromPayload;
+        }
+        Long holdId = holdIdFromBizKey(job.bizKey());
+        if (holdId == null || !(delayedJobs instanceof SlotOccupyStore occupy)) {
+            return null;
+        }
+        SlotOccupyStore.BookingOrderRef order = occupy.findOrderByHoldId(holdId);
+        return order == null ? null : order.id();
     }
 
     static Long orderIdFromPayload(String payload) {
@@ -192,5 +226,20 @@ public class JobRunner {
             return null;
         }
         return Long.parseLong(m.group(1));
+    }
+
+    static Long holdIdFromBizKey(String bizKey) {
+        if (bizKey == null || bizKey.isBlank()) {
+            return null;
+        }
+        Matcher m = HOLD_BIZ.matcher(bizKey);
+        return m.matches() ? Long.parseLong(m.group(1)) : null;
+    }
+
+    static String trimError(String lastError) {
+        if (lastError == null || lastError.isBlank()) {
+            return lastError;
+        }
+        return lastError.length() <= LAST_ERROR_MAX ? lastError : lastError.substring(0, LAST_ERROR_MAX);
     }
 }

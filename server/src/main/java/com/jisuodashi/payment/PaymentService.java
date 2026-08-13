@@ -18,10 +18,13 @@ import com.jisuodashi.workflow.WorkflowInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -39,6 +42,7 @@ public class PaymentService {
     public static final String TASK_UNKNOWN_PAYMENT = "UNKNOWN_PAYMENT";
     public static final String TASK_AMOUNT_MISMATCH = "AMOUNT_MISMATCH";
     public static final String REFUND_REASON_CLOSED_PAID = "CLOSED_ORDER_AUTO_REFUND";
+    static final int DEADLOCK_RETRIES = 3;
 
     private final PaymentStore payments;
     private final SlotOccupyStore orders;
@@ -99,7 +103,7 @@ public class PaymentService {
         if (requestId == null || requestId.isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }
-        return inBothTx(() -> doRepay(customerId, orderId));
+        return retryDeadlock(() -> doRepay(customerId, orderId));
     }
 
     /** After lockNew: prepay outside the occupy TX. Failure must not roll back the lock. */
@@ -114,7 +118,7 @@ public class PaymentService {
 
     public PaymentDtos.WechatNotifyAck onWechatNotify(String body, Map<String, String> headers) {
         WeChatNotify n = wechat.parseAndVerify(body, headers);
-        return inBothTx(() -> doNotify(n));
+        return retryDeadlock(() -> inBothTx(() -> doNotify(n)));
     }
 
     public PaymentDtos.PaymentView getByPaymentNo(String paymentNo) {
@@ -122,50 +126,78 @@ public class PaymentService {
         if (p == null) {
             throw new ApiException(ErrorCodes.NOT_FOUND, "支付单不存在");
         }
-        BookingOrderRef order = inOrderTx(() -> orders.lockOrderById(p.orderId()));
+        BookingOrderRef order = orders.findOrderById(p.orderId());
+        if (order == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
         StoreScope scope = StoreScopeContext.get();
-        if (scope != null && order != null) {
+        if (scope != null) {
             scope.assertContains(order.storeId());
         }
         return new PaymentDtos.PaymentView(
                 p.paymentNo(), p.status(), p.amountFen(), String.valueOf(p.orderId()));
     }
 
+    /**
+     * Payment then order. Channel HTTP is outside the DB TX.
+     */
     private PaymentDtos.PayResponse doRepay(long customerId, long orderId) {
+        RepayPlan plan = inBothTx(() -> decideRepay(customerId, orderId));
+        if (plan.reuse != null) {
+            return toPayResponse(plan.reuse, true);
+        }
+        WeChatPayClient.Prepay prepay = wechat.jsapiPrepay(
+                plan.paymentNo, plan.amountFen, plan.description);
+        PersistResult saved = inBothTx(() -> persistNewPrepay(customerId, orderId, plan, prepay));
+        return toPayResponse(saved.payment, saved.reused);
+    }
+
+    private RepayPlan decideRepay(long customerId, long orderId) {
+        Payment pending = payments.lockPendingByOrderId(orderId);
+        BookingOrderRef order = requirePayableOrder(customerId, orderId);
+        LocalDateTime now = clock.now();
+        if (pending != null && pending.pending() && !pending.prepayExpired(now)) {
+            return RepayPlan.reuse(pending);
+        }
+        if (pending != null && pending.pending()) {
+            payments.update(pending.closed(now));
+        }
+        long id = ids.nextId();
+        return RepayPlan.create("P" + id, id, order.payableFen(), "booking-" + order.orderNo());
+    }
+
+    private PersistResult persistNewPrepay(
+            long customerId, long orderId, RepayPlan plan, WeChatPayClient.Prepay prepay) {
+        Payment pending = payments.lockPendingByOrderId(orderId);
+        requirePayableOrder(customerId, orderId);
+        LocalDateTime now = clock.now();
+        if (pending != null && pending.pending() && !pending.prepayExpired(now)) {
+            return new PersistResult(pending, true);
+        }
+        if (pending != null && pending.pending()) {
+            payments.update(pending.closed(now));
+        }
+        Payment row = new Payment(
+                plan.paymentId, plan.paymentNo, orderId, Payment.CHANNEL_WECHAT, plan.amountFen,
+                Payment.PENDING, prepay.prepayId(), null, null, null,
+                now.plus(prepayTtl), now, now);
+        payments.insert(row);
+        return new PersistResult(row, false);
+    }
+
+    private BookingOrderRef requirePayableOrder(long customerId, long orderId) {
         BookingOrderRef order = orders.lockOrderById(orderId);
         if (order == null || order.customerId() != customerId) {
             throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
         }
-        OrderStatus status = OrderStatus.parse(order.status());
-        if (status != OrderStatus.PENDING_PAY) {
+        if (OrderStatus.parse(order.status()) != OrderStatus.PENDING_PAY) {
             throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "非法状态转移");
         }
         LocalDateTime now = clock.now();
         if (order.lockExpireAt() != null && !order.lockExpireAt().isAfter(now)) {
             throw new ApiException(ErrorCodes.PAY_EXPIRED, "待支付已过期");
         }
-        Payment pending = payments.findPendingByOrderId(orderId);
-        if (pending != null && !pending.prepayExpired(now)) {
-            return toPayResponse(pending, true);
-        }
-        if (pending != null) {
-            payments.update(pending.closed(now));
-        }
-        Payment created = insertWechatPrepay(order, now);
-        return toPayResponse(created, false);
-    }
-
-    private Payment insertWechatPrepay(BookingOrderRef order, LocalDateTime now) {
-        long id = ids.nextId();
-        String paymentNo = "P" + id;
-        WeChatPayClient.Prepay prepay = wechat.jsapiPrepay(
-                paymentNo, order.payableFen(), "booking-" + order.orderNo());
-        Payment row = new Payment(
-                id, paymentNo, order.id(), Payment.CHANNEL_WECHAT, order.payableFen(),
-                Payment.PENDING, prepay.prepayId(), null, null, null,
-                now.plus(prepayTtl), now, now);
-        payments.insert(row);
-        return row;
+        return order;
     }
 
     private PaymentDtos.WechatNotifyAck doNotify(WeChatNotify n) {
@@ -268,24 +300,60 @@ public class PaymentService {
         });
     }
 
-    private <T> T inOrderTx(Supplier<T> work) {
-        return inTx(() -> {
-            orders.beginWork();
-            try {
-                T result = work.get();
-                orders.commitWork();
-                return result;
-            } catch (RuntimeException ex) {
-                orders.rollbackWork();
-                throw ex;
-            }
-        });
-    }
-
     private <T> T inTx(Supplier<T> work) {
         if (tx == null) {
             return work.get();
         }
         return tx.execute(status -> work.get());
+    }
+
+    private <T> T retryDeadlock(Supplier<T> work) {
+        RuntimeException last = null;
+        for (int attempt = 1; attempt <= DEADLOCK_RETRIES; attempt++) {
+            try {
+                return work.get();
+            } catch (RuntimeException ex) {
+                if (!isDeadlock(ex) || attempt == DEADLOCK_RETRIES) {
+                    if (isDeadlock(ex)) {
+                        throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+                    }
+                    throw ex;
+                }
+                last = ex;
+            }
+        }
+        throw last != null ? last : new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+    }
+
+    static boolean isDeadlock(Throwable ex) {
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof DeadlockLoserDataAccessException) {
+                return true;
+            }
+            if (t instanceof SQLException sql && sql.getErrorCode() == 1213) {
+                return true;
+            }
+            String msg = t.getMessage();
+            if (msg != null && msg.toLowerCase().contains("deadlock")) {
+                return true;
+            }
+            if (t instanceof DataAccessException && msg != null && msg.contains("1213")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private record RepayPlan(Payment reuse, String paymentNo, long paymentId, long amountFen, String description) {
+        static RepayPlan reuse(Payment payment) {
+            return new RepayPlan(payment, null, 0, 0, null);
+        }
+
+        static RepayPlan create(String paymentNo, long paymentId, long amountFen, String description) {
+            return new RepayPlan(null, paymentNo, paymentId, amountFen, description);
+        }
+    }
+
+    private record PersistResult(Payment payment, boolean reused) {
     }
 }

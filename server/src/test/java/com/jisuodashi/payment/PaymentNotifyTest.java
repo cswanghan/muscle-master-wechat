@@ -158,6 +158,25 @@ class PaymentNotifyTest {
     }
 
     @Test
+    void pollDoesNotLockAndMissingOrderIs404() {
+        Fixture f = fixture("n-poll");
+        PaymentDtos.PayResponse pay = f.svc.repay(OccupyFixtures.CUSTOMER, f.locked.orderId(), "poll");
+        PaymentDtos.PaymentView view = f.svc.getByPaymentNo(pay.paymentNo());
+        assertThat(view.status()).isEqualTo(Payment.PENDING);
+        assertThat(view.orderId()).isEqualTo(String.valueOf(f.locked.orderId()));
+
+        f.payments.beginWork();
+        f.payments.insert(new Payment(
+                99L, "P-orphan", 99L, Payment.CHANNEL_WECHAT, 1, Payment.PENDING,
+                "x", null, null, null, f.clock.now().plusHours(2), f.clock.now(), f.clock.now()));
+        f.payments.commitWork();
+        assertThatThrownBy(() -> f.svc.getByPaymentNo("P-orphan"))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getCode())
+                .isEqualTo(ErrorCodes.NOT_FOUND);
+    }
+
+    @Test
     void unknownPaymentNoWritesHumanTaskAndAcks() {
         Fixture f = fixture("n-unk");
         PaymentDtos.WechatNotifyAck ack = f.svc.onWechatNotify(body("P-missing", 19800), Map.of());

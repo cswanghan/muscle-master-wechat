@@ -87,6 +87,15 @@ public class InMemoryPaymentStore implements PaymentStore {
     }
 
     @Override
+    public Payment lockPendingByOrderId(long orderId) {
+        Payment pending = findPendingByOrderId(orderId);
+        if (pending == null) {
+            return null;
+        }
+        return lockByPaymentNo(pending.paymentNo());
+    }
+
+    @Override
     public void insert(Payment payment) {
         Work w = requireWork();
         Payment prev = byNo.putIfAbsent(payment.paymentNo(), payment);
