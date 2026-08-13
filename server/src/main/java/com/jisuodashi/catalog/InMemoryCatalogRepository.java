@@ -61,6 +61,18 @@ public class InMemoryCatalogRepository implements CatalogRepository {
                 TWENTY_TWO,
                 "Asia/Shanghai",
                 1));
+        stores.add(new CatalogModels.Store(
+                DemoCatalogIds.STORE_EAST,
+                "DEMO02",
+                "肌松大师·演示二分店",
+                null,
+                null,
+                new BigDecimal("121.5000000"),
+                new BigDecimal("31.2400000"),
+                TEN,
+                TWENTY_TWO,
+                "Asia/Shanghai",
+                1));
 
         List<Long> allProjects = List.of(
                 DemoCatalogIds.PROJECT_P60, DemoCatalogIds.PROJECT_P45, DemoCatalogIds.PROJECT_P90);
@@ -127,6 +139,16 @@ public class InMemoryCatalogRepository implements CatalogRepository {
     @Override
     public synchronized void resetDemo() {
         seed();
+    }
+
+    public void putStore(CatalogModels.Store store) {
+        stores.removeIf(s -> s.id() == store.id());
+        stores.add(store);
+    }
+
+    public void putTherapist(CatalogModels.Therapist therapist) {
+        therapists.removeIf(t -> t.id() == therapist.id());
+        therapists.add(therapist);
     }
 
     @Override

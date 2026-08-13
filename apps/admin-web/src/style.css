@@ -189,6 +189,22 @@ body,
   font-size: 15px;
 }
 
+.util {
+  margin-left: auto;
+  margin-right: 16px;
+  text-align: right;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--jade);
+}
+
+.util small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: #4a5a54;
+}
+
 .desk-alert {
   margin-bottom: 4px;
 }

@@ -3,6 +3,7 @@ package com.jisuodashi.order;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.common.GrayStores;
 import com.jisuodashi.inventory.LockNewCommand;
 import com.jisuodashi.inventory.LockNewResult;
 import com.jisuodashi.inventory.SlotOccupyService;
@@ -25,6 +26,7 @@ public class BookingService {
     private final SlotOccupyService occupy;
     private final OrderStateMachine machine;
     private final PaymentService payments;
+    private GrayStores gray;
 
     public BookingService(SlotOccupyService occupy, OrderStateMachine machine) {
         this(occupy, machine, null);
@@ -35,6 +37,11 @@ public class BookingService {
         this.occupy = occupy;
         this.machine = machine;
         this.payments = payments;
+    }
+
+    @Autowired(required = false)
+    public void setGrayStores(GrayStores gray) {
+        this.gray = gray;
     }
 
     public BookingDtos.CreateBookingResponse create(long customerId, BookingDtos.CreateBookingRequest req) {
@@ -102,6 +109,9 @@ public class BookingService {
         if (row == null || row.customerId() != customerId) {
             throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
         }
+        if (gray != null && !gray.allows(row.storeId())) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
         return toListItem(row);
     }
 
@@ -112,6 +122,9 @@ public class BookingService {
         }
         Long afterId = parseCursor(cursor);
         List<BookingOrderRef> all = occupy.listOrdersByCustomer(customerId);
+        if (gray != null) {
+            all = all.stream().filter(row -> gray.allows(row.storeId())).toList();
+        }
         List<BookingDtos.BookingListItem> sliced = new ArrayList<>();
         boolean skipping = afterId != null;
         String next = null;

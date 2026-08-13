@@ -4,7 +4,9 @@ import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppProperties;
 import com.jisuodashi.common.ClockConfig;
 import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.common.GrayStores;
 import com.jisuodashi.common.PhoneCrypto;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -30,6 +32,7 @@ public class CatalogService {
     private final Clock clock;
     private final int nearMeters;
     private final TtlCache<String, List<CatalogModels.Store>> storeCache;
+    private GrayStores gray;
 
     public CatalogService(
             CatalogRepository catalog,
@@ -43,6 +46,11 @@ public class CatalogService {
         this.storeCache = new TtlCache<>(properties.getCatalog().getStoreCacheTtl(), clock);
     }
 
+    @Autowired(required = false)
+    public void setGrayStores(GrayStores gray) {
+        this.gray = gray;
+    }
+
     public CatalogDtos.Page<CatalogDtos.StoreListItem> listStores(
             Double lng, Double lat, String cursor, Integer limit) {
         if ((lng == null) != (lat == null)) {
@@ -52,6 +60,9 @@ public class CatalogService {
         Long afterId = parseCursor(cursor);
         List<CatalogModels.Store> cached = storeCache.get("active", this::loadActiveStores);
         List<CatalogDtos.StoreListItem> all = projectStoreList(cached, lng, lat);
+        if (gray != null) {
+            all = all.stream().filter(s -> gray.allows(Long.parseLong(s.storeId()))).toList();
+        }
         List<CatalogDtos.StoreListItem> sliced = new ArrayList<>();
         boolean skipping = afterId != null;
         String next = null;
@@ -73,6 +84,9 @@ public class CatalogService {
     }
 
     public CatalogDtos.StoreDetail getStore(long id) {
+        if (gray != null) {
+            gray.require(id);
+        }
         CatalogModels.Store store = catalog.findStore(id)
                 .filter(s -> s.status() == 1)
                 .orElseThrow(() -> new ApiException(ErrorCodes.NOT_FOUND, "门店不存在"));
@@ -92,6 +106,9 @@ public class CatalogService {
 
     public CatalogDtos.Page<CatalogDtos.TherapistItem> listTherapists(
             Long storeId, Long symptomId, String cursor, Integer limit) {
+        if (storeId != null && gray != null) {
+            gray.require(storeId);
+        }
         int size = normalizeLimit(limit);
         Long afterId = parseCursor(cursor);
         LocalDate today = LocalDate.now(clock.withZone(ClockConfig.SHANGHAI));
@@ -140,6 +157,9 @@ public class CatalogService {
     }
 
     public CatalogDtos.Page<CatalogDtos.ProjectSummary> listProjects(Long storeId, Long symptomId) {
+        if (storeId != null && gray != null) {
+            gray.require(storeId);
+        }
         return CatalogDtos.Page.of(listedProjects(storeId, symptomId));
     }
 

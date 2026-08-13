@@ -5,6 +5,8 @@ import com.jisuodashi.catalog.CatalogRepository;
 import com.jisuodashi.catalog.Pricing;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.common.GrayStores;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -28,6 +30,7 @@ public class AvailabilityService {
     private final AvailabilityStore store;
     private final CatalogRepository catalog;
     private final AvailabilityCache cache;
+    private GrayStores gray;
 
     public AvailabilityService(
             AvailabilityStore store,
@@ -39,6 +42,11 @@ public class AvailabilityService {
         this.cache = cache;
     }
 
+    @Autowired(required = false)
+    public void setGrayStores(GrayStores gray) {
+        this.gray = gray;
+    }
+
     public AvailabilityDtos.Availability query(
             long storeId,
             LocalDate date,
@@ -46,6 +54,9 @@ public class AvailabilityService {
             Long therapistId,
             boolean includeBusy
     ) {
+        if (gray != null) {
+            gray.require(storeId);
+        }
         catalog.findStore(storeId)
                 .filter(s -> s.status() == 1)
                 .orElseThrow(() -> new ApiException(ErrorCodes.NOT_FOUND, "门店不存在"));

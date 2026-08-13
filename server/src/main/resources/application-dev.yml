@@ -52,3 +52,22 @@ app:
     force-release:
       enabled: false
       token:
+  gray:
+    store-ids: 3100000000000000001
+  flags:
+    booking:
+      enabled: true
+      lock:
+        enabled: true
+    pay:
+      wechat:
+        enabled: true
+    workflow:
+      reschedule:
+        enabled: true
+      add-on:
+        enabled: true
+      swap:
+        enabled: true
+      refund:
+        enabled: true
