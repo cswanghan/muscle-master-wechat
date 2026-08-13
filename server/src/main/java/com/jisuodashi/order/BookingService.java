@@ -6,8 +6,11 @@ import com.jisuodashi.inventory.LockNewCommand;
 import com.jisuodashi.inventory.LockNewResult;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
+import com.jisuodashi.payment.PaymentDtos;
+import com.jisuodashi.payment.PaymentService;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -15,10 +18,16 @@ public class BookingService {
 
     private final SlotOccupyService occupy;
     private final OrderStateMachine machine;
+    private final PaymentService payments;
 
     public BookingService(SlotOccupyService occupy, OrderStateMachine machine) {
+        this(occupy, machine, null);
+    }
+
+    public BookingService(SlotOccupyService occupy, OrderStateMachine machine, PaymentService payments) {
         this.occupy = occupy;
         this.machine = machine;
+        this.payments = payments;
     }
 
     public BookingDtos.CreateBookingResponse create(long customerId, BookingDtos.CreateBookingRequest req) {
@@ -31,13 +40,28 @@ public class BookingService {
                 req.date(),
                 req.startSlotNo(),
                 LockNewCommand.SOURCE_MINI_C));
+        Map<String, String> payParams = null;
+        if (payments != null) {
+            PaymentDtos.PayResponse prepay = payments.tryPrepayAfterLock(
+                    customerId, locked.orderId(), req.requestId() + ":prepay");
+            if (prepay != null) {
+                payParams = prepay.payParams();
+            }
+        }
         return new BookingDtos.CreateBookingResponse(
                 String.valueOf(locked.orderId()),
                 locked.orderNo(),
                 locked.status(),
                 locked.lockExpireAt(),
                 locked.payableFen(),
-                null);
+                payParams);
+    }
+
+    public PaymentDtos.PayResponse pay(long customerId, long orderId, BookingDtos.PayRequest req) {
+        if (payments == null) {
+            throw new ApiException(ErrorCodes.INTERNAL, "支付未配置");
+        }
+        return payments.repay(customerId, orderId, req.requestId());
     }
 
     /**

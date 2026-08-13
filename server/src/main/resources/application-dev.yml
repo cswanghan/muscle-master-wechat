@@ -34,6 +34,8 @@ app:
   wechat:
     mock: true
     mock-staff-username: demo.admin
+    mchid: mock-mchid
+    prepay-ttl: 2h
   crypto:
     phone-pepper: dev-phone-pepper
     dek-base64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=

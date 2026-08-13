@@ -489,6 +489,12 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public BookingOrderRef findOrderById(long orderId) {
+        BookingOrderInsert row = orders.get(orderId);
+        return row == null ? null : toRef(row);
+    }
+
+    @Override
     public int deleteOccupancyForLockedHold(long holdId) {
         Work w = requireWork();
         List<Map.Entry<String, OccupancyInsert>> removed = new ArrayList<>();
@@ -1096,7 +1102,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     public static final class MutableJob {
-        final long id;
+        public final long id;
         final String jobType;
         final String bizKey;
         final String payload;

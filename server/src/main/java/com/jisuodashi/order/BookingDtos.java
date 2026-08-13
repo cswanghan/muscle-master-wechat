@@ -45,4 +45,9 @@ public final class BookingDtos {
             String requestId
     ) {
     }
+
+    public record PayRequest(
+            @NotBlank(message = "requestId 不能为空") String requestId
+    ) {
+    }
 }

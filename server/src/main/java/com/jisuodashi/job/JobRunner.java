@@ -24,6 +24,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Single runner (D16). Gated by {@code app.jobs.enabled}.
@@ -39,17 +41,18 @@ public class JobRunner {
     public static final int CLAIM_LIMIT = 50;
 
     private static final Logger log = LoggerFactory.getLogger(JobRunner.class);
+    private static final Pattern ORDER_ID = Pattern.compile("\"orderId\"\\s*:\\s*(\\d+)");
+    private static final Pattern HOLD_BIZ = Pattern.compile("^hold:(\\d+)$");
+    static final int LAST_ERROR_MAX = 512;
 
     private final SlotGenerateJob slotGenerateJob;
     private final SlotScanJob slotScanJob;
     private final DelayedJobStore delayedJobs;
-    private final SlotOccupyStore occupyStore;
-    private final OrderStateMachine machine;
     private final AppClock clock;
     private final String instanceId;
     private final TransactionTemplate tx;
+    private final OrderStateMachine machine;
 
-    @Autowired
     public JobRunner(
             SlotGenerateJob slotGenerateJob,
             SlotScanJob slotScanJob,
@@ -57,7 +60,7 @@ public class JobRunner {
             AppClock clock,
             AppProperties properties,
             PlatformTransactionManager txManager,
-            OrderStateMachine machine
+            @Autowired(required = false) OrderStateMachine machine
     ) {
         this(slotGenerateJob, slotScanJob, delayedJobs, clock,
                 "w" + properties.getSnowflake().getWorkerId(),
@@ -88,11 +91,10 @@ public class JobRunner {
         this.slotGenerateJob = slotGenerateJob;
         this.slotScanJob = slotScanJob;
         this.delayedJobs = delayedJobs;
-        this.occupyStore = delayedJobs instanceof SlotOccupyStore store ? store : null;
-        this.machine = machine;
         this.clock = clock;
         this.instanceId = instanceId;
         this.tx = tx;
+        this.machine = machine;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -120,40 +122,33 @@ public class JobRunner {
         List<Long> ids = claimDueJobs();
         int n = 0;
         for (long id : ids) {
-            DelayedJobRow job = null;
-            try {
-                job = delayedJobs.findJob(id);
-                if (job == null) {
-                    continue;
-                }
-                completeJob(job, dispatch(job), null);
-                n++;
-            } catch (ApiException ex) {
-                n += completeCaught(job, id, ex.getCode(), ex.getMessage());
-            } catch (RuntimeException ex) {
-                log.warn("JobRunner job={} failed: {}", id, ex.toString());
-                n += completeCaught(job, id, ErrorCodes.INTERNAL, errorText(ex));
+            DelayedJobRow job = delayedJobs.findJob(id);
+            if (job == null) {
+                continue;
             }
+            runClaimedJob(job);
+            n++;
         }
         return n;
     }
 
-    private int completeCaught(DelayedJobRow job, long id, int code, String lastError) {
-        if (job == null) {
-            log.warn("JobRunner job={} failed before load, code={}", id, code);
-            return 0;
-        }
+    /**
+     * Isolate one claimed row. {@code ApiException} (incl. 40904) completes;
+     * any other failure is {@code FAILED} + {@code last_error} and the batch continues.
+     */
+    public int runClaimedJob(DelayedJobRow job) {
         try {
-            completeJob(job, code, lastError);
+            int code = dispatch(job);
+            completeJob(job, code, isJobSuccess(code) ? null : "code=" + code);
+            return code;
+        } catch (ApiException ex) {
+            completeJob(job, ex.getCode(), ex.getMessage());
+            return ex.getCode();
         } catch (RuntimeException ex) {
-            log.warn("JobRunner complete job={} failed: {}", id, ex.toString());
+            log.warn("job {} {} failed", job.id(), job.jobType(), ex);
+            completeJob(job, ErrorCodes.INTERNAL, ex.getMessage());
+            return ErrorCodes.INTERNAL;
         }
-        return 1;
-    }
-
-    static String errorText(Throwable ex) {
-        String msg = ex.getMessage();
-        return msg == null || msg.isBlank() ? ex.getClass().getSimpleName() : msg;
     }
 
     public List<Long> claimDueJobs() {
@@ -172,7 +167,7 @@ public class JobRunner {
             delayedJobs.completeJob(job.id(), "DONE", null, clock.now());
             return;
         }
-        delayedJobs.completeJob(job.id(), "FAILED", lastError, clock.now());
+        delayedJobs.completeJob(job.id(), "FAILED", trimError(lastError), clock.now());
     }
 
     public static boolean isJobSuccess(int fireResultCode) {
@@ -180,13 +175,9 @@ public class JobRunner {
     }
 
     /**
-     * Law A: only {@code fire()}. Never {@code ReleaseLock} first.
-     * {@code BOOKED + PAY_TIMEOUT} → 40904, treated as DONE by {@link #completeJob}.
+     * RELEASE_LOCK / RELEASE_ADDON only {@code fire()}. Already-paid timeout → 40904 → DONE (D25).
      */
-    int dispatch(DelayedJobRow job) {
-        if (machine == null) {
-            return ErrorCodes.OK;
-        }
+    public int dispatch(DelayedJobRow job) {
         if (SlotOccupyService.JOB_RELEASE_LOCK.equals(job.jobType())) {
             return fireOrder(job, OrderEvent.PAY_TIMEOUT);
         }
@@ -197,77 +188,62 @@ public class JobRunner {
     }
 
     private int fireOrder(DelayedJobRow job, OrderEvent event) {
-        Long orderId = resolveOrderId(job);
-        if (orderId == null) {
+        if (machine == null) {
             return ErrorCodes.OK;
         }
-        machine.fire(orderId, event, FireContext.job());
-        return ErrorCodes.OK;
+        Long orderId = resolveOrderId(job);
+        if (orderId == null) {
+            log.warn("{} missing orderId job={} biz={}", job.jobType(), job.id(), job.bizKey());
+            return ErrorCodes.INTERNAL;
+        }
+        try {
+            machine.fire(orderId, event, FireContext.job());
+            return ErrorCodes.OK;
+        } catch (ApiException ex) {
+            return ex.getCode();
+        }
     }
 
     Long resolveOrderId(DelayedJobRow job) {
-        Long fromPayload = parseOrderId(job.payload());
+        Long fromPayload = orderIdFromPayload(job.payload());
         if (fromPayload != null) {
             return fromPayload;
         }
-        Long holdId = parseHoldId(job.bizKey());
-        if (holdId == null || occupyStore == null) {
+        Long holdId = holdIdFromBizKey(job.bizKey());
+        if (holdId == null || !(delayedJobs instanceof SlotOccupyStore occupy)) {
             return null;
         }
-        var byHold = occupyStore.findOrderByHoldId(holdId);
+        SlotOccupyStore.BookingOrderRef byHold = occupy.findOrderByHoldId(holdId);
         if (byHold != null) {
             return byHold.id();
         }
-        var byAddon = occupyStore.findOrderByAddOnHoldId(holdId);
+        SlotOccupyStore.BookingOrderRef byAddon = occupy.findOrderByAddOnHoldId(holdId);
         return byAddon == null ? null : byAddon.id();
     }
 
-    public static Long parseOrderId(String payload) {
-        return parseJsonLong(payload, "orderId");
+    static Long orderIdFromPayload(String payload) {
+        if (payload == null || payload.isBlank()) {
+            return null;
+        }
+        Matcher m = ORDER_ID.matcher(payload);
+        if (!m.find()) {
+            return null;
+        }
+        return Long.parseLong(m.group(1));
     }
 
-    public static Long parseHoldId(String bizKey) {
-        if (bizKey == null || !bizKey.startsWith("hold:")) {
+    static Long holdIdFromBizKey(String bizKey) {
+        if (bizKey == null || bizKey.isBlank()) {
             return null;
         }
-        try {
-            return Long.parseLong(bizKey.substring("hold:".length()));
-        } catch (NumberFormatException ex) {
-            return null;
-        }
+        Matcher m = HOLD_BIZ.matcher(bizKey);
+        return m.matches() ? Long.parseLong(m.group(1)) : null;
     }
 
-    static Long parseJsonLong(String json, String field) {
-        if (json == null || json.isBlank() || field == null) {
-            return null;
+    static String trimError(String lastError) {
+        if (lastError == null || lastError.isBlank()) {
+            return lastError;
         }
-        String key = "\"" + field + "\"";
-        int at = json.indexOf(key);
-        if (at < 0) {
-            return null;
-        }
-        int colon = json.indexOf(':', at + key.length());
-        if (colon < 0) {
-            return null;
-        }
-        int i = colon + 1;
-        while (i < json.length() && (json.charAt(i) == ' ' || json.charAt(i) == '"')) {
-            i++;
-        }
-        int j = i;
-        if (j < json.length() && json.charAt(j) == '-') {
-            j++;
-        }
-        while (j < json.length() && Character.isDigit(json.charAt(j))) {
-            j++;
-        }
-        if (j == i || (j == i + 1 && json.charAt(i) == '-')) {
-            return null;
-        }
-        try {
-            return Long.parseLong(json.substring(i, j));
-        } catch (NumberFormatException ex) {
-            return null;
-        }
+        return lastError.length() <= LAST_ERROR_MAX ? lastError : lastError.substring(0, LAST_ERROR_MAX);
     }
 }
