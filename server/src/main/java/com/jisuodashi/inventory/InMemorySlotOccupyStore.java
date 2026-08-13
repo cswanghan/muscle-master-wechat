@@ -110,6 +110,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         bedOccupancyInserts.set(0);
         therapistSlots.clear();
         bedSlots.clear();
+        changeLogs.clear();
         seedDemoCalendar();
     }
 

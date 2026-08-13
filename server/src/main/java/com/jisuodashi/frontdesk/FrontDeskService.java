@@ -284,6 +284,7 @@ public class FrontDeskService {
                 String.valueOf(order.therapistId()),
                 order.startSlotNo(),
                 order.serviceDate().toString(),
+                order.payableFen(),
                 payments.remainingFen(order.id()));
     }
 
