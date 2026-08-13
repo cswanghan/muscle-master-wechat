@@ -18,6 +18,7 @@ import com.jisuodashi.inventory.SlotOccupyStore.IdemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.IdemRow;
 import com.jisuodashi.inventory.SlotOccupyStore.OccupancyInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.OwnedSlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
@@ -70,6 +71,9 @@ public class SlotOccupyService {
     public static final int SCAN_BATCH = 500;
     public static final int STUCK_LOCK_MINUTES = 30;
     public static final String ITEM_PROJECT = "PROJECT";
+    public static final String ITEM_ADD_ON = "ADD_ON";
+    public static final String SCOPE_ADDON = "addon";
+    public static final String ORDER_IN_SERVICE = "IN_SERVICE";
     public static final int LOCK_MINUTES = 15;
     public static final int IDEMPOTENT_TAKEOVER_SECONDS = 30;
     public static final int DEADLOCK_RETRIES = 3;
@@ -267,7 +271,8 @@ public class SlotOccupyService {
     /**
      * Dual-table expired LOCKED scan without {@code fire()} (Law A).
      * Orphan → forceFree; PENDING_PAY / CLOSED leftover → ReleaseLock;
-     * add-on / paid → skip. Production scan uses {@code SlotScanJob} + fire.
+     * add-on hold → ReleaseAddOnHold; paid → skip. Production scan uses
+     * {@code SlotScanJob} + fire.
      */
     public SlotScanResult scanExpiredLocks() {
         List<Long> holds = store.findExpiredLockedHoldIds(clock.now(), SCAN_BATCH);
@@ -282,8 +287,8 @@ public class SlotOccupyService {
                 forceFreeByHold(holdId);
                 orphans++;
             } else if (byAddon != null && byAddon.addOnHoldId() != null && byAddon.addOnHoldId() == holdId) {
+                releaseAddOnHold(holdId);
                 addon++;
-                incStalePaid();
             } else if (byHold != null && mayReleaseUnpaidLocked(byHold.status())) {
                 ReleaseResult r = releaseLock(holdId);
                 if (r.skipped()) {
@@ -558,7 +563,7 @@ public class SlotOccupyService {
         store.restoreBufferSlots(order.id(), bufferFrom, oldEnd, order.holdId(), now);
         store.reassignOccupancyHold(order.id(), bufferFrom, oldEnd, order.holdId());
         store.clearAddOnHold(order.id(), now);
-        store.deleteUnpaidAddOnItems(order.id());
+        store.deleteUnpaidAddOnItems(order.id(), bufferFrom);
         evictAvail(order.storeId(), order.serviceDate());
         String outcome = (occ == 0 && therapist == 0 && bed == 0)
                 ? ReleaseResult.IDEMPOTENT
@@ -717,6 +722,319 @@ public class SlotOccupyService {
 
         static IdempotencyBegin replay(LockNewResult body) {
             return new IdempotencyBegin(0, body.asReplay());
+        }
+    }
+
+    public ExtendOwnResult extendOwn(long orderId, long projectId, int slotCount, boolean cash) {
+        return extendOwn(orderId, projectId, slotCount, cash, null);
+    }
+
+    public ExtendOwnResult extendOwn(
+            long orderId, long projectId, int slotCount, boolean cash, String requestId) {
+        if (slotCount < 1) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "durationMinutes 必须是 15 的倍数且 ≥15");
+        }
+        BookingOrderRef peek = store.findOrderById(orderId);
+        if (peek == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        String token = dayLock.tryAcquire(peek.therapistId(), peek.serviceDate());
+        if (token == null) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        try {
+            return retryDeadlock(() -> inTx(() -> {
+                store.beginWork();
+                try {
+                    ExtendOwnResult result = doExtendOwn(orderId, projectId, slotCount, cash, requestId);
+                    store.commitWork();
+                    return result;
+                } catch (RuntimeException ex) {
+                    store.rollbackWork();
+                    throw ex;
+                }
+            }));
+        } finally {
+            dayLock.release(peek.therapistId(), peek.serviceDate(), token);
+            invalidateAvailability(peek.storeId(), peek.serviceDate());
+        }
+    }
+
+    public ConfirmPaidResult confirmPaidAddOn(long orderId) {
+        return inStoreTx(() -> doConfirmPaidAddOn(orderId));
+    }
+
+    public ConfirmPaidResult confirmPaidAddOnInOpenTx(long orderId) {
+        return doConfirmPaidAddOn(orderId);
+    }
+
+    private ExtendOwnResult doExtendOwn(
+            long orderId, long projectId, int slotCount, boolean cash, String requestId) {
+        AddonIdem begin = beginAddonIdempotent(requestId);
+        if (begin.replay != null) {
+            return begin.replay;
+        }
+        BookingOrderRef order = store.lockOrderById(orderId);
+        if (order == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        if (!ORDER_IN_SERVICE.equals(order.status())) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "非法状态转移");
+        }
+        if (order.addOnHoldId() != null) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "已有未支付加钟");
+        }
+        ProjectRef project = store.loadProject(projectId);
+        if (project == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "项目不存在");
+        }
+        int B = order.bufferSlots();
+        int oldEnd = order.endSlotNo();
+        int newEnd = oldEnd + slotCount;
+        List<Integer> oldBuffer = range(oldEnd - B, oldEnd);
+        List<Integer> newFree = range(oldEnd, newEnd);
+        LocalDateTime now = clock.now();
+        LocalDateTime expireAt = cash ? null : now.plusMinutes(LOCK_MINUTES);
+        long addHold = ids.getAsLong();
+        long amountFen = addOnPrice(project, slotCount);
+
+        occupyOwnBuffer(order, oldBuffer, addHold, cash, newEnd, expireAt, now);
+        occupyNewTail(order, newFree, slotCount, addHold, cash, newEnd, expireAt, now);
+
+        store.insertOrderItem(new OrderItemInsert(
+                ids.getAsLong(), order.id(), ITEM_ADD_ON, project.id(), project.name(),
+                slotCount * 15, 0, slotCount,
+                slotCount == 0 ? 0 : amountFen / slotCount, amountFen,
+                oldEnd - B, newEnd, now));
+
+        String paymentNo = null;
+        if (cash) {
+            long payId = ids.getAsLong();
+            paymentNo = "P" + payId;
+            store.insertCashPayment(payId, paymentNo, order.id(), amountFen, now);
+            store.applyCashAddOn(order.id(), newEnd, amountFen, now);
+        } else {
+            store.setAddOnHold(order.id(), addHold, now);
+            store.insertDelayedJob(new DelayedJobInsert(
+                    ids.getAsLong(), JOB_RELEASE_ADDON, "hold:" + addHold,
+                    "{\"orderId\":" + order.id() + ",\"holdId\":" + addHold + "}",
+                    now.plusMinutes(LOCK_MINUTES), "PENDING", now));
+        }
+        ExtendOwnResult result = new ExtendOwnResult(
+                order.id(), addHold, oldEnd, cash ? newEnd : oldEnd,
+                slotCount * 15, amountFen, cash, paymentNo, false);
+        finishAddonIdempotent(requestId, begin.version, result);
+        return result;
+    }
+
+    private void occupyOwnBuffer(
+            BookingOrderRef order,
+            List<Integer> oldBuffer,
+            long addHold,
+            boolean cash,
+            int newEnd,
+            LocalDateTime expireAt,
+            LocalDateTime now
+    ) {
+        if (oldBuffer.isEmpty()) {
+            return;
+        }
+        List<OwnedSlotRow> trows = store.lockTherapistSlots(
+                order.therapistId(), order.serviceDate(), oldBuffer);
+        List<OwnedSlotRow> brows = store.lockBedSlots(
+                order.bedId(), order.serviceDate(), oldBuffer);
+        if (!ownBuffer(trows, order.id(), oldBuffer.size())
+                || !ownBuffer(brows, order.id(), oldBuffer.size())) {
+            throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
+        }
+        for (int slotNo : oldBuffer) {
+            String dest = destStatus(cash, slotNo, newEnd, order.bufferSlots());
+            if (store.updateTherapistSlotDest(
+                    order.therapistId(), order.serviceDate(), slotNo,
+                    SlotStatus.BUFFER, order.id(), dest, order.id(), addHold, expireAt, now) != 1
+                    || store.updateBedSlotDest(
+                    order.bedId(), order.serviceDate(), slotNo,
+                    SlotStatus.BUFFER, order.id(), dest, order.id(), addHold, expireAt, now) != 1) {
+                throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
+            }
+        }
+        store.reassignOccupancyHold(order.id(), oldBuffer.getFirst(), oldBuffer.getLast() + 1, addHold);
+    }
+
+    private void occupyNewTail(
+            BookingOrderRef order,
+            List<Integer> newFree,
+            int slotCount,
+            long addHold,
+            boolean cash,
+            int newEnd,
+            LocalDateTime expireAt,
+            LocalDateTime now
+    ) {
+        List<SlotRow> trows = store.lockFreeTherapistSlots(
+                order.therapistId(), order.serviceDate(), newFree);
+        if (trows.size() != slotCount
+                || store.occupancyExists(
+                ResourceType.THERAPIST, order.therapistId(), order.serviceDate(), newFree)) {
+            throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
+        }
+        List<SlotRow> brows = store.lockFreeBedSlots(order.bedId(), order.serviceDate(), newFree);
+        if (brows.size() != slotCount
+                || store.occupancyExists(ResourceType.BED, order.bedId(), order.serviceDate(), newFree)) {
+            throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
+        }
+        for (int slotNo : newFree) {
+            String dest = destStatus(cash, slotNo, newEnd, order.bufferSlots());
+            if (store.updateTherapistSlotDest(
+                    order.therapistId(), order.serviceDate(), slotNo,
+                    SlotStatus.FREE, null, dest, order.id(), addHold, expireAt, now) != 1
+                    || store.updateBedSlotDest(
+                    order.bedId(), order.serviceDate(), slotNo,
+                    SlotStatus.FREE, null, dest, order.id(), addHold, expireAt, now) != 1) {
+                throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
+            }
+        }
+        try {
+            insertOccupancy(ResourceType.THERAPIST, order.therapistId(), order.serviceDate(),
+                    newFree, order.id(), addHold, now);
+            insertOccupancy(ResourceType.BED, order.bedId(), order.serviceDate(),
+                    newFree, order.id(), addHold, now);
+        } catch (DuplicateOccupancyException ex) {
+            throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
+        }
+    }
+
+    private ConfirmPaidResult doConfirmPaidAddOn(long orderId) {
+        BookingOrderRef order = store.lockOrderById(orderId);
+        if (order == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        if (order.addOnHoldId() == null) {
+            return new ConfirmPaidResult(order.id(), 0L, 0, 0, 0);
+        }
+        OrderItemInsert item = store.findLatestAddOnItem(order.id());
+        if (item == null) {
+            throw new ApiException(ErrorCodes.ADD_ON_CONFLICT, "后续格冲突");
+        }
+        int newEnd = item.endSlotNo();
+        int serviceEnd = newEnd - order.bufferSlots();
+        LocalDateTime now = clock.now();
+        int therapist = store.confirmPaidTherapistSlots(order.id(), order.addOnHoldId(), serviceEnd, now);
+        int bed = store.confirmPaidBedSlots(order.id(), order.addOnHoldId(), serviceEnd, now);
+        store.applyPaidAddOn(order.id(), newEnd, item.amountFen(), now);
+        int jobs = store.markReleaseAddonJobDone(order.addOnHoldId(), now);
+        evictAvail(order.storeId(), order.serviceDate());
+        return new ConfirmPaidResult(order.id(), order.addOnHoldId(), therapist, bed, jobs);
+    }
+
+    static long addOnPrice(ProjectRef project, int slotCount) {
+        if (project.addOnPriceFen() != null) {
+            return project.addOnPriceFen() * (long) slotCount;
+        }
+        int units = Math.max(1, project.durationMinutes() / 15);
+        return project.priceFen() * (long) slotCount / units;
+    }
+
+    static String destStatus(boolean cash, int slotNo, int newEnd, int bufferSlots) {
+        if (!cash) {
+            return SlotStatus.LOCKED;
+        }
+        return slotNo >= newEnd - bufferSlots ? SlotStatus.BUFFER : SlotStatus.BOOKED;
+    }
+
+    private static boolean ownBuffer(List<OwnedSlotRow> rows, long orderId, int expected) {
+        if (rows.size() != expected) {
+            return false;
+        }
+        for (OwnedSlotRow row : rows) {
+            if (!SlotStatus.BUFFER.equals(row.status())
+                    || row.orderId() == null
+                    || row.orderId() != orderId) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static List<Integer> range(int fromInclusive, int toExclusive) {
+        if (toExclusive <= fromInclusive) {
+            return List.of();
+        }
+        java.util.ArrayList<Integer> nos = new java.util.ArrayList<>(toExclusive - fromInclusive);
+        for (int s = fromInclusive; s < toExclusive; s++) {
+            nos.add(s);
+        }
+        return List.copyOf(nos);
+    }
+
+    private AddonIdem beginAddonIdempotent(String requestId) {
+        if (requestId == null || requestId.isBlank()) {
+            return AddonIdem.proceed(0);
+        }
+        LocalDateTime now = clock.now();
+        boolean inserted = store.insertIdempotency(new IdemInsert(
+                ids.getAsLong(), SCOPE_ADDON, requestId, "PROCESSING", 0, instanceId,
+                now, now, now.plusSeconds(IDEMPOTENT_TAKEOVER_SECONDS)));
+        if (inserted) {
+            return AddonIdem.proceed(0);
+        }
+        IdemRow rec = store.lockIdempotency(SCOPE_ADDON, requestId);
+        if (rec == null) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        if ("DONE".equals(rec.status())) {
+            return AddonIdem.replay(parseAddonReplay(rec.responseBody()));
+        }
+        if ("PROCESSING".equals(rec.status()) && rec.expireAt() != null && rec.expireAt().isAfter(now)) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        int n = store.takeoverIdempotency(
+                SCOPE_ADDON, requestId, rec.version(), now.plusSeconds(IDEMPOTENT_TAKEOVER_SECONDS),
+                now, instanceId);
+        if (n == 0) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        return AddonIdem.proceed(rec.version() + 1);
+    }
+
+    private void finishAddonIdempotent(String requestId, int version, ExtendOwnResult body) {
+        if (requestId == null || requestId.isBlank()) {
+            return;
+        }
+        store.finishIdempotent(SCOPE_ADDON, requestId, version, toAddonJson(body), clock.now());
+    }
+
+    static String toAddonJson(ExtendOwnResult result) {
+        try {
+            ExtendOwnResult stored = result.replay()
+                    ? new ExtendOwnResult(
+                    result.orderId(), result.addHoldId(), result.oldEndSlotNo(), result.newEndSlotNo(),
+                    result.durationMinutes(), result.amountFen(), result.cash(), result.paymentNo(), false)
+                    : result;
+            return JSON.writeValueAsString(stored);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static ExtendOwnResult parseAddonReplay(String json) {
+        if (json == null || json.isBlank()) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        try {
+            return JSON.readValue(json, ExtendOwnResult.class).asReplay();
+        } catch (JsonProcessingException e) {
+            throw new ApiException(ErrorCodes.INTERNAL, "幂等回放失败");
+        }
+    }
+
+    record AddonIdem(int version, ExtendOwnResult replay) {
+        static AddonIdem proceed(int version) {
+            return new AddonIdem(version, null);
+        }
+
+        static AddonIdem replay(ExtendOwnResult body) {
+            return new AddonIdem(0, body.asReplay());
         }
     }
 }

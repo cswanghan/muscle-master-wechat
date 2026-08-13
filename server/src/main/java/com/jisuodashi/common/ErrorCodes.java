@@ -18,6 +18,7 @@ public final class ErrorCodes {
     public static final int LOCK_CONFLICT = 40903;
     public static final int ILLEGAL_TRANSITION = 40904;
     public static final int PAY_EXPIRED = 40905;
+    public static final int ADD_ON_CONFLICT = 40907;
     public static final int CUSTOMER_COLLISION = 40908;
     public static final int INTERNAL = 50001;
     public static final int CHANNEL_ERROR = 50002;
@@ -35,7 +36,7 @@ public final class ErrorCodes {
             case PREPAY_FAILED -> HttpStatus.PAYMENT_REQUIRED;
             case CHANNEL_ERROR -> HttpStatus.BAD_GATEWAY;
             case CUSTOMER_COLLISION, SLOT_UNAVAILABLE, NO_FREE_BED, LOCK_CONFLICT, ILLEGAL_TRANSITION,
-                    PAY_EXPIRED
+                    PAY_EXPIRED, ADD_ON_CONFLICT
                     -> HttpStatus.CONFLICT;
             default -> {
                 if (code >= 40900 && code < 41000) {

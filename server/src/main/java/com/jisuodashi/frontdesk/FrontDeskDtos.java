@@ -81,4 +81,25 @@ public final class FrontDeskDtos {
 
     public record LookupResponse(List<OrderPreview> items) {
     }
+
+    public record AddOnRequest(
+            @NotBlank(message = "requestId 不能为空") String requestId,
+            @NotBlank(message = "projectId 不能为空") String projectId,
+            @NotNull(message = "durationMinutes 不能为空")
+            @Min(value = 15, message = "durationMinutes 必须是 15 的倍数且 ≥15") Integer durationMinutes,
+            @NotBlank(message = "payChannel 不能为空") String payChannel
+    ) {
+    }
+
+    public record AddOnResponse(
+            String orderId,
+            String status,
+            String payChannel,
+            String paymentNo,
+            String codeUrl,
+            long amountFen,
+            int endSlotNo,
+            boolean replay
+    ) {
+    }
 }

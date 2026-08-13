@@ -50,7 +50,7 @@ public class SlotScanJob {
     }
 
     /**
-     * Design §2.6 path C: orphan → forceFree; add-on → skip (PR13);
+     * Design §2.6 path C: orphan → forceFree; add-on → fire(ADD_ON_PAY_TIMEOUT);
      * PENDING_PAY → fire(PAY_TIMEOUT); CLOSED leftover → ReleaseLock; else stale.
      */
     SlotScanResult scanAndFire() {
@@ -66,8 +66,12 @@ public class SlotScanJob {
                 occupy.forceFreeByHold(holdId);
                 orphans++;
             } else if (byAddon != null && byAddon.addOnHoldId() != null && byAddon.addOnHoldId() == holdId) {
-                addon++;
-                occupy.noteStalePaidLocked();
+                if (fireAddOnTimeout(byAddon.id())) {
+                    addon++;
+                } else {
+                    stale++;
+                    occupy.noteStalePaidLocked();
+                }
             } else if (byHold != null && SlotOccupyService.ORDER_PENDING_PAY.equals(byHold.status())) {
                 if (firePayTimeout(byHold.id())) {
                     pending++;
@@ -100,6 +104,19 @@ public class SlotScanJob {
                 return false;
             }
             log.warn("SlotScanJob fire(PAY_TIMEOUT) order={} code={}", orderId, ex.getCode());
+            return false;
+        }
+    }
+
+    private boolean fireAddOnTimeout(long orderId) {
+        try {
+            machine.fire(orderId, OrderEvent.ADD_ON_PAY_TIMEOUT, FireContext.job());
+            return true;
+        } catch (ApiException ex) {
+            if (ex.getCode() == ErrorCodes.ILLEGAL_TRANSITION) {
+                return true;
+            }
+            log.warn("SlotScanJob fire(ADD_ON_PAY_TIMEOUT) order={} code={}", orderId, ex.getCode());
             return false;
         }
     }
