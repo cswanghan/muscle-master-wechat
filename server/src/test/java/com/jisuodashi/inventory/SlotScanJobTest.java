@@ -2,6 +2,7 @@ package com.jisuodashi.inventory;
 
 import com.jisuodashi.inventory.InMemorySlotOccupyStore.MutableSlot;
 import com.jisuodashi.job.SlotScanJob;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -32,6 +33,22 @@ class SlotScanJobTest {
         assertThat(store.bedSlot(BED1, TODAY, 78).status).isEqualTo(SlotStatus.FREE);
         assertThat(store.findOrderByHoldId(locked.holdId()).status())
                 .isEqualTo(SlotOccupyService.ORDER_PENDING_PAY);
+    }
+
+    @Test
+    void closedOrderExpiredLockIsReleased() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService service = OccupyFixtures.service(store);
+        LockNewResult locked = service.lockNew(OccupyFixtures.cmd("scan-closed", T1, START_1930));
+        store.setOrderStatus(locked.orderId(), SlotOccupyService.ORDER_CLOSED);
+        store.expireHold(locked.holdId(), TODAY.atTime(18, 50));
+
+        SlotScanResult scan = new SlotScanJob(service).run();
+        assertThat(scan.pendingReleased()).isEqualTo(1);
+        assertThat(store.occupancies).isEmpty();
+        assertThat(store.therapistSlot(T1, TODAY, 78).status).isEqualTo(SlotStatus.FREE);
+        assertThat(store.findOrderByHoldId(locked.holdId()).status())
+                .isEqualTo(SlotOccupyService.ORDER_CLOSED);
     }
 
     @Test
@@ -116,6 +133,28 @@ class SlotScanJobTest {
         assertThat(scan.pendingReleased()).isZero();
         assertThat(store.occupancies).hasSize(10);
         assertThat(store.therapistSlot(T1, TODAY, 78).status).isEqualTo(SlotStatus.LOCKED);
+    }
+
+    @Test
+    void scanIncrementsStalePaidMetricAndStuckGauge() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SimpleMeterRegistry meters = new SimpleMeterRegistry();
+        SlotOccupyService service = new SlotOccupyService(
+                store, new InMemoryTherapistDayLock(),
+                new java.util.concurrent.atomic.AtomicLong(9_200_000_000_000_000_000L)::incrementAndGet,
+                new com.jisuodashi.common.AppClock(java.time.Clock.fixed(
+                        TODAY.atTime(19, 0).atZone(com.jisuodashi.common.AppClock.SHANGHAI).toInstant(),
+                        com.jisuodashi.common.AppClock.SHANGHAI)),
+                meters);
+        LockNewResult locked = service.lockNew(OccupyFixtures.cmd("scan-metric", T1, START_1930));
+        store.setOrderStatus(locked.orderId(), "BOOKED");
+        store.expireHold(locked.holdId(), TODAY.atTime(18, 20));
+
+        SlotScanResult scan = new SlotScanJob(service).run();
+        assertThat(scan.stalePaid()).isEqualTo(1);
+        assertThat(meters.counter("slot.locked.stale_paid").count()).isEqualTo(1.0);
+        assertThat(store.countLockedExpiredBefore(TODAY.atTime(18, 50))).isEqualTo(10);
+        assertThat(meters.get("slot.locked.stuck_30m").gauge().value()).isEqualTo(10.0);
     }
 
     private static void plantBedOnly(InMemorySlotOccupyStore store, long bedId, long holdId, LocalDateTime expire) {

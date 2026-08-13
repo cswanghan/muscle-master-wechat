@@ -14,6 +14,7 @@ public class AppProperties {
     private final Crypto crypto = new Crypto();
     private final Catalog catalog = new Catalog();
     private final Booking booking = new Booking();
+    private final Internal internal = new Internal();
 
     public Jobs getJobs() {
         return jobs;
@@ -41,6 +42,10 @@ public class AppProperties {
 
     public Booking getBooking() {
         return booking;
+    }
+
+    public Internal getInternal() {
+        return internal;
     }
 
     public static class Jobs {
@@ -195,6 +200,39 @@ public class AppProperties {
 
         public void setStoreCacheTtl(Duration storeCacheTtl) {
             this.storeCacheTtl = storeCacheTtl;
+        }
+    }
+
+    /**
+     * Rollback-drill endpoints. Off by default; when on, require loopback
+     * plus {@code X-Internal-Token}. Never expose :8080 unauthenticated.
+     */
+    public static class Internal {
+        private final ForceRelease forceRelease = new ForceRelease();
+
+        public ForceRelease getForceRelease() {
+            return forceRelease;
+        }
+
+        public static class ForceRelease {
+            private boolean enabled = false;
+            private String token = "";
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getToken() {
+                return token;
+            }
+
+            public void setToken(String token) {
+                this.token = token;
+            }
         }
     }
 

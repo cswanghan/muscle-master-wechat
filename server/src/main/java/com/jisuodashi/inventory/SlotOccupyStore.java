@@ -88,6 +88,9 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     List<Long> findExpiredLockedHoldIds(LocalDateTime now, int limit);
 
+    /** LOCKED rows with {@code lock_expire_at < cutoff} on both slot tables. */
+    int countLockedExpiredBefore(LocalDateTime cutoff);
+
     int confirmPaidTherapistSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now);
 
     int confirmPaidBedSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now);

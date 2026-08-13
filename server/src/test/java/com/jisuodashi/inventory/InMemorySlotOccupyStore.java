@@ -480,6 +480,23 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
         return ids.stream().limit(limit).toList();
     }
 
+    @Override
+    public int countLockedExpiredBefore(LocalDateTime cutoff) {
+        return countExpiredRows(therapistSlots, cutoff) + countExpiredRows(bedSlots, cutoff);
+    }
+
+    private static int countExpiredRows(Map<String, MutableSlot> slots, LocalDateTime cutoff) {
+        int n = 0;
+        for (MutableSlot slot : slots.values()) {
+            if (SlotStatus.LOCKED.equals(slot.status)
+                    && slot.lockExpireAt != null
+                    && slot.lockExpireAt.isBefore(cutoff)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     private static void collectExpired(Map<String, MutableSlot> slots, LocalDateTime now, java.util.Set<Long> ids) {
         for (MutableSlot slot : slots.values()) {
             if (SlotStatus.LOCKED.equals(slot.status)

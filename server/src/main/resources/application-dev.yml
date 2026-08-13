@@ -43,3 +43,7 @@ app:
   booking:
     captcha:
       enabled: false
+  internal:
+    force-release:
+      enabled: false
+      token:

@@ -38,6 +38,19 @@ class MuscleMasterApplicationTests {
 
     @Test
     @SuppressWarnings("unchecked")
+    void internalForceReleaseIsOffOnDev() {
+        assertThat(appProperties.getInternal().getForceRelease().isEnabled()).isFalse();
+        ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
+                "/internal/force-release?holdId=1",
+                null,
+                (Class<Map<String, Object>>) (Class<?>) Map.class);
+        assertThat(response.getStatusCode().value()).isEqualTo(403);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().get("code")).isEqualTo(40301);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void actuatorHealthIsUp() {
         ResponseEntity<Map<String, Object>> response =
                 restTemplate.getForEntity("/actuator/health", (Class<Map<String, Object>>) (Class<?>) Map.class);

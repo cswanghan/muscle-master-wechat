@@ -44,6 +44,21 @@ class SlotReleaseServiceTest {
     }
 
     @Test
+    void releaseLockFreesClosedOrderLockedSlots() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService service = OccupyFixtures.service(store);
+        LockNewResult locked = service.lockNew(OccupyFixtures.cmd("rel-closed", T1, START_1930));
+        store.setOrderStatus(locked.orderId(), SlotOccupyService.ORDER_CLOSED);
+
+        ReleaseResult freed = service.releaseLock(locked.holdId());
+        assertThat(freed.outcome()).isEqualTo(ReleaseResult.FREED);
+        assertThat(freed.occupancyDeleted()).isEqualTo(10);
+        assertSlotsFree(store, locked.holdId(), locked.orderId());
+        assertThat(store.findOrderByHoldId(locked.holdId()).status())
+                .isEqualTo(SlotOccupyService.ORDER_CLOSED);
+    }
+
+    @Test
     void releaseLockDoesNotFreePaidOrder() {
         InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
         SlotOccupyService service = OccupyFixtures.service(store);
@@ -113,6 +128,21 @@ class SlotReleaseServiceTest {
         assertThat(forced.outcome()).isEqualTo(ReleaseResult.ORPHAN_FREED);
         assertThat(store.occupancies).isEmpty();
         assertSlotsFree(store, locked.holdId(), locked.orderId());
+    }
+
+    @Test
+    void forceFreeByHoldDoesNotDeleteBookedOccupancy() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService service = OccupyFixtures.service(store);
+        LockNewResult locked = service.lockNew(OccupyFixtures.cmd("rel-force-paid", T1, START_1930));
+        service.confirmPaidSlots(locked.orderId());
+        store.setOrderStatus(locked.orderId(), "BOOKED");
+
+        ReleaseResult forced = service.forceFreeByHold(locked.holdId());
+        assertThat(forced.outcome()).isEqualTo(ReleaseResult.IDEMPOTENT);
+        assertThat(forced.occupancyDeleted()).isZero();
+        assertThat(store.occupancies).hasSize(10);
+        assertBookedBuffer(store, locked.orderId());
     }
 
     @Test

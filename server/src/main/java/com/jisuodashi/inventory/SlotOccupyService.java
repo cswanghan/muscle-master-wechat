@@ -21,6 +21,9 @@ import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DeadlockLoserDataAccessException;
@@ -52,6 +55,8 @@ import java.util.function.Supplier;
  * <p>
  * Law A (D25): {@link #releaseLock} / {@link #forceFreeByHold} MUST NOT
  * {@code fire()} the order state machine. They join the caller TX.
+ * {@code ReleaseLock} frees LOCKED rows when the order is PENDING_PAY or
+ * CLOSED (fire already wrote the target). Never BOOKED / IN_SERVICE.
  */
 @Service
 public class SlotOccupyService {
@@ -60,7 +65,9 @@ public class SlotOccupyService {
     public static final String JOB_RELEASE_LOCK = "RELEASE_LOCK";
     public static final String JOB_RELEASE_ADDON = "RELEASE_ADDON";
     public static final String ORDER_PENDING_PAY = "PENDING_PAY";
+    public static final String ORDER_CLOSED = "CLOSED";
     public static final int SCAN_BATCH = 500;
+    public static final int STUCK_LOCK_MINUTES = 30;
     public static final String ITEM_PROJECT = "PROJECT";
     public static final int LOCK_MINUTES = 15;
     public static final int IDEMPOTENT_TAKEOVER_SECONDS = 30;
@@ -76,6 +83,7 @@ public class SlotOccupyService {
     private final TransactionTemplate tx;
     private final String instanceId;
     private final StringRedisTemplate redis;
+    private final Counter stalePaid;
 
     @Autowired
     public SlotOccupyService(
@@ -85,10 +93,11 @@ public class SlotOccupyService {
             AppClock clock,
             PlatformTransactionManager txManager,
             AppProperties properties,
-            @Autowired(required = false) StringRedisTemplate redis
+            @Autowired(required = false) StringRedisTemplate redis,
+            @Autowired(required = false) MeterRegistry meters
     ) {
         this(store, dayLock, ids::nextId, clock, new TransactionTemplate(txManager),
-                "w" + properties.getSnowflake().getWorkerId(), redis);
+                "w" + properties.getSnowflake().getWorkerId(), redis, meters);
     }
 
     public SlotOccupyService(
@@ -97,7 +106,17 @@ public class SlotOccupyService {
             LongSupplier ids,
             AppClock clock
     ) {
-        this(store, dayLock, ids, clock, null, "test", null);
+        this(store, dayLock, ids, clock, null, "test", null, null);
+    }
+
+    public SlotOccupyService(
+            SlotOccupyStore store,
+            TherapistDayLock dayLock,
+            LongSupplier ids,
+            AppClock clock,
+            MeterRegistry meters
+    ) {
+        this(store, dayLock, ids, clock, null, "test", null, meters);
     }
 
     SlotOccupyService(
@@ -107,7 +126,8 @@ public class SlotOccupyService {
             AppClock clock,
             TransactionTemplate tx,
             String instanceId,
-            StringRedisTemplate redis
+            StringRedisTemplate redis,
+            MeterRegistry meters
     ) {
         this.store = store;
         this.dayLock = dayLock;
@@ -116,6 +136,17 @@ public class SlotOccupyService {
         this.tx = tx;
         this.instanceId = instanceId;
         this.redis = redis;
+        if (meters == null) {
+            this.stalePaid = null;
+        } else {
+            this.stalePaid = Counter.builder("slot.locked.stale_paid")
+                    .description("Expired LOCKED holds skipped because the order is paid/in-service or add-on")
+                    .register(meters);
+            Gauge.builder("slot.locked.stuck_30m", store,
+                            s -> s.countLockedExpiredBefore(clock.now().minusMinutes(STUCK_LOCK_MINUTES)))
+                    .description("LOCKED rows with lock_expire_at older than 30 minutes")
+                    .register(meters);
+        }
     }
 
     public LockNewResult lockNew(LockNewCommand cmd) {
@@ -135,8 +166,10 @@ public class SlotOccupyService {
     }
 
     /**
-     * Free LOCKED slots for an unpaid hold. No {@code fire()}.
-     * Missing order → orphan {@link #forceFreeByHold}. Non-PENDING_PAY → no-op.
+     * Free LOCKED slots for a hold. No {@code fire()}.
+     * Missing order → orphan {@link #forceFreeByHold}.
+     * PENDING_PAY or CLOSED (fire already CAS'd the target) → free LOCKED only.
+     * BOOKED / IN_SERVICE → skip (paid inventory; force-release is the drill).
      */
     public ReleaseResult releaseLock(long holdId) {
         return inStoreTx(() -> doReleaseLock(holdId));
@@ -144,7 +177,8 @@ public class SlotOccupyService {
 
     /**
      * FORCE free LOCKED slots for this hold (orphans / rollback drill).
-     * Deletes occupancy then LOCKED→FREE. Does not {@code fire()}.
+     * Only LOCKED occupancy and LOCKED rows. Does not {@code fire()}.
+     * Locks the order row when present so this cannot race {@link #confirmPaidSlots}.
      */
     public ReleaseResult forceFreeByHold(long holdId) {
         return inStoreTx(() -> doForceFreeByHold(holdId));
@@ -176,15 +210,18 @@ public class SlotOccupyService {
                 orphans++;
             } else if (byAddon != null && byAddon.addOnHoldId() != null && byAddon.addOnHoldId() == holdId) {
                 addon++;
-            } else if (byHold != null && ORDER_PENDING_PAY.equals(byHold.status())) {
+                incStalePaid();
+            } else if (byHold != null && mayReleaseUnpaidLocked(byHold.status())) {
                 ReleaseResult r = releaseLock(holdId);
                 if (r.skipped()) {
                     stale++;
+                    incStalePaid();
                 } else {
                     pending++;
                 }
             } else {
                 stale++;
+                incStalePaid();
             }
         }
         return new SlotScanResult(List.copyOf(holds), orphans, pending, stale, addon);
@@ -368,23 +405,29 @@ public class SlotOccupyService {
                     holdId, outcome,
                     orphan.occupancyDeleted(), orphan.therapistFreed(), orphan.bedFreed());
         }
-        if (!ORDER_PENDING_PAY.equals(order.status())) {
+        if (!mayReleaseUnpaidLocked(order.status())) {
             return new ReleaseResult(holdId, ReleaseResult.SKIPPED_NOT_PENDING, 0, 0, 0);
         }
         return freeLockedHold(holdId, ReleaseResult.FREED);
     }
 
+    /**
+     * fire() writes CLOSED first then calls ReleaseLock. PENDING_PAY is the
+     * pre-fire / scan-direct path. BOOKED/IN_SERVICE keep occupancy.
+     */
+    static boolean mayReleaseUnpaidLocked(String status) {
+        return ORDER_PENDING_PAY.equals(status) || ORDER_CLOSED.equals(status);
+    }
+
     private ReleaseResult doForceFreeByHold(long holdId) {
-        SlotHoldMeta meta = store.findHoldSlotMeta(holdId);
-        int occ = store.deleteOccupancyByHold(holdId);
-        LocalDateTime now = clock.now();
-        int therapist = store.freeLockedTherapistSlots(holdId, now);
-        int bed = store.freeLockedBedSlots(holdId, now);
-        evictMeta(meta);
-        String outcome = (occ == 0 && therapist == 0 && bed == 0)
-                ? ReleaseResult.IDEMPOTENT
-                : ReleaseResult.ORPHAN_FREED;
-        return new ReleaseResult(holdId, outcome, occ, therapist, bed);
+        store.lockOrderByHoldId(holdId);
+        return freeLockedHold(holdId, ReleaseResult.ORPHAN_FREED);
+    }
+
+    private void incStalePaid() {
+        if (stalePaid != null) {
+            stalePaid.increment();
+        }
     }
 
     private ReleaseResult freeLockedHold(long holdId, String freedOutcome) {

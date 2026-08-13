@@ -421,6 +421,16 @@ public interface InventoryOccupyMapper {
             """)
     List<Long> findExpiredLockedHoldIds(@Param("now") LocalDateTime now, @Param("limit") int limit);
 
+    @Select("""
+            SELECT
+              (SELECT COUNT(*) FROM therapist_slot
+                WHERE status = 'LOCKED' AND lock_expire_at < #{cutoff})
+              +
+              (SELECT COUNT(*) FROM bed_slot
+                WHERE status = 'LOCKED' AND lock_expire_at < #{cutoff})
+            """)
+    int countLockedExpiredBefore(@Param("cutoff") LocalDateTime cutoff);
+
     @Update("""
             UPDATE therapist_slot
                SET status = CASE WHEN slot_no < #{serviceEnd} THEN 'BOOKED' ELSE 'BUFFER' END,

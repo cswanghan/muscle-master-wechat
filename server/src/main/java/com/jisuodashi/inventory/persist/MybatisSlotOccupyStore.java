@@ -216,6 +216,11 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public int countLockedExpiredBefore(LocalDateTime cutoff) {
+        return mapper.countLockedExpiredBefore(cutoff);
+    }
+
+    @Override
     public int confirmPaidTherapistSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now) {
         return mapper.confirmPaidTherapistSlots(orderId, holdId, serviceEndSlotNo, now);
     }

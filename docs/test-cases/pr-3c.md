@@ -11,8 +11,8 @@
 ## TC-3c-02 paid order not released by expire job
 
 - **步骤**：`lockNew` 后 `confirmPaidSlots`（78–81 BOOKED、82 BUFFER，`lock_expire_at=NULL`，`RELEASE_LOCK` 标 DONE）。再把 job 拨回 PENDING 到期，`JobRunner.drainDueJobs()`。
-- **预期**：扫描找不到 LOCKED；occupancy 仍 10；slot 仍 BOOKED/BUFFER；expire job no-op 后 `DONE`（不是 FAILED）。非 `PENDING_PAY` 的 `ReleaseLock` 直接 `SKIPPED_NOT_PENDING`。
-- **实际结果**：PASS。`SlotReleaseServiceTest.confirmPaidThenExpireJobDoesNotRelease` / `releaseLockDoesNotFreePaidOrder`；`SlotScanJobTest.paidOrderNotReleasedByExpireScan`。
+- **预期**：扫描找不到 LOCKED；occupancy 仍 10；slot 仍 BOOKED/BUFFER；expire job no-op 后 `DONE`（不是 FAILED）。`BOOKED`/`IN_SERVICE` 的 `ReleaseLock` 直接 `SKIPPED_NOT_PENDING`。`CLOSED`（fire 已写终态）仍释放 LOCKED。
+- **实际结果**：PASS。`SlotReleaseServiceTest.confirmPaidThenExpireJobDoesNotRelease` / `releaseLockDoesNotFreePaidOrder` / `releaseLockFreesClosedOrderLockedSlots`；`SlotScanJobTest.paidOrderNotReleasedByExpireScan` / `closedOrderExpiredLockIsReleased`。
 
 ## TC-3c-03 bed-only orphan released
 
@@ -34,15 +34,15 @@
 
 ## TC-3c-06 ForceRelease + 内部端点
 
-- **步骤**：订单标 `BOOKED` 但格仍 LOCKED；`ReleaseLock` 跳过；`ForceReleaseJob` / `POST /internal/force-release?holdId=` 强制清 LOCKED。
-- **预期**：内部路径不在 `/api/v1/c|t|f|a`；`forceFreeByHold` 删 occupancy + FREE。
-- **实际结果**：PASS。`SlotReleaseServiceTest.forceFreeByHoldReleasesNonPendingLockedOrphan`。
+- **步骤**：订单标 `BOOKED` 但格仍 LOCKED；`ReleaseLock` 跳过；`ForceReleaseJob` 只清 LOCKED。`POST /internal/force-release?holdId=` 默认关；开启须本机 + `X-Internal-Token`。
+- **预期**：内部路径不在 `/api/v1/c|t|f|a`；dev 未开 → 40301；无 LOCKED → 40901；已 BOOKED 的 occupancy 不被 `forceFreeByHold` 删除。
+- **实际结果**：PASS。`SlotReleaseServiceTest.forceFreeByHoldReleasesNonPendingLockedOrphan` / `forceFreeByHoldDoesNotDeleteBookedOccupancy`；`InternalForceReleaseControllerTest`；`MuscleMasterApplicationTests.internalForceReleaseIsOffOnDev`。
 
 ## TC-3c-07 既有用例不回归
 
 - **步骤**：`export JAVA_HOME=/opt/homebrew/opt/openjdk@21; export PATH="$JAVA_HOME/bin:$PATH"`；`mvn -f server/pom.xml test`。
 - **预期**：生成 / lockNew / 登录 / 目录 / schema / RBAC / JobRunner 仍过。
-- **实际结果**：PASS。Surefire：`Tests run: 134, Failures: 0, Errors: 0, Skipped: 0`。
+- **实际结果**：PASS。Surefire：`Tests run: 145, Failures: 0, Errors: 0, Skipped: 0`。
 
 ## 附加：释放报告截图
 

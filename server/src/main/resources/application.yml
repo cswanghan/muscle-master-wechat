@@ -75,6 +75,10 @@ app:
   booking:
     captcha:
       enabled: ${BOOKING_CAPTCHA_ENABLED:false}
+  internal:
+    force-release:
+      enabled: ${APP_INTERNAL_FORCE_RELEASE:false}
+      token: ${APP_INTERNAL_FORCE_RELEASE_TOKEN:}
 
 logging:
   pattern:
