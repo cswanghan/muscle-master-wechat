@@ -51,6 +51,31 @@ class SlotPlannerTest {
     }
 
     @Test
+    void oneSidedLeaveStartOnlyCoalescesEndToBusinessHours() {
+        var leave = DemoFixtures.leave(1, T1, TODAY, LocalTime.of(18, 0), null);
+        TherapistDayPlan plan = planner.plan(
+                T1, TODAY, List.of(weekdayTemplate(STORE)), List.of(leave),
+                DemoFixtures.OPEN, DemoFixtures.CLOSE);
+        assertRest(plan, 72, 88);
+        assertThat(plan.slots().get(40).status()).isEqualTo(SlotStatus.FREE);
+        assertThat(plan.slots().get(71).status()).isEqualTo(SlotStatus.FREE);
+        assertThat(count(plan, SlotStatus.REST)).isEqualTo(16);
+        assertThat(count(plan, SlotStatus.FREE)).isEqualTo(32);
+    }
+
+    @Test
+    void oneSidedLeaveEndOnlyCoalescesStartToBusinessHours() {
+        var leave = DemoFixtures.leave(1, T1, TODAY, null, LocalTime.of(16, 0));
+        TherapistDayPlan plan = planner.plan(
+                T1, TODAY, List.of(weekdayTemplate(STORE)), List.of(leave),
+                DemoFixtures.OPEN, DemoFixtures.CLOSE);
+        assertRest(plan, 40, 64);
+        assertThat(plan.slots().get(64).status()).isEqualTo(SlotStatus.FREE);
+        assertThat(count(plan, SlotStatus.REST)).isEqualTo(24);
+        assertThat(count(plan, SlotStatus.FREE)).isEqualTo(24);
+    }
+
+    @Test
     void pendingLeaveIsIgnored() {
         var pending = new ScheduleExceptionView(
                 1, T1, null, TODAY, "LEAVE", LocalTime.of(14, 0), LocalTime.of(16, 0), "PENDING");

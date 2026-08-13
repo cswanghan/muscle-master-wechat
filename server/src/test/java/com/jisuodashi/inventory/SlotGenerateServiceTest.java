@@ -121,6 +121,42 @@ class SlotGenerateServiceTest {
     }
 
     @Test
+    void oneSidedLeaveDoesNotRestTheWholeDay() {
+        InMemorySlotGenerateStore store = DemoFixtures.demoStore();
+        store.exceptions.add(DemoFixtures.leave(1, T1, TODAY, LocalTime.of(18, 0), null));
+        SlotGenerateResult result = DemoFixtures.service(store).generate(TODAY);
+
+        assertThat(result.restWritten()).isEqualTo(16);
+        assertThat(store.therapistSlot(T1, TODAY, 40).status()).isEqualTo(SlotStatus.FREE);
+        assertThat(store.therapistSlot(T1, TODAY, 71).status()).isEqualTo(SlotStatus.FREE);
+        assertThat(store.therapistSlot(T1, TODAY, 72).status()).isEqualTo(SlotStatus.REST);
+        assertThat(store.therapistSlot(T1, TODAY, 87).status()).isEqualTo(SlotStatus.REST);
+    }
+
+    @Test
+    void badTherapistDayDoesNotRollBackHorizon() {
+        InMemorySlotGenerateStore store = DemoFixtures.demoStore();
+        store.exceptions.add(new SlotGenerateStore.ScheduleExceptionView(
+                99, T1, null, TODAY, "LEAVE", LocalTime.of(14, 7), LocalTime.of(16, 0), "APPROVED"));
+
+        SlotGenerateResult result = DemoFixtures.service(store).generate(TODAY);
+        LocalDate horizon = TODAY.plusDays(SlotGenerateService.HORIZON_DAYS);
+
+        assertThat(store.therapistSlot(T1, TODAY, 40)).isNull();
+        assertThat(store.therapistSlot(T1, TODAY.plusDays(1), 40)).isNotNull();
+        assertThat(store.therapistSlot(T2, TODAY, 40)).isNotNull();
+        assertThat(result.therapistInserted()).isEqualTo((3 * 16 - 1) * SLOTS_PER_SHIFT);
+        assertThat(result.bedInserted()).isEqualTo(2 * 16 * SLOTS_PER_SHIFT);
+        assertThat(store.humanTasks.values())
+                .anyMatch(t -> SlotGenerateService.TASK_GENERATION_FAILED.equals(t.taskType())
+                        && t.bizKey().equals("gf:" + T1 + ":" + TODAY));
+        assertThat(store.therapistSlots.values())
+                .noneMatch(s -> s.therapistId() == T1 && s.slotDate().equals(TODAY));
+        assertThat(store.therapistSlots.values())
+                .anyMatch(s -> s.therapistId() == T1 && s.slotDate().equals(horizon));
+    }
+
+    @Test
     void jobDelegatesToServiceWithoutWritingBuffer() {
         InMemorySlotGenerateStore store = DemoFixtures.demoStore();
         SlotGenerateJob job = new SlotGenerateJob(DemoFixtures.service(store));
