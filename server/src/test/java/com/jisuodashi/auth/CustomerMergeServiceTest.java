@@ -29,7 +29,7 @@ class CustomerMergeServiceTest {
         customers = new InMemoryCustomerRepository();
         related = new InMemoryRelatedRecordsRepository(ids, clock);
         sessions = new InMemoryAuthSessionRepository();
-        merge = new CustomerMergeService(customers, related, sessions, ids, clock);
+        merge = new CustomerMergeService(customers, related, sessions, new CollisionTaskWriter(related), ids, clock);
     }
 
     @Test

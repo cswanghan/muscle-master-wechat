@@ -22,6 +22,7 @@ public class CustomerMergeService {
     private final CustomerRepository customers;
     private final RelatedRecordsRepository related;
     private final AuthSessionRepository sessions;
+    private final CollisionTaskWriter collisionTasks;
     private final SnowflakeIdGenerator ids;
     private final Clock clock;
     private final Object lock = new Object();
@@ -30,11 +31,13 @@ public class CustomerMergeService {
             CustomerRepository customers,
             RelatedRecordsRepository related,
             AuthSessionRepository sessions,
+            CollisionTaskWriter collisionTasks,
             SnowflakeIdGenerator ids,
             Clock clock) {
         this.customers = customers;
         this.related = related;
         this.sessions = sessions;
+        this.collisionTasks = collisionTasks;
         this.ids = ids;
         this.clock = clock;
     }
@@ -107,7 +110,7 @@ public class CustomerMergeService {
                 if (openid == null || openid.equals(b.getWxOpenid())) {
                     return b;
                 }
-                related.insertCollisionTask(phoneHash);
+                collisionTasks.record(phoneHash);
                 throw new ApiException(ErrorCodes.CUSTOMER_COLLISION, "客户身份冲突");
             }
 
@@ -143,7 +146,7 @@ public class CustomerMergeService {
                 return b;
             }
 
-            related.insertCollisionTask(phoneHash);
+            collisionTasks.record(phoneHash);
             throw new ApiException(ErrorCodes.CUSTOMER_COLLISION, "客户身份冲突");
         }
     }
