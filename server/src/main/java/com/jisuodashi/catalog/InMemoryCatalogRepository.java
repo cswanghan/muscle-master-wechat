@@ -1,6 +1,7 @@
 package com.jisuodashi.catalog;
 
 import com.jisuodashi.auth.DemoStaffIds;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 /** H2 cannot apply V1; load the same IDs as V3__demo_store.sql. */
 @Repository
+@Profile("dev")
 public class InMemoryCatalogRepository implements CatalogRepository {
 
     private static final LocalDate FROM = LocalDate.of(2026, 1, 1);

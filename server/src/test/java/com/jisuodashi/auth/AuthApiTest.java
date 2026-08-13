@@ -54,10 +54,14 @@ class AuthApiTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private AuthSessionRepository sessions;
+
     @BeforeEach
     void reset() {
         customers.clear();
         related.clear();
+        sessions.clear();
     }
 
     @Test
@@ -100,6 +104,10 @@ class AuthApiTest {
         assertThat(p.subjectId()).isEqualTo(walkIn.getId());
         assertThat(related.bookingCustomerIds()).containsExactly(walkIn.getId());
         assertThat(customers.findById(Long.parseLong(openidOnlyId))).isEmpty();
+        assertThat(sessions.findBySubject("CUSTOMER", Long.parseLong(openidOnlyId))).isEmpty();
+        assertThat(sessions.findBySubject("CUSTOMER", walkIn.getId()))
+                .isNotEmpty()
+                .allMatch(s -> s.getSubjectId() == walkIn.getId());
     }
 
     @Test
@@ -114,6 +122,7 @@ class AuthApiTest {
         assertThat(res.getBody()).isNotNull();
         assertThat(res.getBody().get("code")).isEqualTo(40908);
         assertThat(related.humanTasks()).isNotEmpty();
+        assertThat(related.humanTasks().getFirst().getBizKey().length()).isLessThanOrEqualTo(64);
     }
 
     @Test

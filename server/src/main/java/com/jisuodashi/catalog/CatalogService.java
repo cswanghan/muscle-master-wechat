@@ -29,7 +29,7 @@ public class CatalogService {
     private final PhoneCrypto phoneCrypto;
     private final Clock clock;
     private final int nearMeters;
-    private final TtlCache<String, List<CatalogDtos.StoreListItem>> storeCache;
+    private final TtlCache<String, List<CatalogModels.Store>> storeCache;
 
     public CatalogService(
             CatalogRepository catalog,
@@ -50,10 +50,8 @@ public class CatalogService {
         }
         int size = normalizeLimit(limit);
         Long afterId = parseCursor(cursor);
-        String cacheKey = (lng == null)
-                ? "all"
-                : "geo:" + Math.round(lng * 1000) + ":" + Math.round(lat * 1000);
-        List<CatalogDtos.StoreListItem> all = storeCache.get(cacheKey, () -> buildStoreList(lng, lat));
+        List<CatalogModels.Store> cached = storeCache.get("active", this::loadActiveStores);
+        List<CatalogDtos.StoreListItem> all = projectStoreList(cached, lng, lat);
         List<CatalogDtos.StoreListItem> sliced = new ArrayList<>();
         boolean skipping = afterId != null;
         String next = null;
@@ -98,7 +96,10 @@ public class CatalogService {
         Long afterId = parseCursor(cursor);
         LocalDate today = LocalDate.now(clock.withZone(ClockConfig.SHANGHAI));
         int weekday = isoWeekday(today.getDayOfWeek());
-        Set<Long> onDuty = onDutyTherapistIds(storeId, today, weekday);
+        // Prefer generated therapist_slot when inventory has run; else week templates (V3).
+        Set<Long> onDuty = catalog.hasSlotsOn(today)
+                ? new HashSet<>(catalog.therapistIdsOnDutySlots(storeId, today))
+                : onDutyTherapistIds(storeId, today, weekday);
         List<CatalogDtos.TherapistItem> items = new ArrayList<>();
         String next = null;
         boolean skipping = afterId != null;
@@ -163,12 +164,14 @@ public class CatalogService {
         return new CatalogDtos.SymptomProjects(items, items.isEmpty() ? EMPTY_HINT : null);
     }
 
-    private List<CatalogDtos.StoreListItem> buildStoreList(Double lng, Double lat) {
+    private List<CatalogModels.Store> loadActiveStores() {
+        return catalog.listStores().stream().filter(s -> s.status() == 1).toList();
+    }
+
+    private List<CatalogDtos.StoreListItem> projectStoreList(
+            List<CatalogModels.Store> stores, Double lng, Double lat) {
         List<CatalogDtos.StoreListItem> items = new ArrayList<>();
-        for (CatalogModels.Store store : catalog.listStores()) {
-            if (store.status() != 1) {
-                continue;
-            }
+        for (CatalogModels.Store store : stores) {
             Integer distance = null;
             boolean near = false;
             if (lng != null && store.lng() != null && store.lat() != null) {

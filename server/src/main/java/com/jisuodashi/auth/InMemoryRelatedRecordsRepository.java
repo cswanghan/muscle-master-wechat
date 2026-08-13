@@ -1,6 +1,7 @@
 package com.jisuodashi.auth;
 
 import com.jisuodashi.common.SnowflakeIdGenerator;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.Clock;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Repository
+@Profile("dev")
 public class InMemoryRelatedRecordsRepository implements RelatedRecordsRepository {
 
     private final SnowflakeIdGenerator ids;
@@ -42,7 +44,7 @@ public class InMemoryRelatedRecordsRepository implements RelatedRecordsRepositor
 
     @Override
     public void insertCollisionTask(String phoneHash) {
-        String bizKey = "collide:" + phoneHash;
+        String bizKey = CollisionKeys.bizKey(phoneHash);
         boolean exists = tasks.stream().anyMatch(t -> bizKey.equals(t.getBizKey()));
         if (exists) {
             return;

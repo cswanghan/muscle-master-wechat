@@ -1,8 +1,8 @@
 # PR4 测试用例 — feat(auth,catalog): WeChat login and C catalog
 
-环境：macOS aarch64，`JAVA_HOME=/opt/homebrew/opt/openjdk@21`（21.0.12），Maven 3.9.16，Node v26.0.0。无 Docker。`dev` profile 用 H2 且 Flyway=false；目录与登录走内存仓，夹具 ID 对齐 V3。本机 Surge 会劫持 127.0.0.1，HTTP 使用 `curl --noproxy '*'`。
+环境：macOS aarch64，`JAVA_HOME=/opt/homebrew/opt/openjdk@21`（21.0.12），Maven 3.9.16，Node v26.0.0。无 Docker。`dev` profile 用 H2 且 Flyway=false；内存仓 `@Profile("dev")`，夹具 ID 对齐 V3。默认 profile 走 JDBC（MySQL V1–V3）。本机 Surge 会劫持 127.0.0.1，HTTP 使用 `curl --noproxy '*'`。
 
-Surefire 合计 **Tests run: 32, Failures: 0, Errors: 0, Skipped: 0**（既有 3 + 本 PR 29）。
+技师「当天有班」：已生成 `therapist_slot` 时按 `slot_date=today AND status<>REST`（`store_id` 可选）。库存 PR 未跑时回退周模板（V3 3×7）。不读 SUPPORT / `schedule_exception`。
 
 ## TC-4-01 C 端微信登录 `code=dev`
 
@@ -22,7 +22,7 @@ Surefire 合计 **Tests run: 32, Failures: 0, Errors: 0, Skipped: 0**（既有 3
 
 - **步骤**：先 `CustomerMerge(null, phoneHash)` 建散客，再 `code=dev` 登录，再 `POST /api/v1/c/auth/bind-phone` `{ "phoneCode":"dev-phone" }`。
 - **预期**：存活行是带手机号的 B；新 JWT `sub=B.id`；A 软删；booking/session/service_record 改挂 B。
-- **实际结果**：PASS。`AuthApiTest.bindPhoneMergesWalkInAndReturnsSurvivor` + `CustomerMergeServiceTest` 10 条（含 40908 碰撞）。
+- **实际结果**：PASS。`AuthApiTest.bindPhoneMergesWalkInAndReturnsSurvivor` 断言登录写入的 `auth_session.subject_id` 改挂 B；`CustomerMergeServiceTest` 含 40908 与 `biz_key` ≤64。
 
 ## TC-4-03 员工微信登录 `code=dev-staff`
 

@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
+import java.time.Clock;
+
 @Configuration
 public class WeChatClientConfig {
 
@@ -16,10 +18,19 @@ public class WeChatClientConfig {
     }
 
     @Bean
-    public WeChatClient weChatClient(AppProperties properties, RestClient.Builder builder) {
-        if (properties.getWechat().isMock()) {
+    public WeChatClient weChatClient(AppProperties properties, RestClient.Builder builder, Clock clock) {
+        AppProperties.Wechat wechat = properties.getWechat();
+        if (wechat.isMock()) {
             return new MockWeChatClient();
         }
-        return new HttpWeChatClient(properties, builder);
+        if (blank(wechat.getCustomerAppId()) || blank(wechat.getCustomerAppSecret())) {
+            throw new IllegalStateException(
+                    "wechat.mock=false requires app.wechat.customer-app-id and customer-app-secret");
+        }
+        return new HttpWeChatClient(properties, builder, clock);
+    }
+
+    private static boolean blank(String value) {
+        return value == null || value.isBlank();
     }
 }

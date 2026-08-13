@@ -51,6 +51,6 @@ public class GlobalExceptionHandler {
             return bind.getFieldError().getDefaultMessage();
         }
         String msg = ex.getMessage();
-        return msg == null || msg.isBlank() ? "参数错误" : "参数错误";
+        return msg == null || msg.isBlank() ? "参数错误" : msg;
     }
 }

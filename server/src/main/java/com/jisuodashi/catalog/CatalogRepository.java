@@ -1,5 +1,6 @@
 package com.jisuodashi.catalog;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,14 @@ public interface CatalogRepository {
     List<CatalogModels.SymptomProject> listSymptomProjects();
 
     List<CatalogModels.ScheduleTemplate> listTemplates();
+
+    /** True when inventory has generated any slot for the date. */
+    default boolean hasSlotsOn(LocalDate date) {
+        return false;
+    }
+
+    /** therapist_slot.store_id that day, status <> REST. Empty until inventory generates. */
+    default List<Long> therapistIdsOnDutySlots(Long storeId, LocalDate date) {
+        return List.of();
+    }
 }

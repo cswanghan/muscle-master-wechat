@@ -18,6 +18,7 @@ class CustomerMergeServiceTest {
 
     private InMemoryCustomerRepository customers;
     private InMemoryRelatedRecordsRepository related;
+    private InMemoryAuthSessionRepository sessions;
     private CustomerMergeService merge;
 
     @BeforeEach
@@ -27,7 +28,8 @@ class CustomerMergeServiceTest {
         SnowflakeIdGenerator ids = new SnowflakeIdGenerator(props);
         customers = new InMemoryCustomerRepository();
         related = new InMemoryRelatedRecordsRepository(ids, clock);
-        merge = new CustomerMergeService(customers, related, ids, clock);
+        sessions = new InMemoryAuthSessionRepository();
+        merge = new CustomerMergeService(customers, related, sessions, ids, clock);
     }
 
     @Test
@@ -87,8 +89,21 @@ class CustomerMergeServiceTest {
                 .extracting(ex -> ((ApiException) ex).getCode())
                 .isEqualTo(ErrorCodes.CUSTOMER_COLLISION);
         assertThat(related.humanTasks()).hasSize(1);
-        assertThat(related.humanTasks().getFirst().getBizKey()).isEqualTo("collide:h1");
+        assertThat(related.humanTasks().getFirst().getBizKey()).isEqualTo(CollisionKeys.bizKey("h1"));
         assertThat(related.humanTasks().getFirst().getTaskType()).isEqualTo("CUSTOMER_COLLISION");
+    }
+
+    @Test
+    void collisionBizKeyFitsVarchar64() {
+        String hash = "a".repeat(64);
+        merge.merge("o-other", hash, new byte[]{2});
+        assertThatThrownBy(() -> merge.merge("o-new", hash, new byte[]{2}))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getCode())
+                .isEqualTo(ErrorCodes.CUSTOMER_COLLISION);
+        String key = related.humanTasks().getFirst().getBizKey();
+        assertThat(key.length()).isLessThanOrEqualTo(64);
+        assertThat(key).isEqualTo("collide:" + "a".repeat(56));
     }
 
     @Test
@@ -105,6 +120,12 @@ class CustomerMergeServiceTest {
         related.addBooking(11L, a.getId());
         related.addSession(12L, a.getId());
         related.addServiceRecord(13L, a.getId());
+        AuthSession loginSession = new AuthSession();
+        loginSession.setId(12L);
+        loginSession.setSubjectType("CUSTOMER");
+        loginSession.setSubjectId(a.getId());
+        loginSession.setTokenHash("hash-a");
+        sessions.insert(loginSession);
 
         Customer survivor = merge.merge("o1", "h1", new byte[]{3});
         assertThat(survivor.getId()).isEqualTo(b.getId());
@@ -115,6 +136,10 @@ class CustomerMergeServiceTest {
         assertThat(related.bookingCustomerIds()).containsExactly(b.getId());
         assertThat(related.sessionSubjectIds()).containsExactly(b.getId());
         assertThat(related.serviceRecordCustomerIds()).containsExactly(b.getId());
+        assertThat(sessions.findBySubject("CUSTOMER", a.getId())).isEmpty();
+        assertThat(sessions.findBySubject("CUSTOMER", b.getId()))
+                .extracting(AuthSession::getSubjectId)
+                .containsExactly(b.getId());
         assertThat(related.audits()).hasSize(1);
         assertThat(related.audits().getFirst().action()).isEqualTo("CUSTOMER_MERGE");
     }
@@ -127,6 +152,6 @@ class CustomerMergeServiceTest {
                 .isInstanceOf(ApiException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
                 .isEqualTo(ErrorCodes.CUSTOMER_COLLISION);
-        assertThat(related.humanTasks()).extracting(HumanTask::getBizKey).contains("collide:h1");
+        assertThat(related.humanTasks()).extracting(HumanTask::getBizKey).contains(CollisionKeys.bizKey("h1"));
     }
 }

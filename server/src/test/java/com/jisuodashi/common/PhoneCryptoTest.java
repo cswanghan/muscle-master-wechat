@@ -1,5 +1,6 @@
 package com.jisuodashi.common;
 
+import com.jisuodashi.auth.CollisionKeys;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ class PhoneCryptoTest {
         assertThat(parts.hash()).hasSize(64);
         assertThat(crypto.decrypt(parts.cipher())).isEqualTo("+8613800138000");
         assertThat(crypto.hashE164("+8613800138000")).isEqualTo(parts.hash());
+        assertThat(CollisionKeys.bizKey(parts.hash()).length()).isLessThanOrEqualTo(64);
     }
 
     @Test

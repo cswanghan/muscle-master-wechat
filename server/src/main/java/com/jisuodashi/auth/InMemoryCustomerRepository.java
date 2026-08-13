@@ -1,5 +1,6 @@
 package com.jisuodashi.auth;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /** H2 cannot run V1; customers live in memory on `dev`. */
 @Repository
+@Profile("dev")
 public class InMemoryCustomerRepository implements CustomerRepository {
 
     private final ConcurrentMap<Long, Customer> byId = new ConcurrentHashMap<>();

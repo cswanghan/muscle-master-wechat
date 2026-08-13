@@ -1,5 +1,6 @@
 package com.jisuodashi.auth;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -9,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Repository
+@Profile("dev")
 public class InMemoryStaffUserRepository implements StaffUserRepository {
 
     private final ConcurrentMap<Long, StaffUser> byId = new ConcurrentHashMap<>();

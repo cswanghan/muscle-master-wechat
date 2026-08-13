@@ -4,10 +4,12 @@ import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.SnowflakeIdGenerator;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -19,6 +21,7 @@ public class CustomerMergeService {
 
     private final CustomerRepository customers;
     private final RelatedRecordsRepository related;
+    private final AuthSessionRepository sessions;
     private final SnowflakeIdGenerator ids;
     private final Clock clock;
     private final Object lock = new Object();
@@ -26,10 +29,12 @@ public class CustomerMergeService {
     public CustomerMergeService(
             CustomerRepository customers,
             RelatedRecordsRepository related,
+            AuthSessionRepository sessions,
             SnowflakeIdGenerator ids,
             Clock clock) {
         this.customers = customers;
         this.related = related;
+        this.sessions = sessions;
         this.ids = ids;
         this.clock = clock;
     }
@@ -38,6 +43,7 @@ public class CustomerMergeService {
         return merge(openid, null, phoneHash, phoneCipher);
     }
 
+    @Transactional
     public Customer merge(String openid, String unionid, String phoneHash, byte[] phoneCipher) {
         synchronized (lock) {
             Customer a = openid == null ? null : customers.findByOpenid(openid).orElse(null);
@@ -49,7 +55,16 @@ public class CustomerMergeService {
             if (b != null) {
                 lockIds.add(b.getId());
             }
-            customers.lockByIds(lockIds);
+            // Re-read locked rows so a future SELECT … FOR UPDATE is what we mutate.
+            List<Customer> locked = customers.lockByIds(lockIds);
+            if (a != null) {
+                final long aId = a.getId();
+                a = locked.stream().filter(c -> c.getId() == aId).findFirst().orElse(a);
+            }
+            if (b != null) {
+                final long bId = b.getId();
+                b = locked.stream().filter(c -> c.getId() == bId).findFirst().orElse(b);
+            }
             Instant now = Instant.now(clock);
 
             if (a == null && b == null) {
@@ -117,6 +132,7 @@ public class CustomerMergeService {
                 customers.update(b);
 
                 related.reassignBookings(a.getId(), b.getId());
+                sessions.reassignCustomer(a.getId(), b.getId());
                 related.reassignSessions(a.getId(), b.getId());
                 related.reassignServiceRecords(a.getId(), b.getId());
 
