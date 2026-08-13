@@ -32,4 +32,9 @@ public class UnconfiguredWeChatPayClient implements WeChatPayClient {
     public WeChatNotify parseAndVerify(String body, Map<String, String> headers) {
         throw new ApiException(ErrorCodes.CHANNEL_ERROR, "支付渠道未配置");
     }
+
+    @Override
+    public RefundResult refund(String refundNo, String paymentNo, long amountFen, String reason) {
+        throw new ApiException(ErrorCodes.CHANNEL_ERROR, "支付渠道未配置");
+    }
 }

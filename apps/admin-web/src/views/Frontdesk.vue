@@ -116,6 +116,11 @@ const rescheduleTherapistId = ref(THERAPIST)
 const rescheduleLoading = ref(false)
 const rescheduleResult = ref<{ status: string; serviceDate: string; startSlotNo: number; endSlotNo: number } | null>(null)
 
+const refundOrderId = ref('')
+const refundAmountFen = ref('0')
+const refundLoading = ref(false)
+const refundResult = ref<{ status: string; workflowStatus: string; refunds?: unknown[] } | null>(null)
+
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => addOn.value?.codeUrl || walkIn.value?.codeUrl || '')
 const qrMarkup = computed(() => (qrText.value ? qrSvg(qrText.value) : ''))
@@ -352,6 +357,32 @@ async function submitReschedule() {
   }
 }
 
+async function submitRefund() {
+  const id = refundOrderId.value.trim()
+  if (!id) {
+    error.value = '请填写订单'
+    return
+  }
+  refundLoading.value = true
+  error.value = ''
+  try {
+    const res = await fetch(`/api/v1/f/orders/${id}/refund`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        requestId: `rf-${Date.now()}`,
+        amountFen: Number(refundAmountFen.value) || 0,
+        reason: '前台退款',
+      }),
+    })
+    refundResult.value = await readEnvelope(res)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    refundLoading.value = false
+  }
+}
+
 onUnmounted(stopPoll)
 </script>
 
@@ -527,6 +558,24 @@ onUnmounted(stopPoll)
       </div>
       <div v-if="rescheduleResult" id="reschedule-result" class="result">
         {{ rescheduleResult.status }} · {{ rescheduleResult.serviceDate }} 格{{ rescheduleResult.startSlotNo }}–{{ rescheduleResult.endSlotNo }}
+      </div>
+    </section>
+
+    <section class="desk-card" id="refund-panel">
+      <h2>退款</h2>
+      <p class="hint">全额 = SUM(SUCCESS)−已退 · ≥50000 先审批 · POST /f/orders/{id}/refund</p>
+      <div class="form">
+        <label>订单 ID / 金额（分，锁定为剩余可退）</label>
+        <div class="row">
+          <el-input id="refund-order-id" v-model="refundOrderId" size="large" />
+          <el-input id="refund-amount" v-model="refundAmountFen" size="large" disabled />
+        </div>
+        <el-button id="refund-submit" type="primary" size="large" :loading="refundLoading" @click="submitRefund">
+          发起退款
+        </el-button>
+      </div>
+      <div v-if="refundResult" id="refund-result" class="result">
+        {{ refundResult.status }} · {{ refundResult.workflowStatus }} · {{ refundResult.refunds?.length || 0 }} 张
       </div>
     </section>
 

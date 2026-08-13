@@ -180,18 +180,18 @@ public class JdbcPaymentStore implements PaymentStore {
                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     task.getId(),
-                    null,
-                    null,
+                    task.getWorkflowInstanceId(),
+                    task.getOrderId(),
                     task.getTaskType(),
                     task.getBizKey(),
                     task.getTitle(),
                     null,
                     task.getStatus(),
                     null,
-                    null,
+                    task.getStoreId(),
                     JdbcTimes.ts(task.getCreatedAt()),
-                    null,
-                    null);
+                    JdbcTimes.ts(task.getResolvedAt()),
+                    task.getResolvedBy());
         } catch (DuplicateKeyException ignored) {
             jdbc.update("UPDATE human_task SET id=id WHERE biz_key=?", task.getBizKey());
         }
@@ -216,17 +216,12 @@ public class JdbcPaymentStore implements PaymentStore {
     @Override
     public List<HumanTask> listHumanTasks() {
         return jdbc.query(
-                "SELECT id, task_type, biz_key, title, status, created_at FROM human_task",
-                (rs, i) -> {
-                    HumanTask t = new HumanTask();
-                    t.setId(rs.getLong("id"));
-                    t.setTaskType(rs.getString("task_type"));
-                    t.setBizKey(rs.getString("biz_key"));
-                    t.setTitle(rs.getString("title"));
-                    t.setStatus(rs.getString("status"));
-                    t.setCreatedAt(JdbcTimes.instant(rs.getTimestamp("created_at")));
-                    return t;
-                });
+                """
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
+                       created_at, resolved_at, resolved_by
+                  FROM human_task
+                """,
+                HUMAN_TASK);
     }
 
     private static final RowMapper<Refund> REFUND = (rs, i) -> new Refund(
@@ -258,5 +253,118 @@ public class JdbcPaymentStore implements PaymentStore {
 
     private static LocalDateTime local(Timestamp value) {
         return value == null ? null : value.toLocalDateTime();
+    }
+
+    private static final RowMapper<HumanTask> HUMAN_TASK = (rs, i) -> {
+        HumanTask t = new HumanTask();
+        t.setId(rs.getLong("id"));
+        long wf = rs.getLong("workflow_instance_id");
+        t.setWorkflowInstanceId(rs.wasNull() ? null : wf);
+        long oid = rs.getLong("order_id");
+        t.setOrderId(rs.wasNull() ? null : oid);
+        long sid = rs.getLong("store_id");
+        t.setStoreId(rs.wasNull() ? null : sid);
+        t.setTaskType(rs.getString("task_type"));
+        t.setBizKey(rs.getString("biz_key"));
+        t.setTitle(rs.getString("title"));
+        t.setStatus(rs.getString("status"));
+        t.setCreatedAt(JdbcTimes.instant(rs.getTimestamp("created_at")));
+        t.setResolvedAt(JdbcTimes.instant(rs.getTimestamp("resolved_at")));
+        long by = rs.getLong("resolved_by");
+        t.setResolvedBy(rs.wasNull() ? null : by);
+        return t;
+    };
+
+    @Override
+    public Payment findById(long id) {
+        List<Payment> rows = jdbc.query("SELECT * FROM payment WHERE id=?", paymentMapper, id);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
+    public Refund findByRefundNo(String refundNo) {
+        List<Refund> rows = jdbc.query("SELECT * FROM refund WHERE refund_no=?", REFUND, refundNo);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
+    public Refund lockByRefundNo(String refundNo) {
+        List<Refund> rows = jdbc.query(
+                "SELECT * FROM refund WHERE refund_no=? FOR UPDATE", REFUND, refundNo);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
+    public void updateRefund(Refund refund) {
+        jdbc.update(
+                """
+                UPDATE refund
+                   SET status=?, wx_refund_id=?, operator_id=?, updated_at=?
+                 WHERE id=?
+                """,
+                refund.status(),
+                refund.wxRefundId(),
+                refund.operatorId(),
+                ts(refund.updatedAt()),
+                refund.id());
+    }
+
+    @Override
+    public void updateWorkflow(WorkflowInstance instance) {
+        jdbc.update(
+                """
+                UPDATE workflow_instance
+                   SET status=?, context_json=?, updated_at=?
+                 WHERE id=?
+                """,
+                instance.status(),
+                instance.contextJson(),
+                ts(instance.updatedAt()),
+                instance.id());
+    }
+
+    @Override
+    public WorkflowInstance findWorkflowById(long id) {
+        List<WorkflowInstance> rows = jdbc.query(
+                "SELECT * FROM workflow_instance WHERE id=?", WORKFLOW, id);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
+    public HumanTask findHumanTaskById(long id) {
+        List<HumanTask> rows = jdbc.query(
+                """
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
+                       created_at, resolved_at, resolved_by
+                  FROM human_task WHERE id=?
+                """,
+                HUMAN_TASK, id);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
+    public HumanTask lockHumanTaskById(long id) {
+        List<HumanTask> rows = jdbc.query(
+                """
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
+                       created_at, resolved_at, resolved_by
+                  FROM human_task WHERE id=? FOR UPDATE
+                """,
+                HUMAN_TASK, id);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
+    public void updateHumanTask(HumanTask task) {
+        jdbc.update(
+                """
+                UPDATE human_task
+                   SET status=?, resolved_at=?, resolved_by=?
+                 WHERE id=?
+                """,
+                task.getStatus(),
+                JdbcTimes.ts(task.getResolvedAt()),
+                task.getResolvedBy(),
+                task.getId());
     }
 }

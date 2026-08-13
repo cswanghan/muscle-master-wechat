@@ -283,7 +283,8 @@ public class FrontDeskService {
                 customerMask(order.customerId()),
                 String.valueOf(order.therapistId()),
                 order.startSlotNo(),
-                order.serviceDate().toString());
+                order.serviceDate().toString(),
+                payments.remainingFen(order.id()));
     }
 
     private FrontDeskDtos.WalkInResponse toWalkIn(
@@ -310,7 +311,8 @@ public class FrontDeskService {
                 replay,
                 order == null ? null : roomName(order.roomId()),
                 order == null ? null : bedName(order.bedId()),
-                maskFromCustomer(customer));
+                maskFromCustomer(customer),
+                order == null ? 0L : payments.remainingFen(order.id()));
     }
 
     private String customerMask(long customerId) {
@@ -464,5 +466,61 @@ public class FrontDeskService {
                 bedName(moved.bedId()),
                 customerMask(view.customerId()),
                 moved.replay());
+    }
+
+
+    public FrontDeskDtos.RefundResponse refund(String orderIdRaw, FrontDeskDtos.RefundRequest req) {
+        AuthContext.requireStaff();
+        if (req == null) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        long orderId = parseId(orderIdRaw, "orderId");
+        requireScopedOrder(orders.findOrderById(orderId));
+        var outcome = payments.refund(
+                orderId,
+                req.requestId(),
+                req.amountFen() == null ? 0L : req.amountFen(),
+                req.reason(),
+                deskContext());
+        return toRefund(outcome);
+    }
+
+    public FrontDeskDtos.RefundResponse approveTask(String taskIdRaw, FrontDeskDtos.ApproveRequest req) {
+        AuthContext.requireStaff();
+        long taskId = parseId(taskIdRaw, "taskId");
+        String requestId = req == null ? null : req.requestId();
+        return toRefund(payments.approve(taskId, requestId));
+    }
+
+    public FrontDeskDtos.RefundResponse denyTask(String taskIdRaw, FrontDeskDtos.ApproveRequest req) {
+        AuthContext.requireStaff();
+        long taskId = parseId(taskIdRaw, "taskId");
+        String requestId = req == null ? null : req.requestId();
+        return toRefund(payments.deny(taskId, requestId));
+    }
+
+    public FrontDeskDtos.HumanTaskListResponse listHumanTasks(String status) {
+        AuthContext.requireStaff();
+        return new FrontDeskDtos.HumanTaskListResponse(
+                payments.listHumanTasks(status).stream()
+                        .map(t -> new FrontDeskDtos.HumanTaskView(
+                                t.id(), t.taskType(), t.title(), t.status(), t.orderId(), t.bizKey()))
+                        .toList());
+    }
+
+    private static FrontDeskDtos.RefundResponse toRefund(PaymentDtos.RefundOutcome outcome) {
+        return new FrontDeskDtos.RefundResponse(
+                outcome.orderId(),
+                outcome.orderStatus(),
+                outcome.workflowStatus(),
+                outcome.refunds() == null ? List.of() : outcome.refunds().stream()
+                        .map(r -> new FrontDeskDtos.RefundView(
+                                r.refundNo(),
+                                String.valueOf(r.paymentId()),
+                                r.amountFen(),
+                                r.status(),
+                                r.wxRefundId()))
+                        .toList(),
+                outcome.replay());
     }
 }

@@ -58,4 +58,50 @@ public class HumanTask {
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
+
+    private Long workflowInstanceId;
+    private Long orderId;
+    private Long storeId;
+    private Instant resolvedAt;
+    private Long resolvedBy;
+
+    public Long getWorkflowInstanceId() {
+        return workflowInstanceId;
+    }
+
+    public void setWorkflowInstanceId(Long workflowInstanceId) {
+        this.workflowInstanceId = workflowInstanceId;
+    }
+
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
+    }
+
+    public Long getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(Long storeId) {
+        this.storeId = storeId;
+    }
+
+    public Instant getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(Instant resolvedAt) {
+        this.resolvedAt = resolvedAt;
+    }
+
+    public Long getResolvedBy() {
+        return resolvedBy;
+    }
+
+    public void setResolvedBy(Long resolvedBy) {
+        this.resolvedBy = resolvedBy;
+    }
 }

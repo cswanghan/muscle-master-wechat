@@ -66,4 +66,13 @@ public class FrontOrderController {
             @Valid @RequestBody FrontDeskDtos.RescheduleRequest request) {
         return ApiResponse.ok(desk.reschedule(id, request));
     }
+
+    @PostMapping("/{id}/refund")
+    @StoreScoped
+    @RequirePerm("refund:create")
+    public ApiResponse<FrontDeskDtos.RefundResponse> refund(
+            @PathVariable("id") String id,
+            @Valid @RequestBody FrontDeskDtos.RefundRequest request) {
+        return ApiResponse.ok(desk.refund(id, request));
+    }
 }

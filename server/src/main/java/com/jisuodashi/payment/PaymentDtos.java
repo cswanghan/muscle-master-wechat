@@ -3,6 +3,7 @@ package com.jisuodashi.payment;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotBlank;
 
+import java.util.List;
 import java.util.Map;
 
 public final class PaymentDtos {
@@ -52,5 +53,24 @@ public final class PaymentDtos {
         public static WechatNotifyAck fail(String message) {
             return new WechatNotifyAck("FAIL", message);
         }
+    }
+
+    public record RefundOutcome(
+            String orderId,
+            String orderStatus,
+            String workflowStatus,
+            List<Refund> refunds,
+            boolean replay
+    ) {
+    }
+
+    public record HumanTaskItem(
+            String id,
+            String taskType,
+            String title,
+            String status,
+            String orderId,
+            String bizKey
+    ) {
     }
 }
