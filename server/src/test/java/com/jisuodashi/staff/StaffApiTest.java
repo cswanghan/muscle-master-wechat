@@ -122,6 +122,11 @@ class StaffApiTest {
                 therapistToken()));
         assertThat(started.get("status")).isEqualTo("IN_SERVICE");
         assertThat(occupyStore.findOrderById(Long.parseLong(order.orderId)).status()).isEqualTo("IN_SERVICE");
+        assertThat(notes.findLatestServiceRecord(Long.parseLong(order.orderId)))
+                .isPresent()
+                .get()
+                .extracting(ServiceRecord::endedAt)
+                .isNull();
 
         Map<String, Object> replay = dataOk(post(
                 "/api/v1/t/orders/" + order.orderId + "/start",
@@ -135,6 +140,11 @@ class StaffApiTest {
                 therapistToken()));
         assertThat(done.get("status")).isEqualTo("COMPLETED");
         assertThat(occupyStore.findOrderById(Long.parseLong(order.orderId)).status()).isEqualTo("COMPLETED");
+        assertThat(notes.findLatestServiceRecord(Long.parseLong(order.orderId)))
+                .isPresent()
+                .get()
+                .extracting(ServiceRecord::endedAt)
+                .isNotNull();
 
         Map<String, Object> replayDone = dataOk(post(
                 "/api/v1/t/orders/" + order.orderId + "/complete",
@@ -162,6 +172,21 @@ class StaffApiTest {
                 "/api/v1/t/orders/" + order.orderId + "/start",
                 Map.of("requestId", "t-note-start"),
                 therapistToken()));
+
+        Map<String, Object> empty = dataOk(get("/api/v1/t/orders/" + order.orderId + "/notes", therapistToken()));
+        assertThat(empty.get("items")).isEqualTo(List.of());
+        assertThat(empty.get("consented")).isEqualTo(false);
+
+        ResponseEntity<Map<String, Object>> noConsent = post(
+                "/api/v1/t/orders/" + order.orderId + "/notes",
+                Map.of("content", "无同意"),
+                therapistToken());
+        assertThat(noConsent.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(noConsent.getBody().get("code")).isEqualTo(40301);
+
+        Map<String, Object> consent = dataOk(post(
+                "/api/v1/t/orders/" + order.orderId + "/consent", Map.of(), therapistToken()));
+        assertThat(consent.get("consented")).isEqualTo(true);
 
         Map<String, Object> first = dataOk(post(
                 "/api/v1/t/orders/" + order.orderId + "/notes",
@@ -203,6 +228,26 @@ class StaffApiTest {
         Map<String, Object> data = dataOk(get("/api/v1/t/today", t2Token()));
         assertThat(data.get("next")).isNull();
         assertThat(data.get("timeline")).isInstanceOf(List.class);
+        Map<String, Object> alias = dataOk(get("/api/v1/t/me/today", t2Token()));
+        assertThat(alias.get("next")).isNull();
+    }
+
+    @Test
+    void orderCardBindsOpenedIdNotBoardNext() {
+        Prepared first = prepareCheckedIn(48);
+        Prepared second = prepareCheckedIn(72);
+        dataOk(post(
+                "/api/v1/t/orders/" + first.orderId + "/start",
+                Map.of("requestId", "t-bind-start"),
+                therapistToken()));
+        Map<String, Object> board = dataOk(get("/api/v1/t/today", therapistToken()));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> next = (Map<String, Object>) board.get("next");
+        assertThat(next.get("orderId")).isEqualTo(first.orderId);
+        Map<String, Object> opened = dataOk(get("/api/v1/t/orders/" + second.orderId, therapistToken()));
+        assertThat(opened.get("orderId")).isEqualTo(second.orderId);
+        assertThat(opened.get("status")).isEqualTo("CHECKED_IN");
+        assertThat(opened.get("start")).isEqualTo("18:00");
     }
 
     private Prepared prepareCheckedIn(int startSlotNo) {

@@ -5,9 +5,7 @@ import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.TokenType;
 import com.jisuodashi.catalog.CatalogModels;
 import com.jisuodashi.common.ApiException;
-import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
-import com.jisuodashi.common.SnowflakeIdGenerator;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.order.FireContext;
@@ -25,23 +23,14 @@ public class StaffOrderService {
     private final OrderStateMachine machine;
     private final SlotOccupyService occupy;
     private final StaffTherapistLookup therapists;
-    private final TreatmentNoteRepository notes;
-    private final SnowflakeIdGenerator ids;
-    private final AppClock clock;
 
     public StaffOrderService(
             OrderStateMachine machine,
             SlotOccupyService occupy,
-            StaffTherapistLookup therapists,
-            TreatmentNoteRepository notes,
-            SnowflakeIdGenerator ids,
-            AppClock clock) {
+            StaffTherapistLookup therapists) {
         this.machine = machine;
         this.occupy = occupy;
         this.therapists = therapists;
-        this.notes = notes;
-        this.ids = ids;
-        this.clock = clock;
     }
 
     public StaffDtos.OrderActionResponse start(String orderIdRaw, StaffDtos.OrderActionRequest request) {
@@ -69,12 +58,6 @@ public class StaffOrderService {
         FireContext ctx = FireContext.staff(therapist.id(), principal.storeIds());
         try {
             FireResult fired = machine.fire(orderId, event, ctx);
-            if (event == OrderEvent.START_SERVICE) {
-                notes.ensureServiceRecord(
-                        ids.nextId(), orderId, therapist.id(), order.customerId(), order.storeId(), clock.instant());
-            } else if (event == OrderEvent.COMPLETE_SERVICE) {
-                notes.markLatestEnded(orderId, clock.instant());
-            }
             return new StaffDtos.OrderActionResponse(
                     String.valueOf(fired.orderId()), fired.to().name(), requestId);
         } catch (ApiException ex) {

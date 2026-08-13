@@ -44,9 +44,10 @@ public class OrderStateMachine {
     private final TransactionTemplate tx;
     private final AuditLogRepository audits;
     private final SnowflakeIdGenerator ids;
+    private final ServiceRecordSide records;
 
     public OrderStateMachine() {
-        this(null, null, new AppClock(), new AppProperties(), null, null, null);
+        this(null, null, new AppClock(), new AppProperties(), null, null, null, null);
     }
 
     @Autowired
@@ -57,7 +58,8 @@ public class OrderStateMachine {
             AppProperties properties,
             PlatformTransactionManager txManager,
             @Autowired(required = false) AuditLogRepository audits,
-            @Autowired(required = false) SnowflakeIdGenerator ids
+            @Autowired(required = false) SnowflakeIdGenerator ids,
+            @Autowired(required = false) ServiceRecordSide records
     ) {
         this.store = store;
         this.occupy = occupy;
@@ -66,10 +68,11 @@ public class OrderStateMachine {
         this.tx = txManager == null ? null : new TransactionTemplate(txManager);
         this.audits = audits;
         this.ids = ids;
+        this.records = records;
     }
 
     public OrderStateMachine(SlotOccupyStore store, SlotOccupyService occupy, AppClock clock) {
-        this(store, occupy, clock, new AppProperties(), null, null, null);
+        this(store, occupy, clock, new AppProperties(), null, null, null, null);
     }
 
     OrderStateMachine(
@@ -80,7 +83,7 @@ public class OrderStateMachine {
             AuditLogRepository audits,
             SnowflakeIdGenerator ids
     ) {
-        this(store, occupy, clock, properties, null, audits, ids);
+        this(store, occupy, clock, properties, null, audits, ids, null);
     }
 
     /** Table lookup. Unknown {@code (from,event)} → 40904. */
@@ -217,21 +220,47 @@ public class OrderStateMachine {
     }
 
     private void applySides(OrderTransition t, BookingOrderRef order) {
-        if (occupy == null || order == null) {
+        if (order == null) {
             return;
         }
         for (OrderSide side : t.sides()) {
             switch (side) {
-                case CONFIRM_PAID -> occupy.confirmPaidSlotsInOpenTx(order.id());
-                case RELEASE_LOCK -> occupy.releaseLockInOpenTx(order.holdId());
-                case RELEASE_UNCONSUMED_START -> occupy.releaseUnconsumedInOpenTx(order.id(), order.startSlotNo());
-                case RELEASE_UNCONSUMED_NOW -> occupy.releaseUnconsumedInOpenTx(order.id(), currentSlotNo());
+                case CONFIRM_PAID -> {
+                    if (occupy != null) {
+                        occupy.confirmPaidSlotsInOpenTx(order.id());
+                    }
+                }
+                case RELEASE_LOCK -> {
+                    if (occupy != null) {
+                        occupy.releaseLockInOpenTx(order.holdId());
+                    }
+                }
+                case RELEASE_UNCONSUMED_START -> {
+                    if (occupy != null) {
+                        occupy.releaseUnconsumedInOpenTx(order.id(), order.startSlotNo());
+                    }
+                }
+                case RELEASE_UNCONSUMED_NOW -> {
+                    if (occupy != null) {
+                        occupy.releaseUnconsumedInOpenTx(order.id(), currentSlotNo());
+                    }
+                }
                 case RELEASE_ADDON -> {
-                    if (order.addOnHoldId() != null) {
+                    if (occupy != null && order.addOnHoldId() != null) {
                         occupy.releaseAddOnHoldInOpenTx(order.addOnHoldId());
                     }
                 }
-                case NONE, CHECKED_IN_AT, SERVICE_RECORD, ENDED_AT, NO_SHOW_COUNT,
+                case SERVICE_RECORD -> {
+                    if (records != null) {
+                        records.insertStarted(order, clock.instant());
+                    }
+                }
+                case ENDED_AT -> {
+                    if (records != null) {
+                        records.markEnded(order.id(), clock.instant());
+                    }
+                }
+                case NONE, CHECKED_IN_AT, NO_SHOW_COUNT,
                         REFUND, RESCHEDULE, SWAP_THERAPIST -> {
                 }
             }

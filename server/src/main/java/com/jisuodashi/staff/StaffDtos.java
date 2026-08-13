@@ -35,9 +35,18 @@ public final class StaffDtos {
     public record OrderActionResponse(String orderId, String status, String requestId) {
     }
 
-    public record AppendNoteRequest(@NotBlank(message = "content 不能为空") String content) {
+    public record AppendNoteRequest(
+            @NotBlank(message = "content 不能为空") String content,
+            Boolean consent
+    ) {
+        public AppendNoteRequest(String content) {
+            this(content, null);
+        }
     }
 
     public record AppendNoteResponse(String id, String orderId, String content, String createdAt) {
+    }
+
+    public record ConsentResponse(String orderId, boolean consented, String consentedAt) {
     }
 }

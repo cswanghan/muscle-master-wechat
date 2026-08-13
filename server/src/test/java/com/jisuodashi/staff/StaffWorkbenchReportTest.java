@@ -109,6 +109,15 @@ class StaffWorkbenchReportTest {
                 Integer.valueOf(40904).equals(t2Start.get("code")),
                 String.valueOf(t2Start.get("code"))));
 
+        Map<String, Object> emptyNotes = data(get("/api/v1/t/orders/" + orderId + "/notes", t1));
+        rows.add(row("NOTE", "服务技师空记录 GET 200 []",
+                emptyNotes.get("items") instanceof List<?> list && list.isEmpty()
+                        && Boolean.FALSE.equals(emptyNotes.get("consented")),
+                "items=" + emptyNotes.get("items")));
+
+        Map<String, Object> noConsent = body(post(
+                "/api/v1/t/orders/" + orderId + "/notes", Map.of("content", "无同意"), t1));
+        data(post("/api/v1/t/orders/" + orderId + "/consent", Map.of(), t1));
         Map<String, Object> note = data(post(
                 "/api/v1/t/orders/" + orderId + "/notes",
                 Map.of("content", "腰段张力高，本次以放松为主。禁忌：孕。"),
@@ -117,11 +126,20 @@ class StaffWorkbenchReportTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> items = (List<Map<String, Object>>) listed.get("items");
         Map<String, Object> t2Notes = body(get("/api/v1/t/orders/" + orderId + "/notes", t2));
-        rows.add(row("NOTE", "POST notes 只增；GET 仅本人",
-                "腰段张力高，本次以放松为主。禁忌：孕。".equals(note.get("content"))
+        rows.add(row("NOTE", "D27 无同意 40301；POST 只增；GET 仅本人",
+                Integer.valueOf(40301).equals(noConsent.get("code"))
+                        && "腰段张力高，本次以放松为主。禁忌：孕。".equals(note.get("content"))
                         && items != null && items.size() == 1
                         && Integer.valueOf(40401).equals(t2Notes.get("code")),
-                "items=" + (items == null ? 0 : items.size()) + " t2=" + t2Notes.get("code")));
+                "deny=" + noConsent.get("code") + " items=" + (items == null ? 0 : items.size())
+                        + " t2=" + t2Notes.get("code")));
+
+        Map<String, Object> alias = data(get("/api/v1/t/me/today", t1));
+        Map<String, Object> opened = data(get("/api/v1/t/orders/" + orderId, t1));
+        boolean record = notes.findLatestServiceRecord(Long.parseLong(orderId)).isPresent();
+        rows.add(row("T1", "GET /t/me/today 别名 + GET /t/orders/{id} 绑定本单",
+                alias.get("next") != null && orderId.equals(opened.get("orderId")) && record,
+                "opened=" + opened.get("orderId") + " record=" + record));
 
         Map<String, Object> done = data(post(
                 "/api/v1/t/orders/" + orderId + "/complete", Map.of("requestId", "rpt-complete"), t1));

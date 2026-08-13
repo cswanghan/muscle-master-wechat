@@ -9,6 +9,7 @@ import com.jisuodashi.catalog.CatalogModels;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.inventory.SlotTimes;
 import org.springframework.stereotype.Service;
@@ -29,16 +30,19 @@ public class TodayBoardService {
     private final StaffBoardStore board;
     private final StaffTherapistLookup therapists;
     private final CustomerRepository customers;
+    private final SlotOccupyService occupy;
     private final AppClock clock;
 
     public TodayBoardService(
             StaffBoardStore board,
             StaffTherapistLookup therapists,
             CustomerRepository customers,
+            SlotOccupyService occupy,
             AppClock clock) {
         this.board = board;
         this.therapists = therapists;
         this.customers = customers;
+        this.occupy = occupy;
         this.clock = clock;
     }
 
@@ -58,6 +62,20 @@ public class TodayBoardService {
                         slot.orderId() == null ? null : String.valueOf(slot.orderId())))
                 .toList();
         return new StaffDtos.TodayBoard(next, timeline);
+    }
+
+    public StaffDtos.NextJob job(String orderIdRaw) {
+        JwtPrincipal principal = AuthContext.requireStaff();
+        if (principal.typ() != TokenType.T) {
+            throw new ApiException(ErrorCodes.FORBIDDEN, "无功能权限");
+        }
+        CatalogModels.Therapist therapist = therapists.requireTherapist(principal);
+        long orderId = StaffOrderService.parseOrderId(orderIdRaw);
+        BookingOrderRef order = occupy.findOrderById(orderId);
+        if (order == null || order.therapistId() != therapist.id()) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        return toCard(order);
     }
 
     private StaffDtos.NextJob pickNext(List<BookingOrderRef> orders) {

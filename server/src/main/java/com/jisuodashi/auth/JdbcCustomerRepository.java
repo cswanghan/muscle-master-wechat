@@ -22,6 +22,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
         c.setPhoneCipher(rs.getBytes("phone_cipher"));
         c.setPhoneHash(rs.getString("phone_hash"));
         c.setNickname(rs.getString("nickname"));
+        c.setTreatmentConsentAt(JdbcTimes.instant(rs.getTimestamp("treatment_consent_at")));
         c.setCreatedAt(JdbcTimes.instant(rs.getTimestamp("created_at")));
         c.setUpdatedAt(JdbcTimes.instant(rs.getTimestamp("updated_at")));
         c.setDeletedAt(JdbcTimes.instant(rs.getTimestamp("deleted_at")));
@@ -68,8 +69,8 @@ public class JdbcCustomerRepository implements CustomerRepository {
                 """
                 INSERT INTO customer
                   (id, wx_openid, wx_unionid, phone_cipher, phone_hash, nickname, avatar_url,
-                   no_show_count, created_at, updated_at, deleted_at)
-                VALUES (?,?,?,?,?,?,?,0,?,?,?)
+                   no_show_count, treatment_consent_at, created_at, updated_at, deleted_at)
+                VALUES (?,?,?,?,?,?,?,0,?,?,?,?)
                 """,
                 customer.getId(),
                 customer.getWxOpenid(),
@@ -78,6 +79,7 @@ public class JdbcCustomerRepository implements CustomerRepository {
                 customer.getPhoneHash(),
                 customer.getNickname(),
                 null,
+                JdbcTimes.ts(customer.getTreatmentConsentAt()),
                 JdbcTimes.ts(customer.getCreatedAt()),
                 JdbcTimes.ts(customer.getUpdatedAt()),
                 JdbcTimes.ts(customer.getDeletedAt()));
@@ -89,13 +91,14 @@ public class JdbcCustomerRepository implements CustomerRepository {
         jdbc.update(
                 """
                 UPDATE customer SET wx_openid=?, wx_unionid=?, phone_cipher=?, phone_hash=?,
-                  nickname=?, updated_at=?, deleted_at=? WHERE id=?
+                  nickname=?, treatment_consent_at=?, updated_at=?, deleted_at=? WHERE id=?
                 """,
                 customer.getWxOpenid(),
                 customer.getWxUnionid(),
                 customer.getPhoneCipher(),
                 customer.getPhoneHash(),
                 customer.getNickname(),
+                JdbcTimes.ts(customer.getTreatmentConsentAt()),
                 JdbcTimes.ts(customer.getUpdatedAt()),
                 JdbcTimes.ts(customer.getDeletedAt()),
                 customer.getId());

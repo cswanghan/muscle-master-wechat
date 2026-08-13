@@ -15,7 +15,7 @@ public class TodayBoardController {
         this.today = today;
     }
 
-    @GetMapping("/today")
+    @GetMapping({"/today", "/me/today"})
     public ApiResponse<StaffDtos.TodayBoard> today() {
         return ApiResponse.ok(today.today());
     }

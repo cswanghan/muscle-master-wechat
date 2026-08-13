@@ -33,7 +33,11 @@
     </view>
   </view>
 
-  <view class="composer">
+  <view wx:if="{{!consented}}" class="composer">
+    <view class="hint">首次写记录前需客人知情同意（敏感个信，非病历）</view>
+    <button class="btn append" disabled="{{busy}}" bindtap="giveConsent">客人已知情同意</button>
+  </view>
+  <view wx:else class="composer">
     <textarea
       class="box"
       maxlength="2000"

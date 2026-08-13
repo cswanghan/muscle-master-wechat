@@ -10,6 +10,7 @@ public class Customer {
     private byte[] phoneCipher;
     private String phoneHash;
     private String nickname;
+    private Instant treatmentConsentAt;
     private Instant createdAt;
     private Instant updatedAt;
     private Instant deletedAt;
@@ -62,6 +63,14 @@ public class Customer {
         this.nickname = nickname;
     }
 
+    public Instant getTreatmentConsentAt() {
+        return treatmentConsentAt;
+    }
+
+    public void setTreatmentConsentAt(Instant treatmentConsentAt) {
+        this.treatmentConsentAt = treatmentConsentAt;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -102,6 +111,7 @@ public class Customer {
         c.phoneCipher = phoneCipher == null ? null : phoneCipher.clone();
         c.phoneHash = phoneHash;
         c.nickname = nickname;
+        c.treatmentConsentAt = treatmentConsentAt;
         c.createdAt = createdAt;
         c.updatedAt = updatedAt;
         c.deletedAt = deletedAt;

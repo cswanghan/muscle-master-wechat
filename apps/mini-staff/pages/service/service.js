@@ -22,6 +22,7 @@ Page({
     notes: [],
     draft: '',
     draftHint: '力度偏好、禁忌；提交后不可改',
+    consented: false,
     timerText: '00:00',
     busy: false,
     error: '',
@@ -52,11 +53,15 @@ Page({
   refresh() {
     const app = getApp()
     const token = app.globalData.token
-    return api.request({ url: '/api/v1/t/today', token }).then((board) => {
-      const next = (board && board.next) || {}
-      const status = next.status || this.data.status
+    const orderId = this.data.orderId
+    if (!orderId) {
+      this.setData({ error: '缺少订单' })
+      return Promise.resolve()
+    }
+    return api.request({ url: `/api/v1/t/orders/${orderId}`, token }).then((card) => {
+      const status = (card && card.status) || this.data.status
       this.setData({
-        next,
+        next: card || {},
         status,
         statusLabel: statusLabel(status),
       })
@@ -80,11 +85,17 @@ Page({
       const last = items.length ? items[items.length - 1].content : ''
       this.setData({
         notes: items,
+        consented: !!(data && data.consented),
         draftHint: last ? `参考上次：${last}` : '力度偏好、禁忌；提交后不可改',
       })
     }).catch(() => {
       this.setData({ notes: [] })
     })
+  },
+  giveConsent() {
+    this.act(`/api/v1/t/orders/${this.data.orderId}/consent`, null, () => {
+      this.setData({ consented: true })
+    }, {})
   },
   beginTimer(startedAt) {
     this.setData({ startedAt })

@@ -28,6 +28,9 @@ public final class RbacDtos {
     public record TreatmentNoteItem(String id, String orderId, String content, String createdAt) {
     }
 
-    public record TreatmentNoteList(List<TreatmentNoteItem> items) {
+    public record TreatmentNoteList(List<TreatmentNoteItem> items, boolean consented) {
+        public TreatmentNoteList(List<TreatmentNoteItem> items) {
+            this(items, false);
+        }
     }
 }

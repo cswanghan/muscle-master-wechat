@@ -33,6 +33,12 @@ public class TreatmentNoteController {
         }
     }
 
+    @PostMapping("/{orderId}/consent")
+    @Audited(action = "NOTE_CONSENT", resourceType = "TREATMENT_NOTE")
+    public ApiResponse<StaffDtos.ConsentResponse> consent(@PathVariable String orderId) {
+        return ApiResponse.ok(notes.consent(orderId));
+    }
+
     @PostMapping("/{orderId}/notes")
     @Audited(action = "NOTE_WRITE", resourceType = "TREATMENT_NOTE")
     public ApiResponse<StaffDtos.AppendNoteResponse> append(
