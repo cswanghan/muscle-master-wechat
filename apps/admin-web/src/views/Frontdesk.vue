@@ -109,6 +109,13 @@ const swapReason = ref('指定技师请假')
 const swapLoading = ref(false)
 const swapResult = ref<SwapData | null>(null)
 
+const rescheduleOrderId = ref('')
+const rescheduleDate = ref('2026-08-14')
+const rescheduleStart = ref(80)
+const rescheduleTherapistId = ref(THERAPIST)
+const rescheduleLoading = ref(false)
+const rescheduleResult = ref<{ status: string; serviceDate: string; startSlotNo: number; endSlotNo: number } | null>(null)
+
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => addOn.value?.codeUrl || walkIn.value?.codeUrl || '')
 const qrMarkup = computed(() => (qrText.value ? qrSvg(qrText.value) : ''))
@@ -318,6 +325,33 @@ async function swapTherapist(orderId?: string) {
   }
 }
 
+async function submitReschedule() {
+  const id = rescheduleOrderId.value.trim()
+  if (!id) {
+    error.value = '请填写订单'
+    return
+  }
+  rescheduleLoading.value = true
+  error.value = ''
+  try {
+    const res = await fetch(`/api/v1/f/orders/${id}/reschedule`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        requestId: `rs-${Date.now()}`,
+        date: rescheduleDate.value,
+        startSlotNo: rescheduleStart.value,
+        therapistId: rescheduleTherapistId.value.trim(),
+      }),
+    })
+    rescheduleResult.value = await readEnvelope(res)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    rescheduleLoading.value = false
+  }
+}
+
 onUnmounted(stopPoll)
 </script>
 
@@ -472,6 +506,27 @@ onUnmounted(stopPoll)
       <div v-if="swapResult" id="swap-result" class="result">
         {{ swapResult.status }} · {{ swapResult.oldTherapistId }} → {{ swapResult.newTherapistId }} ·
         from={{ swapResult.fromSlotNo }}
+      </div>
+    </section>
+
+    <section class="desk-card" id="reschedule-panel">
+      <h2>改约</h2>
+      <p class="hint">仅 BOOKED · 同店同项目同价 · POST /f/orders/{id}/reschedule</p>
+      <div class="form">
+        <label>订单 ID</label>
+        <el-input id="reschedule-order-id" v-model="rescheduleOrderId" size="large" />
+        <label>新日期 / 开始格 / 技师</label>
+        <div class="row">
+          <el-input id="reschedule-date" v-model="rescheduleDate" size="large" />
+          <el-input-number id="reschedule-start" v-model="rescheduleStart" :min="0" size="large" />
+          <el-input id="reschedule-therapist" v-model="rescheduleTherapistId" size="large" />
+        </div>
+        <el-button id="reschedule-submit" type="primary" size="large" :loading="rescheduleLoading" @click="submitReschedule">
+          确认改约
+        </el-button>
+      </div>
+      <div v-if="rescheduleResult" id="reschedule-result" class="result">
+        {{ rescheduleResult.status }} · {{ rescheduleResult.serviceDate }} 格{{ rescheduleResult.startSlotNo }}–{{ rescheduleResult.endSlotNo }}
       </div>
     </section>
 

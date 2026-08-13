@@ -9,6 +9,9 @@ import com.jisuodashi.inventory.SlotOccupyStore.OwnedSlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotHoldMeta;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
+import com.jisuodashi.inventory.SlotOccupyStore.OrderChangeLogInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -933,4 +936,227 @@ public interface InventoryOccupyMapper {
             @Param("therapistId") long therapistId,
             @Param("homeStoreId") long homeStoreId,
             @Param("now") LocalDateTime now);
+
+
+    @Select("""
+            SELECT status
+              FROM therapist_slot
+             WHERE therapist_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+            """)
+    String peekTherapistSlotStatus(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo);
+
+    @Select("""
+            SELECT status
+              FROM bed_slot
+             WHERE bed_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+            """)
+    String peekBedSlotStatus(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo);
+
+    @Select("""
+            SELECT 'THERAPIST' AS resourceType, therapist_id AS resourceId, slot_date AS slotDate,
+                   slot_no AS slotNo, status, order_id AS orderId, store_id AS storeId
+              FROM therapist_slot
+             WHERE therapist_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+             FOR UPDATE
+            """)
+    RescheduleSlotRow lockTherapistSlotRow(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo);
+
+    @Select("""
+            SELECT 'BED' AS resourceType, bed_id AS resourceId, slot_date AS slotDate,
+                   slot_no AS slotNo, status, order_id AS orderId, store_id AS storeId
+              FROM bed_slot
+             WHERE bed_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+             FOR UPDATE
+            """)
+    RescheduleSlotRow lockBedSlotRow(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = #{status}, order_id = #{orderId}, hold_id = #{holdId},
+                   lock_expire_at = NULL, updated_at = #{now}
+             WHERE therapist_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+               AND status = 'FREE'
+            """)
+    int applyTherapistAcquire(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("status") String status,
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET status = #{status}, order_id = #{orderId}, hold_id = #{holdId},
+                   lock_expire_at = NULL, updated_at = #{now}
+             WHERE bed_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+               AND status = 'FREE'
+            """)
+    int applyBedAcquire(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("status") String status,
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("now") LocalDateTime now);
+
+    @Delete("""
+            DELETE FROM slot_occupancy
+             WHERE resource_type = #{resourceType} AND resource_id = #{resourceId}
+               AND slot_date = #{slotDate} AND slot_no = #{slotNo} AND order_id = #{orderId}
+            """)
+    int deleteOccupancyKey(
+            @Param("resourceType") String resourceType,
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("orderId") long orderId);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE therapist_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+               AND order_id = #{orderId}
+            """)
+    int freeTherapistSlotKey(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("orderId") long orderId,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE bed_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+               AND order_id = #{orderId}
+            """)
+    int freeBedSlotKey(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("orderId") long orderId,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET hold_id = #{holdId}, status = #{status}, updated_at = #{now}
+             WHERE therapist_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+               AND order_id = #{orderId}
+            """)
+    int reholdTherapistSlot(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("status") String status,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET hold_id = #{holdId}, status = #{status}, updated_at = #{now}
+             WHERE bed_id = #{resourceId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+               AND order_id = #{orderId}
+            """)
+    int reholdBedSlot(
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("status") String status,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE slot_occupancy
+               SET hold_id = #{holdId}
+             WHERE resource_type = #{resourceType} AND resource_id = #{resourceId}
+               AND slot_date = #{slotDate} AND slot_no = #{slotNo} AND order_id = #{orderId}
+            """)
+    int reholdOccupancyKey(
+            @Param("resourceType") String resourceType,
+            @Param("resourceId") long resourceId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo,
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId);
+
+    @Update("""
+            UPDATE booking_order
+               SET hold_id = #{holdId},
+                   therapist_id = #{therapistId},
+                   therapist_home_store_id = COALESCE(#{therapistHomeStoreId}, therapist_home_store_id),
+                   service_date = #{serviceDate},
+                   start_slot_no = #{startSlotNo},
+                   end_slot_no = #{endSlotNo},
+                   bed_id = #{bedId},
+                   room_id = #{roomId},
+                   updated_at = #{now}
+             WHERE id = #{orderId}
+            """)
+    int updateOrderForReschedule(
+            @Param("orderId") long orderId,
+            @Param("holdId") long holdId,
+            @Param("therapistId") long therapistId,
+            @Param("therapistHomeStoreId") Long therapistHomeStoreId,
+            @Param("serviceDate") LocalDate serviceDate,
+            @Param("startSlotNo") int startSlotNo,
+            @Param("endSlotNo") int endSlotNo,
+            @Param("bedId") long bedId,
+            @Param("roomId") long roomId,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE order_item
+               SET start_slot_no = #{startSlotNo}, end_slot_no = #{endSlotNo}
+             WHERE order_id = #{orderId} AND item_type = 'PROJECT'
+            """)
+    int updateProjectItemWindow(
+            @Param("orderId") long orderId,
+            @Param("startSlotNo") int startSlotNo,
+            @Param("endSlotNo") int endSlotNo);
+
+    @Insert("""
+            INSERT INTO order_change_log
+              (id, order_id, change_type, before_json, after_json, operator_id, created_at)
+            VALUES
+              (#{id}, #{orderId}, #{changeType}, #{beforeJson}, #{afterJson}, #{operatorId}, #{createdAt})
+            """)
+    int insertOrderChangeLog(
+            @Param("id") long id,
+            @Param("orderId") long orderId,
+            @Param("changeType") String changeType,
+            @Param("beforeJson") String beforeJson,
+            @Param("afterJson") String afterJson,
+            @Param("operatorId") Long operatorId,
+            @Param("createdAt") LocalDateTime createdAt);
+
+    @Select("""
+            SELECT id, order_id AS orderId, item_type AS itemType, project_id AS projectId,
+                   project_name AS projectName, duration_minutes AS durationMinutes,
+                   buffer_minutes AS bufferMinutes, quantity, unit_price_fen AS unitPriceFen,
+                   amount_fen AS amountFen, start_slot_no AS startSlotNo, end_slot_no AS endSlotNo,
+                   created_at AS createdAt
+              FROM order_item
+             WHERE order_id = #{orderId} AND item_type = 'PROJECT'
+             LIMIT 1
+            """)
+    OrderItemInsert findProjectItem(@Param("orderId") long orderId);
 }

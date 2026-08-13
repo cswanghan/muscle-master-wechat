@@ -119,4 +119,30 @@ public final class FrontDeskDtos {
             boolean replay
     ) {
     }
+
+    public record RescheduleRequest(
+            @NotBlank(message = "requestId 不能为空") String requestId,
+            @NotNull(message = "date 不能为空") LocalDate date,
+            @NotNull(message = "startSlotNo 不能为空")
+            @Min(value = 0, message = "startSlotNo 无效") Integer startSlotNo,
+            @NotBlank(message = "therapistId 不能为空") String therapistId
+    ) {
+    }
+
+    public record RescheduleResponse(
+            String orderId,
+            String orderNo,
+            String status,
+            String therapistId,
+            String bedId,
+            String roomId,
+            String serviceDate,
+            int startSlotNo,
+            int endSlotNo,
+            String roomName,
+            String bedName,
+            String customerMask,
+            boolean replay
+    ) {
+    }
 }

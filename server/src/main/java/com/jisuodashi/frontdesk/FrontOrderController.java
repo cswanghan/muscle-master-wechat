@@ -57,4 +57,13 @@ public class FrontOrderController {
             @Valid @RequestBody FrontDeskDtos.SwapTherapistRequest request) {
         return ApiResponse.ok(desk.swapTherapist(id, request));
     }
+
+    @PostMapping("/{id}/reschedule")
+    @StoreScoped
+    @RequirePerm("frontdesk:order:*")
+    public ApiResponse<FrontDeskDtos.RescheduleResponse> reschedule(
+            @PathVariable("id") String id,
+            @Valid @RequestBody FrontDeskDtos.RescheduleRequest request) {
+        return ApiResponse.ok(desk.reschedule(id, request));
+    }
 }

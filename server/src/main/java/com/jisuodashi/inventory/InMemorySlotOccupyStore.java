@@ -10,7 +10,11 @@ import com.jisuodashi.inventory.SlotOccupyStore.SlotHoldMeta;
 import com.jisuodashi.inventory.SlotOccupyStore.IdemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.IdemRow;
 import com.jisuodashi.inventory.SlotOccupyStore.OccupancyInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.OrderChangeLogInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.RescheduleAcquire;
+import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotKey;
+import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.OwnedSlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
@@ -1525,5 +1529,240 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
             }
             locks.clear();
         }
+    }
+
+
+    public final List<OrderChangeLogInsert> changeLogs = new ArrayList<>();
+
+    public List<OrderChangeLogInsert> listChangeLogs() {
+        synchronized (this) {
+            return List.copyOf(changeLogs);
+        }
+    }
+
+    @Override
+    public String peekSlotStatus(String resourceType, long resourceId, LocalDate date, int slotNo) {
+        MutableSlot slot = ResourceType.THERAPIST.equals(resourceType)
+                ? therapistSlots.get(tkey(resourceId, date, slotNo))
+                : bedSlots.get(bkey(resourceId, date, slotNo));
+        return slot == null ? null : slot.status;
+    }
+
+    @Override
+    public List<RescheduleSlotRow> lockRescheduleSlots(List<RescheduleSlotKey> keys) {
+        Work w = requireWork();
+        List<RescheduleSlotRow> rows = new ArrayList<>();
+        if (keys == null || keys.isEmpty()) {
+            return rows;
+        }
+        List<RescheduleSlotKey> ordered = keys.stream().sorted().distinct().toList();
+        for (RescheduleSlotKey key : ordered) {
+            String rowKey = ResourceType.THERAPIST.equals(key.resourceType())
+                    ? tkey(key.resourceId(), key.slotDate(), key.slotNo())
+                    : bkey(key.resourceId(), key.slotDate(), key.slotNo());
+            lockRow(rowKey, w);
+            MutableSlot slot = ResourceType.THERAPIST.equals(key.resourceType())
+                    ? therapistSlots.get(rowKey) : bedSlots.get(rowKey);
+            if (slot != null) {
+                rows.add(new RescheduleSlotRow(
+                        key.resourceType(), key.resourceId(), key.slotDate(), key.slotNo(),
+                        slot.status, slot.orderId, slot.storeId));
+            }
+        }
+        return rows;
+    }
+
+    @Override
+    public int applyRescheduleAcquire(
+            List<RescheduleAcquire> acquire, long orderId, long holdId, LocalDateTime now) {
+        if (acquire == null || acquire.isEmpty()) {
+            return 0;
+        }
+        Work w = requireWork();
+        int n = 0;
+        for (RescheduleAcquire item : acquire) {
+            RescheduleSlotKey key = item.key();
+            MutableSlot slot = slotOf(key);
+            if (slot == null) {
+                continue;
+            }
+            Snapshot snap = slot.snapshot();
+            slot.status = item.destStatus();
+            slot.orderId = orderId;
+            slot.holdId = holdId;
+            slot.lockExpireAt = null;
+            w.undos.add(() -> slot.restore(snap));
+            n++;
+        }
+        return n;
+    }
+
+    @Override
+    public int deleteRescheduleOccupancy(List<RescheduleSlotKey> release, long orderId) {
+        if (release == null || release.isEmpty()) {
+            return 0;
+        }
+        Work w = requireWork();
+        List<Map.Entry<String, OccupancyInsert>> removed = new ArrayList<>();
+        for (RescheduleSlotKey key : release) {
+            String okey = okey(key.resourceType(), key.resourceId(), key.slotDate(), key.slotNo());
+            OccupancyInsert row = occupancies.get(okey);
+            if (row == null || row.orderId() != orderId) {
+                continue;
+            }
+            occupancies.remove(okey);
+            removed.add(Map.entry(okey, row));
+        }
+        w.undos.add(() -> {
+            for (Map.Entry<String, OccupancyInsert> e : removed) {
+                occupancies.putIfAbsent(e.getKey(), e.getValue());
+            }
+        });
+        return removed.size();
+    }
+
+    @Override
+    public int freeRescheduleSlots(List<RescheduleSlotKey> release, long orderId, LocalDateTime now) {
+        if (release == null || release.isEmpty()) {
+            return 0;
+        }
+        Work w = requireWork();
+        int n = 0;
+        for (RescheduleSlotKey key : release) {
+            MutableSlot slot = slotOf(key);
+            if (slot == null || slot.orderId == null || slot.orderId != orderId) {
+                continue;
+            }
+            Snapshot snap = slot.snapshot();
+            slot.status = SlotStatus.FREE;
+            slot.orderId = null;
+            slot.holdId = null;
+            slot.lockExpireAt = null;
+            w.undos.add(() -> slot.restore(snap));
+            n++;
+        }
+        return n;
+    }
+
+    @Override
+    public int reholdRescheduleKeep(List<RescheduleAcquire> keep, long orderId, long newHold, LocalDateTime now) {
+        if (keep == null || keep.isEmpty()) {
+            return 0;
+        }
+        Work w = requireWork();
+        int n = 0;
+        List<Runnable> undo = new ArrayList<>();
+        for (RescheduleAcquire item : keep) {
+            RescheduleSlotKey key = item.key();
+            MutableSlot slot = slotOf(key);
+            if (slot != null && slot.orderId != null && slot.orderId == orderId) {
+                Snapshot snap = slot.snapshot();
+                slot.holdId = newHold;
+                slot.status = item.destStatus();
+                undo.add(() -> slot.restore(snap));
+                n++;
+            }
+            String okey = okey(key.resourceType(), key.resourceId(), key.slotDate(), key.slotNo());
+            OccupancyInsert row = occupancies.get(okey);
+            if (row != null && row.orderId() == orderId) {
+                OccupancyInsert next = new OccupancyInsert(
+                        row.id(), row.resourceType(), row.resourceId(), row.slotDate(), row.slotNo(),
+                        row.orderId(), newHold, row.createdAt());
+                occupancies.put(okey, next);
+                undo.add(() -> occupancies.put(okey, row));
+            }
+        }
+        w.undos.add(() -> {
+            for (int i = undo.size() - 1; i >= 0; i--) {
+                undo.get(i).run();
+            }
+        });
+        return n;
+    }
+
+    @Override
+    public int updateOrderForReschedule(
+            long orderId,
+            long holdId,
+            long therapistId,
+            Long therapistHomeStoreId,
+            LocalDate serviceDate,
+            int startSlotNo,
+            int endSlotNo,
+            long bedId,
+            long roomId,
+            LocalDateTime now) {
+        BookingOrderInsert prev = orders.get(orderId);
+        if (prev == null) {
+            return 0;
+        }
+        long home = therapistHomeStoreId == null ? prev.therapistHomeStoreId() : therapistHomeStoreId;
+        BookingOrderInsert next = new BookingOrderInsert(
+                prev.id(), prev.orderNo(), prev.requestId(), holdId,
+                prev.customerId(), prev.storeId(), therapistId, home,
+                bedId, roomId, prev.status(), prev.source(),
+                serviceDate, startSlotNo, endSlotNo, prev.bufferSlots(),
+                prev.originPriceFen(), prev.payableFen(), null, prev.createdAt());
+        orders.put(orderId, next);
+        if (prev.requestId() != null) {
+            ordersByRequest.put(prev.requestId(), next);
+        }
+        requireWork().undos.add(() -> {
+            orders.put(orderId, prev);
+            if (prev.requestId() != null) {
+                ordersByRequest.put(prev.requestId(), prev);
+            }
+        });
+        return 1;
+    }
+
+    @Override
+    public synchronized int updateProjectItemWindow(long orderId, int startSlotNo, int endSlotNo) {
+        List<OrderItemInsert> prev = new ArrayList<>(orderItems);
+        boolean changed = false;
+        for (int i = 0; i < orderItems.size(); i++) {
+            OrderItemInsert item = orderItems.get(i);
+            if (item.orderId() == orderId && "PROJECT".equals(item.itemType())) {
+                orderItems.set(i, new OrderItemInsert(
+                        item.id(), item.orderId(), item.itemType(), item.projectId(), item.projectName(),
+                        item.durationMinutes(), item.bufferMinutes(), item.quantity(),
+                        item.unitPriceFen(), item.amountFen(), startSlotNo, endSlotNo, item.createdAt()));
+                changed = true;
+            }
+        }
+        if (!changed) {
+            return 0;
+        }
+        requireWork().undos.add(() -> {
+            synchronized (this) {
+                orderItems.clear();
+                orderItems.addAll(prev);
+            }
+        });
+        return 1;
+    }
+
+    @Override
+    public synchronized void insertOrderChangeLog(OrderChangeLogInsert row) {
+        changeLogs.add(row);
+        requireWork().undos.add(() -> {
+            synchronized (this) {
+                changeLogs.remove(row);
+            }
+        });
+    }
+
+    @Override
+    public synchronized OrderItemInsert findProjectItem(long orderId) {
+        return orderItems.stream()
+                .filter(item -> item.orderId() == orderId && "PROJECT".equals(item.itemType()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private MutableSlot slotOf(RescheduleSlotKey key) {
+        return ResourceType.THERAPIST.equals(key.resourceType())
+                ? therapistSlots.get(tkey(key.resourceId(), key.slotDate(), key.slotNo()))
+                : bedSlots.get(bkey(key.resourceId(), key.slotDate(), key.slotNo()));
     }
 }

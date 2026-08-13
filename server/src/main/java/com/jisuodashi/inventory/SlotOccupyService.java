@@ -1248,4 +1248,402 @@ public class SlotOccupyService {
             return new SwapIdem(0, body.asReplay());
         }
     }
+
+
+    public static final String SCOPE_RESCHEDULE = "reschedule";
+    public static final String CHANGE_RESCHEDULE = "RESCHEDULE";
+    public static final String ORDER_BOOKED = "BOOKED";
+
+    /**
+     * Same-TX set-difference occupy. Must not {@code fire()}. Paid orders
+     * keep BOOKED/BUFFER dest and do not insert {@code RELEASE_LOCK}.
+     */
+    public RescheduleResult reschedule(RescheduleCommand cmd) {
+        if (cmd == null || cmd.requestId() == null || cmd.requestId().isBlank()) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        if (cmd.date() == null) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "date 不能为空");
+        }
+        BookingOrderRef peek = store.findOrderById(cmd.orderId());
+        if (peek == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        List<DayKey> days = rescheduleDays(peek.therapistId(), peek.serviceDate(), cmd.therapistId(), cmd.date());
+        List<HeldDay> held = new java.util.ArrayList<>();
+        try {
+            for (DayKey day : days) {
+                String token = dayLock.tryAcquire(day.therapistId(), day.date());
+                if (token == null) {
+                    throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+                }
+                held.add(new HeldDay(day, token));
+            }
+            return inStoreTx(() -> doReschedule(cmd));
+        } finally {
+            for (int i = held.size() - 1; i >= 0; i--) {
+                HeldDay h = held.get(i);
+                dayLock.release(h.day().therapistId(), h.day().date(), h.token());
+            }
+            evictAvail(peek.storeId(), peek.serviceDate());
+            evictAvail(peek.storeId(), cmd.date());
+        }
+    }
+
+    private RescheduleResult doReschedule(RescheduleCommand cmd) {
+        RescheduleIdem idem = beginRescheduleIdem(cmd.requestId());
+        if (idem.replay != null) {
+            return idem.replay;
+        }
+        BookingOrderRef order = store.lockOrderById(cmd.orderId());
+        if (order == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        if (!ORDER_BOOKED.equals(order.status())) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "仅 BOOKED 可改约");
+        }
+        TherapistRef therapist = store.loadTherapist(cmd.therapistId());
+        if (therapist == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "技师不存在");
+        }
+        SlotOccupyStore.OrderItemInsert projectItem = store.findProjectItem(order.id());
+        if (projectItem == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "项目不存在");
+        }
+        ProjectRef project = store.loadProject(projectItem.projectId());
+        if (project == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "项目不存在");
+        }
+        long newPrice = Pricing.priceFen(
+                store.loadSlotPriceOverride(cmd.therapistId(), cmd.date(), cmd.startSlotNo()),
+                store.loadStoreProjectPrice(order.storeId(), projectItem.projectId()),
+                project.priceFen());
+        if (newPrice != order.payableFen()) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "改约须同价");
+        }
+        int slotCount = order.endSlotNo() - order.startSlotNo();
+        if (slotCount <= 0) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "订单时段无效");
+        }
+        List<Integer> oldSlotNos = rescheduleWindow(order.startSlotNo(), slotCount);
+        List<Integer> newSlotNos = rescheduleWindow(cmd.startSlotNo(), slotCount);
+
+        Set<SlotOccupyStore.RescheduleSlotKey> oldT = new java.util.TreeSet<>();
+        Set<SlotOccupyStore.RescheduleSlotKey> oldB = new java.util.TreeSet<>();
+        Set<SlotOccupyStore.RescheduleSlotKey> newT = new java.util.TreeSet<>();
+        for (int slotNo : oldSlotNos) {
+            oldT.add(slotKey(ResourceType.THERAPIST, order.therapistId(), order.serviceDate(), slotNo));
+            oldB.add(slotKey(ResourceType.BED, order.bedId(), order.serviceDate(), slotNo));
+        }
+        for (int slotNo : newSlotNos) {
+            newT.add(slotKey(ResourceType.THERAPIST, cmd.therapistId(), cmd.date(), slotNo));
+        }
+
+        java.util.Map<SlotOccupyStore.RescheduleSlotKey, SlotOccupyStore.RescheduleSlotRow> byKey =
+                new java.util.HashMap<>();
+        Set<SlotOccupyStore.RescheduleSlotKey> therapistKeys = new java.util.TreeSet<>();
+        therapistKeys.addAll(oldT);
+        therapistKeys.addAll(newT);
+        putLocked(byKey, store.lockRescheduleSlots(List.copyOf(therapistKeys)));
+        putLocked(byKey, store.lockRescheduleSlots(List.copyOf(oldB)));
+
+        Set<SlotOccupyStore.RescheduleSlotKey> tAcquire = new java.util.TreeSet<>(newT);
+        tAcquire.removeAll(oldT);
+        Set<SlotOccupyStore.RescheduleSlotKey> tRelease = new java.util.TreeSet<>(oldT);
+        tRelease.removeAll(newT);
+        Set<SlotOccupyStore.RescheduleSlotKey> tKeep = new java.util.TreeSet<>(newT);
+        tKeep.retainAll(oldT);
+        for (SlotOccupyStore.RescheduleSlotKey key : tAcquire) {
+            assertAcquireFree(byKey.get(key), key);
+        }
+        for (SlotOccupyStore.RescheduleSlotKey key : tRelease) {
+            assertOwned(byKey.get(key), order.id());
+        }
+        for (SlotOccupyStore.RescheduleSlotKey key : tKeep) {
+            assertOwned(byKey.get(key), order.id());
+        }
+        for (SlotOccupyStore.RescheduleSlotKey key : oldB) {
+            assertOwned(byKey.get(key), order.id());
+        }
+        for (SlotOccupyStore.RescheduleSlotKey key : newT) {
+            assertSameStore(byKey.get(key), order.storeId());
+        }
+
+        BedRef chosen = lockPickRescheduleBed(order, cmd.date(), newSlotNos, oldB, byKey);
+        if (chosen == null) {
+            throw new ApiException(ErrorCodes.NO_FREE_BED, "无空闲床位");
+        }
+
+        Set<SlotOccupyStore.RescheduleSlotKey> newB = new java.util.TreeSet<>();
+        for (int slotNo : newSlotNos) {
+            newB.add(slotKey(ResourceType.BED, chosen.id(), cmd.date(), slotNo));
+        }
+        Set<SlotOccupyStore.RescheduleSlotKey> oldKeys = new java.util.TreeSet<>();
+        oldKeys.addAll(oldT);
+        oldKeys.addAll(oldB);
+        Set<SlotOccupyStore.RescheduleSlotKey> newKeys = new java.util.TreeSet<>();
+        newKeys.addAll(newT);
+        newKeys.addAll(newB);
+        Set<SlotOccupyStore.RescheduleSlotKey> acquire = new java.util.TreeSet<>(newKeys);
+        acquire.removeAll(oldKeys);
+        Set<SlotOccupyStore.RescheduleSlotKey> release = new java.util.TreeSet<>(oldKeys);
+        release.removeAll(newKeys);
+        Set<SlotOccupyStore.RescheduleSlotKey> keep = new java.util.TreeSet<>(newKeys);
+        keep.retainAll(oldKeys);
+
+        long newHold = ids.getAsLong();
+        LocalDateTime now = clock.now();
+        int bufferFrom = cmd.startSlotNo() + slotCount - order.bufferSlots();
+
+        List<SlotOccupyStore.RescheduleAcquire> acquireRows = destRows(acquire, bufferFrom);
+        store.applyRescheduleAcquire(acquireRows, order.id(), newHold, now);
+        try {
+            for (SlotOccupyStore.RescheduleSlotKey key : acquire) {
+                store.insertOccupancy(new OccupancyInsert(
+                        ids.getAsLong(), key.resourceType(), key.resourceId(), key.slotDate(), key.slotNo(),
+                        order.id(), newHold, now));
+            }
+        } catch (DuplicateOccupancyException ex) {
+            throw new ApiException(ErrorCodes.SLOT_UNAVAILABLE, "技师时段不可用");
+        }
+        store.deleteRescheduleOccupancy(List.copyOf(release), order.id());
+        store.freeRescheduleSlots(List.copyOf(release), order.id(), now);
+        store.reholdRescheduleKeep(destRows(keep, bufferFrom), order.id(), newHold, now);
+
+        Long newHome = cmd.therapistId() != order.therapistId() ? therapist.homeStoreId() : null;
+        int newEnd = cmd.startSlotNo() + slotCount;
+        store.updateOrderForReschedule(
+                order.id(), newHold, cmd.therapistId(), newHome,
+                cmd.date(), cmd.startSlotNo(), newEnd, chosen.id(), chosen.roomId(), now);
+        store.updateProjectItemWindow(order.id(), cmd.startSlotNo(), newEnd);
+        store.insertOrderChangeLog(new SlotOccupyStore.OrderChangeLogInsert(
+                ids.getAsLong(), order.id(), CHANGE_RESCHEDULE,
+                rescheduleSnap(order.therapistId(), order.bedId(), order.serviceDate(),
+                        order.startSlotNo(), order.endSlotNo(), order.holdId()),
+                rescheduleSnap(cmd.therapistId(), chosen.id(), cmd.date(),
+                        cmd.startSlotNo(), newEnd, newHold),
+                cmd.operatorId(), now));
+
+        RescheduleResult result = new RescheduleResult(
+                order.id(), order.orderNo(), newHold, cmd.therapistId(),
+                chosen.id(), chosen.roomId(), ORDER_BOOKED, cmd.date(),
+                cmd.startSlotNo(), newEnd, acquire.size(), release.size(), keep.size(), false);
+        store.finishIdempotent(SCOPE_RESCHEDULE, cmd.requestId(), idem.version, toRescheduleJson(result), now);
+        return result;
+    }
+
+    private BedRef lockPickRescheduleBed(
+            BookingOrderRef order,
+            LocalDate newDate,
+            List<Integer> newSlotNos,
+            Set<SlotOccupyStore.RescheduleSlotKey> oldB,
+            java.util.Map<SlotOccupyStore.RescheduleSlotKey, SlotOccupyStore.RescheduleSlotRow> byKey
+    ) {
+        for (BedRef bed : rescheduleBedCandidates(order)) {
+            Set<SlotOccupyStore.RescheduleSlotKey> newB = new java.util.TreeSet<>();
+            for (int slotNo : newSlotNos) {
+                newB.add(slotKey(ResourceType.BED, bed.id(), newDate, slotNo));
+            }
+            Set<SlotOccupyStore.RescheduleSlotKey> bAcquire = new java.util.TreeSet<>(newB);
+            bAcquire.removeAll(oldB);
+            if (!bAcquire.isEmpty()) {
+                putLocked(byKey, store.lockRescheduleSlots(List.copyOf(bAcquire)));
+                if (!bedAcquireFree(bAcquire, byKey)) {
+                    continue;
+                }
+            }
+            return bed;
+        }
+        return null;
+    }
+
+    private boolean bedAcquireFree(
+            Set<SlotOccupyStore.RescheduleSlotKey> acquire,
+            java.util.Map<SlotOccupyStore.RescheduleSlotKey, SlotOccupyStore.RescheduleSlotRow> byKey
+    ) {
+        for (SlotOccupyStore.RescheduleSlotKey key : acquire) {
+            SlotOccupyStore.RescheduleSlotRow row = byKey.get(key);
+            if (row == null || !SlotStatus.FREE.equals(row.status())) {
+                return false;
+            }
+            if (store.occupancyExists(key.resourceType(), key.resourceId(), key.slotDate(), List.of(key.slotNo()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<BedRef> rescheduleBedCandidates(BookingOrderRef order) {
+        List<BedRef> listed = store.listBeds(order.storeId());
+        BedRef original = null;
+        for (BedRef bed : listed) {
+            if (bed.id() == order.bedId()) {
+                original = bed;
+                break;
+            }
+        }
+        if (original == null) {
+            original = new BedRef(order.bedId(), order.storeId(), order.roomId(), 0);
+        }
+        List<BedRef> candidates = new java.util.ArrayList<>();
+        candidates.add(original);
+        for (BedRef bed : listed) {
+            if (bed.id() != original.id()) {
+                candidates.add(bed);
+            }
+        }
+        return candidates;
+    }
+
+    private static void putLocked(
+            java.util.Map<SlotOccupyStore.RescheduleSlotKey, SlotOccupyStore.RescheduleSlotRow> byKey,
+            List<SlotOccupyStore.RescheduleSlotRow> rows
+    ) {
+        for (SlotOccupyStore.RescheduleSlotRow row : rows) {
+            byKey.put(row.key(), row);
+        }
+    }
+
+    private static List<SlotOccupyStore.RescheduleAcquire> destRows(
+            Set<SlotOccupyStore.RescheduleSlotKey> keys, int bufferFrom) {
+        List<SlotOccupyStore.RescheduleAcquire> rows = new java.util.ArrayList<>();
+        for (SlotOccupyStore.RescheduleSlotKey key : keys) {
+            String dest = key.slotNo() >= bufferFrom ? SlotStatus.BUFFER : SlotStatus.BOOKED;
+            rows.add(new SlotOccupyStore.RescheduleAcquire(key, dest));
+        }
+        return rows;
+    }
+
+    private RescheduleIdem beginRescheduleIdem(String requestId) {
+        LocalDateTime now = clock.now();
+        boolean inserted = store.insertIdempotency(new IdemInsert(
+                ids.getAsLong(), SCOPE_RESCHEDULE, requestId, "PROCESSING", 0, instanceId,
+                now, now, now.plusSeconds(IDEMPOTENT_TAKEOVER_SECONDS)));
+        if (inserted) {
+            return RescheduleIdem.proceed(0);
+        }
+        IdemRow rec = store.lockIdempotency(SCOPE_RESCHEDULE, requestId);
+        if (rec == null) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        if ("DONE".equals(rec.status())) {
+            return RescheduleIdem.replay(parseRescheduleReplay(rec.responseBody()));
+        }
+        if ("PROCESSING".equals(rec.status()) && rec.expireAt() != null && rec.expireAt().isAfter(now)) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        int n = store.takeoverIdempotency(
+                SCOPE_RESCHEDULE, requestId, rec.version(),
+                now.plusSeconds(IDEMPOTENT_TAKEOVER_SECONDS), now, instanceId);
+        if (n == 0) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        return RescheduleIdem.proceed(rec.version() + 1);
+    }
+
+    private static void assertOwned(SlotOccupyStore.RescheduleSlotRow row, long orderId) {
+        if (row == null || row.orderId() == null || row.orderId() != orderId) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "原占用已变更");
+        }
+    }
+
+    private void assertAcquireFree(SlotOccupyStore.RescheduleSlotRow row, SlotOccupyStore.RescheduleSlotKey key) {
+        if (row == null || !SlotStatus.FREE.equals(row.status())
+                || store.occupancyExists(key.resourceType(), key.resourceId(), key.slotDate(), List.of(key.slotNo()))) {
+            throw acquireBusy(key);
+        }
+    }
+
+    private static void assertSameStore(SlotOccupyStore.RescheduleSlotRow row, long storeId) {
+        if (row == null || row.storeId() == null || row.storeId() != storeId) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "仅同店可改约");
+        }
+    }
+
+    private static ApiException acquireBusy(SlotOccupyStore.RescheduleSlotKey key) {
+        if (ResourceType.BED.equals(key.resourceType())) {
+            return new ApiException(ErrorCodes.NO_FREE_BED, "无空闲床位");
+        }
+        return new ApiException(ErrorCodes.SLOT_UNAVAILABLE, "技师时段不可用");
+    }
+
+    private static SlotOccupyStore.RescheduleSlotKey slotKey(
+            String type, long resourceId, LocalDate date, int slotNo) {
+        return new SlotOccupyStore.RescheduleSlotKey(type, resourceId, date, slotNo);
+    }
+
+    private static List<DayKey> rescheduleDays(long oldTherapist, LocalDate oldDate, long newTherapist, LocalDate newDate) {
+        Set<DayKey> days = new java.util.TreeSet<>();
+        days.add(new DayKey(oldTherapist, oldDate));
+        days.add(new DayKey(newTherapist, newDate));
+        return List.copyOf(days);
+    }
+
+    private static String rescheduleSnap(
+            long therapistId, long bedId, LocalDate date, int start, int end, long holdId) {
+        try {
+            return JSON.writeValueAsString(java.util.Map.of(
+                    "therapistId", therapistId,
+                    "bedId", bedId,
+                    "serviceDate", date.toString(),
+                    "startSlotNo", start,
+                    "endSlotNo", end,
+                    "holdId", holdId));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static String toRescheduleJson(RescheduleResult result) {
+        try {
+            RescheduleResult stored = result.replay() ? result : new RescheduleResult(
+                    result.orderId(), result.orderNo(), result.holdId(), result.therapistId(),
+                    result.bedId(), result.roomId(), result.status(), result.serviceDate(),
+                    result.startSlotNo(), result.endSlotNo(),
+                    result.acquireCount(), result.releaseCount(), result.keepCount(), false);
+            return JSON.writeValueAsString(stored);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static RescheduleResult parseRescheduleReplay(String json) {
+        if (json == null || json.isBlank()) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        try {
+            return JSON.readValue(json, RescheduleResult.class).asReplay();
+        } catch (JsonProcessingException e) {
+            throw new ApiException(ErrorCodes.INTERNAL, "幂等回放失败");
+        }
+    }
+
+    private record DayKey(long therapistId, LocalDate date) implements Comparable<DayKey> {
+        @Override
+        public int compareTo(DayKey o) {
+            int c = Long.compare(therapistId, o.therapistId);
+            return c != 0 ? c : date.compareTo(o.date);
+        }
+    }
+
+    private record HeldDay(DayKey day, String token) {
+    }
+
+    private record RescheduleIdem(int version, RescheduleResult replay) {
+        static RescheduleIdem proceed(int version) {
+            return new RescheduleIdem(version, null);
+        }
+
+        static RescheduleIdem replay(RescheduleResult body) {
+            return new RescheduleIdem(0, body.asReplay());
+        }
+    }
+
+    private static List<Integer> rescheduleWindow(int start, int count) {
+        List<Integer> slots = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            slots.add(start + i);
+        }
+        return List.copyOf(slots);
+    }
 }

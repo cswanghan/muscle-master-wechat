@@ -2,7 +2,13 @@ package com.jisuodashi.inventory.persist;
 
 import com.jisuodashi.inventory.DelayedJobStore.DelayedJobRow;
 import com.jisuodashi.inventory.DuplicateOccupancyException;
+import com.jisuodashi.inventory.ResourceType;
 import com.jisuodashi.inventory.SlotOccupyStore;
+import com.jisuodashi.inventory.SlotOccupyStore.OrderChangeLogInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
+import com.jisuodashi.inventory.SlotOccupyStore.RescheduleAcquire;
+import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotKey;
+import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotRow;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
@@ -338,6 +344,128 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     @Override
     public int completeJob(long id, String status, String lastError, LocalDateTime now) {
         return mapper.completeJob(id, status, lastError, now);
+    }
+
+    @Override
+    public String peekSlotStatus(String resourceType, long resourceId, LocalDate date, int slotNo) {
+        return ResourceType.THERAPIST.equals(resourceType)
+                ? mapper.peekTherapistSlotStatus(resourceId, date, slotNo)
+                : mapper.peekBedSlotStatus(resourceId, date, slotNo);
+    }
+
+    @Override
+    public List<RescheduleSlotRow> lockRescheduleSlots(List<RescheduleSlotKey> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return List.of();
+        }
+        List<RescheduleSlotRow> rows = new java.util.ArrayList<>();
+        for (RescheduleSlotKey key : keys.stream().sorted().distinct().toList()) {
+            RescheduleSlotRow row = ResourceType.THERAPIST.equals(key.resourceType())
+                    ? mapper.lockTherapistSlotRow(key.resourceId(), key.slotDate(), key.slotNo())
+                    : mapper.lockBedSlotRow(key.resourceId(), key.slotDate(), key.slotNo());
+            if (row != null) {
+                rows.add(row);
+            }
+        }
+        return rows;
+    }
+
+    @Override
+    public int applyRescheduleAcquire(
+            List<RescheduleAcquire> acquire, long orderId, long holdId, LocalDateTime now) {
+        if (acquire == null || acquire.isEmpty()) {
+            return 0;
+        }
+        int n = 0;
+        for (RescheduleAcquire item : acquire) {
+            RescheduleSlotKey key = item.key();
+            n += ResourceType.THERAPIST.equals(key.resourceType())
+                    ? mapper.applyTherapistAcquire(
+                    key.resourceId(), key.slotDate(), key.slotNo(), item.destStatus(), orderId, holdId, now)
+                    : mapper.applyBedAcquire(
+                    key.resourceId(), key.slotDate(), key.slotNo(), item.destStatus(), orderId, holdId, now);
+        }
+        return n;
+    }
+
+    @Override
+    public int deleteRescheduleOccupancy(List<RescheduleSlotKey> release, long orderId) {
+        if (release == null || release.isEmpty()) {
+            return 0;
+        }
+        int n = 0;
+        for (RescheduleSlotKey key : release) {
+            n += mapper.deleteOccupancyKey(
+                    key.resourceType(), key.resourceId(), key.slotDate(), key.slotNo(), orderId);
+        }
+        return n;
+    }
+
+    @Override
+    public int freeRescheduleSlots(List<RescheduleSlotKey> release, long orderId, LocalDateTime now) {
+        if (release == null || release.isEmpty()) {
+            return 0;
+        }
+        int n = 0;
+        for (RescheduleSlotKey key : release) {
+            n += ResourceType.THERAPIST.equals(key.resourceType())
+                    ? mapper.freeTherapistSlotKey(key.resourceId(), key.slotDate(), key.slotNo(), orderId, now)
+                    : mapper.freeBedSlotKey(key.resourceId(), key.slotDate(), key.slotNo(), orderId, now);
+        }
+        return n;
+    }
+
+    @Override
+    public int reholdRescheduleKeep(List<RescheduleAcquire> keep, long orderId, long newHold, LocalDateTime now) {
+        if (keep == null || keep.isEmpty()) {
+            return 0;
+        }
+        int n = 0;
+        for (RescheduleAcquire item : keep) {
+            RescheduleSlotKey key = item.key();
+            n += ResourceType.THERAPIST.equals(key.resourceType())
+                    ? mapper.reholdTherapistSlot(
+                    key.resourceId(), key.slotDate(), key.slotNo(), orderId, newHold, item.destStatus(), now)
+                    : mapper.reholdBedSlot(
+                    key.resourceId(), key.slotDate(), key.slotNo(), orderId, newHold, item.destStatus(), now);
+            mapper.reholdOccupancyKey(
+                    key.resourceType(), key.resourceId(), key.slotDate(), key.slotNo(), orderId, newHold);
+        }
+        return n;
+    }
+
+    @Override
+    public int updateOrderForReschedule(
+            long orderId,
+            long holdId,
+            long therapistId,
+            Long therapistHomeStoreId,
+            LocalDate serviceDate,
+            int startSlotNo,
+            int endSlotNo,
+            long bedId,
+            long roomId,
+            LocalDateTime now) {
+        return mapper.updateOrderForReschedule(
+                orderId, holdId, therapistId, therapistHomeStoreId,
+                serviceDate, startSlotNo, endSlotNo, bedId, roomId, now);
+    }
+
+    @Override
+    public int updateProjectItemWindow(long orderId, int startSlotNo, int endSlotNo) {
+        return mapper.updateProjectItemWindow(orderId, startSlotNo, endSlotNo);
+    }
+
+    @Override
+    public void insertOrderChangeLog(OrderChangeLogInsert row) {
+        mapper.insertOrderChangeLog(
+                row.id(), row.orderId(), row.changeType(), row.beforeJson(), row.afterJson(),
+                row.operatorId(), row.createdAt());
+    }
+
+    @Override
+    public OrderItemInsert findProjectItem(long orderId) {
+        return mapper.findProjectItem(orderId);
     }
 
     /** slot_no values are ints; safe to interpolate into IN (...). */

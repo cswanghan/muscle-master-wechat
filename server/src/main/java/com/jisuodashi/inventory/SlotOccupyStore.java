@@ -293,4 +293,84 @@ public interface SlotOccupyStore extends DelayedJobStore {
     int freeTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos, LocalDateTime now);
 
     int updateTherapist(long orderId, long newTherapistId, long newHomeStoreId, LocalDateTime now);
+
+
+
+    String peekSlotStatus(String resourceType, long resourceId, LocalDate date, int slotNo);
+
+    List<RescheduleSlotRow> lockRescheduleSlots(List<RescheduleSlotKey> keys);
+
+    int applyRescheduleAcquire(List<RescheduleAcquire> acquire, long orderId, long holdId, LocalDateTime now);
+
+    int deleteRescheduleOccupancy(List<RescheduleSlotKey> release, long orderId);
+
+    int freeRescheduleSlots(List<RescheduleSlotKey> release, long orderId, LocalDateTime now);
+
+    int reholdRescheduleKeep(List<RescheduleAcquire> keep, long orderId, long newHold, LocalDateTime now);
+
+    int updateOrderForReschedule(
+            long orderId,
+            long holdId,
+            long therapistId,
+            Long therapistHomeStoreId,
+            LocalDate serviceDate,
+            int startSlotNo,
+            int endSlotNo,
+            long bedId,
+            long roomId,
+            LocalDateTime now);
+
+    int updateProjectItemWindow(long orderId, int startSlotNo, int endSlotNo);
+
+    void insertOrderChangeLog(OrderChangeLogInsert row);
+
+    OrderItemInsert findProjectItem(long orderId);
+
+    record RescheduleSlotKey(String resourceType, long resourceId, LocalDate slotDate, int slotNo)
+            implements Comparable<RescheduleSlotKey> {
+        @Override
+        public int compareTo(RescheduleSlotKey o) {
+            int c = resourceType.compareTo(o.resourceType);
+            if (c != 0) {
+                return c;
+            }
+            c = Long.compare(resourceId, o.resourceId);
+            if (c != 0) {
+                return c;
+            }
+            c = slotDate.compareTo(o.slotDate);
+            if (c != 0) {
+                return c;
+            }
+            return Integer.compare(slotNo, o.slotNo);
+        }
+    }
+
+    record RescheduleSlotRow(
+            String resourceType,
+            long resourceId,
+            LocalDate slotDate,
+            int slotNo,
+            String status,
+            Long orderId,
+            Long storeId
+    ) {
+        RescheduleSlotKey key() {
+            return new RescheduleSlotKey(resourceType, resourceId, slotDate, slotNo);
+        }
+    }
+
+    record RescheduleAcquire(RescheduleSlotKey key, String destStatus) {
+    }
+
+    record OrderChangeLogInsert(
+            long id,
+            long orderId,
+            String changeType,
+            String beforeJson,
+            String afterJson,
+            Long operatorId,
+            LocalDateTime createdAt
+    ) {
+    }
 }
