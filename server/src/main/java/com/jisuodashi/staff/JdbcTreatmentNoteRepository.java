@@ -32,9 +32,11 @@ public class JdbcTreatmentNoteRepository implements TreatmentNoteRepository {
         return jdbc.query(
                 """
                 SELECT n.id, n.order_id, n.author_staff_id, n.content, n.created_at,
-                       o.store_id, o.therapist_id
+                       COALESCE(sr.store_id, o.store_id) AS store_id,
+                       COALESCE(sr.therapist_id, o.therapist_id) AS therapist_id
                   FROM treatment_note n
                   JOIN booking_order o ON o.id = n.order_id
+                  LEFT JOIN service_record sr ON sr.id = n.service_record_id
                  WHERE n.order_id = ?
                  ORDER BY n.id
                 """,

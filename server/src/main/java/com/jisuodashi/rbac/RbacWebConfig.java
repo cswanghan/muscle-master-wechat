@@ -16,6 +16,6 @@ public class RbacWebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(storeScopeInterceptor)
-                .addPathPatterns("/api/v1/f/**", "/api/v1/a/**");
+                .addPathPatterns("/api/v1/f/**", "/api/v1/a/**", "/api/v1/t/**");
     }
 }

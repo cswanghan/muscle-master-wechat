@@ -64,6 +64,13 @@ class CaptchaFilterTest {
         MockHttpServletRequest get = new MockHttpServletRequest("GET", CaptchaFilter.PATH);
         get.setServletPath(CaptchaFilter.PATH);
         assertThat(CaptchaFilter.matches(get)).isFalse();
+        MockHttpServletRequest slash = new MockHttpServletRequest("POST", CaptchaFilter.PATH + "/");
+        slash.setServletPath(CaptchaFilter.PATH + "/");
+        assertThat(CaptchaFilter.matches(slash)).isTrue();
+        MockHttpServletRequest viaUri = new MockHttpServletRequest("POST", CaptchaFilter.PATH);
+        viaUri.setServletPath("");
+        viaUri.setRequestURI(CaptchaFilter.PATH);
+        assertThat(CaptchaFilter.matches(viaUri)).isTrue();
     }
 
     private static CaptchaFilter filter(boolean enabled) {

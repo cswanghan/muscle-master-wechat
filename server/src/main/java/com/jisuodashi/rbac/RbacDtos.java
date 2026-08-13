@@ -17,9 +17,6 @@ public final class RbacDtos {
     }
 
     public record StoreStatusRequest(int status) {
-        public Long storeIdHint() {
-            return null;
-        }
     }
 
     public record DeskNoteRequest(String storeId, String content) {

@@ -3,13 +3,17 @@ package com.jisuodashi.rbac;
 import com.jisuodashi.auth.AuthContext;
 import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.TokenType;
+import com.jisuodashi.common.ApiResponse;
 import com.jisuodashi.common.RequestIds;
 import com.jisuodashi.common.SnowflakeIdGenerator;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -23,6 +27,7 @@ import java.util.regex.Pattern;
 @Component
 public class AuditLogAspect {
 
+    private static final Logger log = LoggerFactory.getLogger(AuditLogAspect.class);
     private static final Pattern ID_IN_PATH = Pattern.compile("/(\\d+)(?:/|$)");
 
     private final AuditLogRepository audits;
@@ -36,53 +41,117 @@ public class AuditLogAspect {
     }
 
     @AfterReturning(
-            "@annotation(com.jisuodashi.rbac.Audited) || "
-                    + "((within(com.jisuodashi.admin..*) || within(com.jisuodashi.frontdesk..*)) "
+            pointcut = "@annotation(audited)",
+            returning = "result")
+    public void afterAuditedOk(JoinPoint joinPoint, Audited audited, Object result) {
+        write(joinPoint, audited, result);
+    }
+
+    @AfterThrowing(pointcut = "@annotation(audited)")
+    public void afterAuditedFail(JoinPoint joinPoint, Audited audited) {
+        write(joinPoint, audited, null);
+    }
+
+    @AfterReturning(
+            pointcut = "(within(com.jisuodashi.admin..*) || within(com.jisuodashi.frontdesk..*)) "
                     + "&& (@annotation(org.springframework.web.bind.annotation.PostMapping) "
                     + "|| @annotation(org.springframework.web.bind.annotation.PutMapping) "
                     + "|| @annotation(org.springframework.web.bind.annotation.PatchMapping) "
-                    + "|| @annotation(org.springframework.web.bind.annotation.DeleteMapping)))")
-    public void afterSuccess(JoinPoint joinPoint) {
+                    + "|| @annotation(org.springframework.web.bind.annotation.DeleteMapping))",
+            returning = "result")
+    public void afterWriteOk(JoinPoint joinPoint, Object result) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        Audited audited = signature.getMethod().getAnnotation(Audited.class);
-        HttpServletRequest request = currentRequest();
-        String method = request == null ? "POST" : request.getMethod();
-        if (audited == null && !StoreScopedWriteScanner.WRITE_METHODS.contains(method)) {
+        if (signature.getMethod().getAnnotation(Audited.class) != null) {
             return;
         }
-        AuditLogEntry entry = new AuditLogEntry();
-        entry.setId(ids.nextId());
-        JwtPrincipal principal = AuthContext.get();
-        if (principal == null) {
-            entry.setActorType("SYSTEM");
-        } else if (principal.typ() == TokenType.C) {
-            entry.setActorType("CUSTOMER");
-            entry.setActorId(principal.subjectId());
-        } else {
-            entry.setActorType("STAFF");
-            entry.setActorId(principal.subjectId());
+        write(joinPoint, null, result);
+    }
+
+    private void write(JoinPoint joinPoint, Audited audited, Object result) {
+        try {
+            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+            HttpServletRequest request = currentRequest();
+            String method = request == null ? "POST" : request.getMethod();
+            if (audited == null && !StoreScopedWriteScanner.WRITE_METHODS.contains(method)) {
+                return;
+            }
+            AuditLogEntry entry = new AuditLogEntry();
+            entry.setId(ids.nextId());
+            JwtPrincipal principal = AuthContext.get();
+            if (principal == null) {
+                entry.setActorType("SYSTEM");
+            } else if (principal.typ() == TokenType.C) {
+                entry.setActorType("CUSTOMER");
+                entry.setActorId(principal.subjectId());
+            } else {
+                entry.setActorType("STAFF");
+                entry.setActorId(principal.subjectId());
+            }
+            if (audited != null) {
+                entry.setAction(audited.action());
+                entry.setResourceType(audited.resourceType());
+            } else {
+                entry.setAction(method);
+                entry.setResourceType(resourceType(signature));
+            }
+            entry.setResourceId(firstNonNull(
+                    AuditHints.resourceId(),
+                    resourceIdFromResult(result),
+                    firstPathId(request, joinPoint.getArgs())));
+            entry.setStoreId(firstNonNull(
+                    AuditHints.storeId(),
+                    storeIdFromResult(result),
+                    storeIdFromRequest(request, joinPoint.getArgs()),
+                    singleScopeStore()));
+            if (request != null) {
+                entry.setIp(request.getRemoteAddr());
+                entry.setUserAgent(trim(request.getHeader("User-Agent"), 255));
+            }
+            entry.setRequestId(RequestIds.current());
+            entry.setCreatedAt(Instant.now(clock));
+            audits.insert(entry);
+        } catch (Exception ex) {
+            log.warn("audit_log insert failed", ex);
+        } finally {
+            AuditHints.clear();
         }
-        if (audited != null) {
-            entry.setAction(audited.action());
-            entry.setResourceType(audited.resourceType());
-        } else {
-            entry.setAction(method);
-            entry.setResourceType(resourceType(signature));
-        }
-        entry.setResourceId(firstPathId(request, joinPoint.getArgs()));
+    }
+
+    private static Long singleScopeStore() {
         StoreScope scope = StoreScopeContext.get();
         if (scope != null && scope.storeIds().size() == 1) {
-            entry.setStoreId(scope.storeIds().getFirst());
-        } else if (request != null) {
-            entry.setStoreId(storeIdFromRequest(request, joinPoint.getArgs()));
+            return scope.storeIds().getFirst();
         }
-        if (request != null) {
-            entry.setIp(request.getRemoteAddr());
-            entry.setUserAgent(trim(request.getHeader("User-Agent"), 255));
+        return null;
+    }
+
+    private static Long resourceIdFromResult(Object result) {
+        Object data = unwrap(result);
+        if (data instanceof RbacDtos.DeskNoteResponse note) {
+            return parseLong(note.id());
         }
-        entry.setRequestId(RequestIds.current());
-        entry.setCreatedAt(Instant.now(clock));
-        audits.insert(entry);
+        if (data instanceof RbacDtos.StoreItem item) {
+            return parseLong(item.storeId());
+        }
+        return null;
+    }
+
+    private static Long storeIdFromResult(Object result) {
+        Object data = unwrap(result);
+        if (data instanceof RbacDtos.DeskNoteResponse note) {
+            return parseLong(note.storeId());
+        }
+        if (data instanceof RbacDtos.StoreItem item) {
+            return parseLong(item.storeId());
+        }
+        return null;
+    }
+
+    private static Object unwrap(Object result) {
+        if (result instanceof ApiResponse<?> response) {
+            return response.data();
+        }
+        return result;
     }
 
     private static HttpServletRequest currentRequest() {
@@ -115,22 +184,31 @@ public class AuditLogAspect {
     }
 
     private static Long storeIdFromRequest(HttpServletRequest request, Object[] args) {
-        String q = request.getParameter("storeId");
-        if (q != null && !q.isBlank()) {
-            try {
-                return Long.parseLong(q);
-            } catch (NumberFormatException ignored) {
-                return null;
+        if (request != null) {
+            String q = request.getParameter("storeId");
+            Long fromQuery = parseLong(q);
+            if (fromQuery != null) {
+                return fromQuery;
+            }
+            String uri = request.getRequestURI();
+            if (uri != null && uri.contains("/stores/")) {
+                return firstPathId(request, args);
             }
         }
         if (args != null) {
             for (Object arg : args) {
-                if (arg instanceof RbacDtos.StoreStatusRequest status && status.storeIdHint() != null) {
-                    return status.storeIdHint();
-                }
                 if (arg instanceof RbacDtos.DeskNoteRequest note) {
                     return parseLong(note.storeId());
                 }
+            }
+        }
+        return null;
+    }
+
+    private static Long firstNonNull(Long... values) {
+        for (Long value : values) {
+            if (value != null) {
+                return value;
             }
         }
         return null;

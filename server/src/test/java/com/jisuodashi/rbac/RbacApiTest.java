@@ -48,6 +48,9 @@ class RbacApiTest {
     private DeskNoteService deskNotes;
 
     @Autowired
+    private ScopedStoreDirectory storeDirectory;
+
+    @Autowired
     private ApplicationContext context;
 
     @Autowired
@@ -107,6 +110,17 @@ class RbacApiTest {
     }
 
     @Test
+    void directoryListIsScopedWithoutServiceFilter() {
+        StoreScopeContext.set(new StoreScope(
+                DataScopeType.STORE, List.of(RbacDemoIds.STORE), DemoStaffIds.MANAGER, null));
+        try {
+            assertThat(storeDirectory.list()).extracting(ScopedStore::code).containsExactly("DEMO01");
+        } finally {
+            StoreScopeContext.clear();
+        }
+    }
+
+    @Test
     void outOfScopeWriteIs40302() {
         ResponseEntity<Map<String, Object>> res = rest.exchange(
                 "/api/v1/f/desk-notes",
@@ -126,8 +140,12 @@ class RbacApiTest {
                 MAP);
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(res.getBody().get("code")).isEqualTo(0);
-        assertThat(audits.listRecent(20))
-                .anyMatch(e -> "STAFF".equals(e.getActorType()) && "POST".equals(e.getAction()));
+        assertThat(audits.listRecent(20)).anyMatch(e ->
+                "STAFF".equals(e.getActorType())
+                        && "POST".equals(e.getAction())
+                        && e.getStoreId() != null
+                        && e.getStoreId() == RbacDemoIds.STORE
+                        && e.getResourceId() != null);
     }
 
     @Test
@@ -147,8 +165,23 @@ class RbacApiTest {
                 DemoStaffIds.T2, TokenType.T, "SELF", List.of(RbacDemoIds.STORE))).token();
         ResponseEntity<Map<String, Object>> res = get(
                 "/api/v1/t/orders/" + RbacDemoIds.NOTE_ORDER + "/notes", t2);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(res.getBody().get("code")).isEqualTo(40302);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(res.getBody().get("code")).isEqualTo(40401);
+        assertThat(audits.listRecent(20))
+                .anyMatch(e -> "NOTE_READ".equals(e.getAction()) && e.getStoreId() != null);
+    }
+
+    @Test
+    void managerAndAdminCannotReadTherapistNotes() {
+        ResponseEntity<Map<String, Object>> manager = get(
+                "/api/v1/t/orders/" + RbacDemoIds.NOTE_ORDER + "/notes", managerToken());
+        assertThat(manager.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(manager.getBody().get("code")).isEqualTo(40301);
+
+        ResponseEntity<Map<String, Object>> admin = get(
+                "/api/v1/t/orders/" + RbacDemoIds.NOTE_ORDER + "/notes", adminToken());
+        assertThat(admin.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(admin.getBody().get("code")).isEqualTo(40301);
     }
 
     @Test

@@ -17,7 +17,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-/** Hook on POST /c/bookings. P0 default off — bookings can land later. */
+/**
+ * Hook on POST /c/bookings. P0 default off.
+ * A non-blank {@code X-Captcha-Token} is not a verifier — PR6 must not treat presence as proof.
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 5)
 public class CaptchaFilter extends OncePerRequestFilter {
@@ -48,11 +51,27 @@ public class CaptchaFilter extends OncePerRequestFilter {
     }
 
     static boolean matches(HttpServletRequest request) {
-        if (!"POST".equalsIgnoreCase(request.getMethod())) {
-            return false;
-        }
+        return "POST".equalsIgnoreCase(request.getMethod()) && PATH.equals(normalizedPath(request));
+    }
+
+    static String normalizedPath(HttpServletRequest request) {
         String path = request.getServletPath();
-        return PATH.equals(path);
+        if (path == null || path.isBlank()) {
+            String uri = request.getRequestURI();
+            String ctx = request.getContextPath();
+            if (uri != null) {
+                path = ctx != null && !ctx.isBlank() && uri.startsWith(ctx)
+                        ? uri.substring(ctx.length())
+                        : uri;
+            }
+        }
+        if (path == null) {
+            return "";
+        }
+        if (path.length() > 1 && path.endsWith("/")) {
+            return path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 
     private void writeError(HttpServletResponse response) throws IOException {

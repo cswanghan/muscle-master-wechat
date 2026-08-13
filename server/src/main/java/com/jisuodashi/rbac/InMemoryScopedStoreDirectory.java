@@ -18,16 +18,26 @@ public class InMemoryScopedStoreDirectory implements ScopedStoreDirectory {
 
     @Override
     public List<ScopedStore> list() {
-        return List.copyOf(stores);
+        StoreScope scope = StoreScopeContext.get();
+        List<ScopedStore> all = List.copyOf(stores);
+        return scope == null ? all : scope.filter(all, ScopedStore::id);
     }
 
     @Override
     public Optional<ScopedStore> find(long id) {
+        StoreScope scope = StoreScopeContext.get();
+        if (scope != null && !scope.contains(id)) {
+            return Optional.empty();
+        }
         return stores.stream().filter(s -> s.id() == id).findFirst();
     }
 
     @Override
     public void updateStatus(long id, int status) {
+        StoreScope scope = StoreScopeContext.get();
+        if (scope != null) {
+            scope.assertContains(id);
+        }
         stores.replaceAll(s -> s.id() == id ? s.withStatus(status) : s);
     }
 }

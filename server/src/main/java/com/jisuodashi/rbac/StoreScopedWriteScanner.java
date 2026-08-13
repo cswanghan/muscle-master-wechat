@@ -12,11 +12,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * CI gate: every write mapping under /api/v1/f and /api/v1/a must carry {@link StoreScoped}.
+ * CI gate: /api/v1/f and /api/v1/a handlers must carry {@link StoreScoped};
+ * writes must also carry {@link RequirePerm}.
  */
 public final class StoreScopedWriteScanner {
 
     public static final Set<String> WRITE_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
+    private static final Set<String> SKIP_METHODS = Set.of("OPTIONS");
 
     private StoreScopedWriteScanner() {
     }
@@ -24,8 +26,16 @@ public final class StoreScopedWriteScanner {
     public static List<String> violations(RequestMappingHandlerMapping mapping) {
         List<String> missing = new ArrayList<>();
         mapping.getHandlerMethods().forEach((info, handler) -> {
-            if (isUnscopedWrite(patterns(info), methods(info), handler.getMethod(), handler.getBeanType())) {
-                missing.add(describe(handler, patterns(info)));
+            Collection<String> patterns = patterns(info);
+            Collection<String> httpMethods = methods(info);
+            if (!isFaPath(patterns) || isFixture(patterns) || onlyOptions(httpMethods)) {
+                return;
+            }
+            if (isMissingStoreScoped(handler.getMethod(), handler.getBeanType())) {
+                missing.add("StoreScoped " + describe(handler, patterns));
+            }
+            if (isWrite(httpMethods) && isMissingRequirePerm(handler.getMethod(), handler.getBeanType())) {
+                missing.add("RequirePerm " + describe(handler, patterns));
             }
         });
         return missing;
@@ -36,8 +46,17 @@ public final class StoreScopedWriteScanner {
         if (!isFaPath(patterns) || isFixture(patterns) || !isWrite(httpMethods)) {
             return false;
         }
+        return isMissingStoreScoped(method, beanType);
+    }
+
+    public static boolean isMissingStoreScoped(Method method, Class<?> beanType) {
         return method.getAnnotation(StoreScoped.class) == null
                 && beanType.getAnnotation(StoreScoped.class) == null;
+    }
+
+    public static boolean isMissingRequirePerm(Method method, Class<?> beanType) {
+        return method.getAnnotation(RequirePerm.class) == null
+                && beanType.getAnnotation(RequirePerm.class) == null;
     }
 
     public static boolean isFaPath(Collection<String> patterns) {
@@ -57,6 +76,10 @@ public final class StoreScopedWriteScanner {
         return prefix(path, "/api/v1/a");
     }
 
+    public static boolean isTherapistPath(String path) {
+        return prefix(path, "/api/v1/t");
+    }
+
     public static boolean isWrite(Collection<String> httpMethods) {
         if (httpMethods == null || httpMethods.isEmpty()) {
             return true;
@@ -69,16 +92,26 @@ public final class StoreScopedWriteScanner {
         return false;
     }
 
-    private static boolean isFixture(Collection<String> patterns) {
+    public static boolean isFixture(Collection<String> patterns) {
         for (String pattern : patterns) {
-            if (pattern.contains("/_fixture")) {
+            if (isFixturePath(pattern)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean prefix(String path, String prefix) {
+    public static boolean isFixturePath(String path) {
+        return prefix(path, "/api/v1/f/_fixture") || prefix(path, "/api/v1/a/_fixture");
+    }
+
+    private static boolean onlyOptions(Collection<String> httpMethods) {
+        return httpMethods != null
+                && !httpMethods.isEmpty()
+                && httpMethods.stream().allMatch(m -> SKIP_METHODS.contains(m.toUpperCase()));
+    }
+
+    static boolean prefix(String path, String prefix) {
         return path.equals(prefix) || path.startsWith(prefix + "/") || path.startsWith(prefix + "{");
     }
 

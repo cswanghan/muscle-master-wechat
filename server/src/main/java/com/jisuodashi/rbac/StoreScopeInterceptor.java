@@ -28,11 +28,22 @@ public class StoreScopeInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        if (!(handler instanceof HandlerMethod method) || !StoreScopedWriteScanner.isFaPath(request.getServletPath())) {
+        if (!(handler instanceof HandlerMethod method)) {
+            return true;
+        }
+        String path = request.getServletPath();
+        if (StoreScopedWriteScanner.isTherapistPath(path)) {
+            JwtPrincipal principal = AuthContext.requireStaff();
+            if (principal.typ() != TokenType.T) {
+                throw new ApiException(ErrorCodes.FORBIDDEN, "无功能权限");
+            }
+            return true;
+        }
+        if (!StoreScopedWriteScanner.isFaPath(path)) {
             return true;
         }
         JwtPrincipal principal = AuthContext.requireStaff();
-        assertClientAllowed(request.getServletPath(), principal);
+        assertClientAllowed(path, principal);
         RequirePerm perm = method.getMethodAnnotation(RequirePerm.class);
         if (perm == null) {
             perm = method.getBeanType().getAnnotation(RequirePerm.class);

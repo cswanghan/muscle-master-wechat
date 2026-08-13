@@ -7,7 +7,7 @@ import com.jisuodashi.catalog.CatalogModels;
 import com.jisuodashi.catalog.CatalogRepository;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.ErrorCodes;
-import com.jisuodashi.rbac.DataScopeType;
+import com.jisuodashi.rbac.AuditHints;
 import com.jisuodashi.rbac.RbacDtos;
 import org.springframework.stereotype.Service;
 
@@ -29,19 +29,25 @@ public class TreatmentNoteService {
 
     public RbacDtos.TreatmentNoteList listForOrder(long orderId) {
         JwtPrincipal principal = AuthContext.requireStaff();
+        if (principal.typ() != TokenType.T) {
+            throw new ApiException(ErrorCodes.FORBIDDEN, "无功能权限");
+        }
         List<TreatmentNote> rows = notes.findByOrderId(orderId);
         if (rows.isEmpty()) {
             throw new ApiException(ErrorCodes.NOT_FOUND, "理疗记录不存在");
         }
-        if (principal.typ() == TokenType.T || DataScopeType.SELF == DataScopeType.parse(principal.scopeType())) {
-            Long therapistId = catalog.listTherapists().stream()
-                    .filter(t -> t.staffUserId() == principal.subjectId())
-                    .map(CatalogModels.Therapist::id)
-                    .findFirst()
-                    .orElse(null);
-            if (therapistId == null || rows.stream().anyMatch(n -> n.therapistId() != therapistId)) {
-                throw new ApiException(ErrorCodes.DATA_SCOPE, "数据域拒绝");
-            }
+        AuditHints.setStoreId(rows.getFirst().storeId());
+        AuditHints.setResourceId(rows.getFirst().id());
+        Long therapistId = catalog.listTherapists().stream()
+                .filter(t -> t.staffUserId() == principal.subjectId())
+                .map(CatalogModels.Therapist::id)
+                .findFirst()
+                .orElse(null);
+        boolean served = rows.stream().anyMatch(n ->
+                n.authorStaffId() == principal.subjectId()
+                        || (therapistId != null && n.therapistId() == therapistId));
+        if (!served) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "理疗记录不存在");
         }
         List<RbacDtos.TreatmentNoteItem> items = rows.stream()
                 .map(n -> new RbacDtos.TreatmentNoteItem(

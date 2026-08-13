@@ -18,6 +18,7 @@ class StoreScopedWriteScannerTest {
         assertThat(StoreScopedWriteScanner.isUnscopedWrite(
                 List.of("/api/v1/f/orders"), List.of("POST"), write, DummyUnscoped.class))
                 .isTrue();
+        assertThat(StoreScopedWriteScanner.isMissingRequirePerm(write, DummyUnscoped.class)).isTrue();
     }
 
     @Test
@@ -26,14 +27,13 @@ class StoreScopedWriteScannerTest {
         assertThat(StoreScopedWriteScanner.isUnscopedWrite(
                 List.of("/api/v1/a/stores/1/status"), List.of("POST"), write, DummyScoped.class))
                 .isFalse();
+        assertThat(StoreScopedWriteScanner.isMissingRequirePerm(write, DummyScoped.class)).isFalse();
     }
 
     @Test
-    void getDoesNotRequireAnnotation() throws Exception {
+    void getWithoutStoreScopedIsReported() throws Exception {
         Method list = DummyUnscoped.class.getDeclaredMethod("list");
-        assertThat(StoreScopedWriteScanner.isUnscopedWrite(
-                List.of("/api/v1/f/stores"), List.of("GET"), list, DummyUnscoped.class))
-                .isFalse();
+        assertThat(StoreScopedWriteScanner.isMissingStoreScoped(list, DummyUnscoped.class)).isTrue();
     }
 
     @Test
@@ -42,6 +42,13 @@ class StoreScopedWriteScannerTest {
         assertThat(StoreScopedWriteScanner.isUnscopedWrite(
                 List.of("/api/v1/c/bookings"), List.of("POST"), write, DummyUnscoped.class))
                 .isFalse();
+    }
+
+    @Test
+    void fixtureIsPrefixNotSubstring() {
+        assertThat(StoreScopedWriteScanner.isFixturePath("/api/v1/f/_fixture/unscoped")).isTrue();
+        assertThat(StoreScopedWriteScanner.isFixturePath("/api/v1/f/orders_fixture")).isFalse();
+        assertThat(StoreScopedWriteScanner.isFixture(List.of("/api/v1/a/_fixture/x"))).isTrue();
     }
 
     @RequestMapping("/api/v1/f")
@@ -58,6 +65,7 @@ class StoreScopedWriteScannerTest {
     static class DummyScoped {
         @PostMapping
         @StoreScoped
+        @RequirePerm("catalog:write")
         void write() {
         }
     }

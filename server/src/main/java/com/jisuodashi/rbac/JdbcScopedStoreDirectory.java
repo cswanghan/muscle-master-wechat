@@ -21,32 +21,33 @@ public class JdbcScopedStoreDirectory implements ScopedStoreDirectory {
             rs.getString("name"),
             rs.getInt("status"));
 
-    private final JdbcTemplate jdbc;
+    private final ScopedStoreMapper mapper;
+    private final ScopeAwareJdbc jdbc;
     private final Clock clock;
 
-    public JdbcScopedStoreDirectory(JdbcTemplate jdbc, Clock clock) {
-        this.jdbc = jdbc;
+    public JdbcScopedStoreDirectory(ScopedStoreMapper mapper, JdbcTemplate jdbcTemplate, Clock clock) {
+        this.mapper = mapper;
+        this.jdbc = new ScopeAwareJdbc(jdbcTemplate);
         this.clock = clock;
     }
 
     @Override
     public List<ScopedStore> list() {
-        return jdbc.query("SELECT id, code, name, status FROM store WHERE deleted_at IS NULL ORDER BY id", ROW);
+        return mapper.list();
     }
 
     @Override
     public Optional<ScopedStore> find(long id) {
-        List<ScopedStore> rows = jdbc.query(
-                "SELECT id, code, name, status FROM store WHERE id=? AND deleted_at IS NULL", ROW, id);
+        ScopedStore row = mapper.find(id);
+        if (row != null) {
+            return Optional.of(row);
+        }
+        List<ScopedStore> rows = jdbc.query(ScopedStoreQueries.FIND, ROW, id);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
     @Override
     public void updateStatus(long id, int status) {
-        jdbc.update(
-                "UPDATE store SET status=?, updated_at=? WHERE id=? AND deleted_at IS NULL",
-                status,
-                JdbcTimes.ts(Instant.now(clock)),
-                id);
+        jdbc.update(ScopedStoreQueries.UPDATE_STATUS, status, JdbcTimes.ts(Instant.now(clock)), id);
     }
 }
