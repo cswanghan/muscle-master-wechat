@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>肌松大师 · C 端预览</title>
+  <style>
+    :root {
+      --jade: #1E5C4A;
+      --paper: #F4F1EA;
+      --ink: #1a1c1b;
+      --muted: #6b7a74;
+      --line: #d7e6df;
+      --free: #E8F0EC;
+      --locked: #FAF1E4;
+      --locked-ink: #A9752F;
+      --busy: #F4F2EE;
+      --busy-ink: #8B948F;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #cfd6d2;
+      font-family: "PingFang SC", "Noto Sans SC", sans-serif;
+      color: var(--ink);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 16px 40px;
+    }
+    .stage { display: flex; gap: 28px; align-items: flex-start; }
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: #111;
+      border-radius: 36px;
+      padding: 12px;
+      box-shadow: 0 18px 50px rgba(20, 40, 32, .28);
+    }
+    .screen {
+      height: 100%;
+      background: var(--paper);
+      border-radius: 26px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .status {
+      height: 44px;
+      background: var(--jade);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 12px;
+    }
+    .nav {
+      background: var(--jade);
+      color: #fff;
+      padding: 6px 16px 12px;
+      font-size: 17px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav .back { cursor: pointer; font-weight: 400; opacity: .85; }
+    .content { flex: 1; overflow: auto; padding: 16px 16px 88px; }
+    .dock {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 64px; background: #faf8f3; border-top: 1px solid var(--line);
+      display: flex;
+    }
+    .dock button {
+      flex: 1; border: 0; background: none; color: var(--busy-ink);
+      font-size: 11px; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px; cursor: pointer;
+    }
+    .dock button.on { color: var(--jade); font-weight: 600; }
+    .ico {
+      width: 24px; height: 24px; border-radius: 50%; background: #e8f0ec;
+      color: var(--jade); display: flex; align-items: center; justify-content: center; font-size: 11px;
+    }
+    .dock button.on .ico { background: var(--jade); color: #f4f1ea; }
+    .hero { text-align: center; margin: 8px 0 18px; }
+    .mark {
+      width: 52px; height: 52px; border-radius: 50%; background: var(--jade);
+      color: #f4f1ea; display: inline-flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 8px;
+    }
+    h1 { margin: 0; font-size: 22px; color: var(--jade); }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .entry, .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      padding: 14px; margin-bottom: 10px;
+    }
+    #c3-calendar .card { padding: 8px; margin-bottom: 8px; }
+    .entry { display: flex; gap: 12px; align-items: center; cursor: pointer; }
+    .entry-ico {
+      width: 42px; height: 42px; border-radius: 10px; background: #e8f0ec;
+      color: var(--jade); font-weight: 700; display: flex; align-items: center; justify-content: center;
+    }
+    .entry b { color: var(--jade); font-size: 15px; }
+    .entry p, .hint { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .promo {
+      margin-top: 14px; padding: 14px; border-radius: 12px;
+      background: repeating-linear-gradient(135deg, #faf1e4 0 8px, #f4f1ea 8px 16px);
+      border: 1px dashed #d4b07a;
+    }
+    .promo .tag { display: inline-block; background: #faf1e4; color: var(--locked-ink); font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+    .promo h3 { margin: 8px 0 4px; color: var(--locked-ink); font-size: 16px; }
+    .promo p { margin: 0; color: #8b7a5c; font-size: 12px; }
+    .sec { margin: 14px 0 8px; color: var(--jade); font-size: 13px; font-weight: 600; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip, .date {
+      border: 1px solid var(--line); background: #fff; border-radius: 999px;
+      padding: 6px 12px; font-size: 13px; cursor: pointer;
+    }
+    .chip.on, .date.on { background: var(--jade); color: #fff; border-color: var(--jade); }
+    .dates { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+    .date { min-width: 52px; border-radius: 10px; text-align: center; padding: 6px 0; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+    .lg { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+    .lg.free { background: var(--free); color: var(--jade); }
+    .lg.locked { background: var(--locked); color: var(--locked-ink); }
+    .lg.booked { background: var(--jade); color: #fff; }
+    .lg.busy { background: var(--busy); color: var(--busy-ink); border: 1px dashed #c9cfcb; }
+    .slots { display: flex; flex-wrap: wrap; gap: 4px; }
+    .slot {
+      width: 46px; height: 20px; line-height: 20px; text-align: center;
+      font-size: 9px; border-radius: 3px; cursor: default;
+    }
+    .slot.free { background: var(--free); color: var(--jade); cursor: pointer; }
+    .slot.locked { background: var(--locked); color: var(--locked-ink); }
+    .slot.booked, .slot.sel { background: var(--jade); color: #fff; }
+    .slot.busy { background: var(--busy); color: var(--busy-ink); border: 1px dashed #c9cfcb; }
+    .th-name { font-weight: 600; color: var(--jade); }
+    .bar {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      background: #fff; border-top: 1px solid var(--line);
+      padding: 10px 16px 14px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .price { color: var(--jade); font-size: 22px; font-weight: 700; }
+    .btn {
+      border: 0; background: var(--jade); color: #f4f1ea; border-radius: 22px;
+      height: 40px; padding: 0 18px; font-weight: 600; cursor: pointer; width: 100%;
+      margin-top: 10px;
+    }
+    .btn.ghost { background: #fff; color: var(--jade); border: 1px solid var(--jade); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .ticker { background: var(--locked); color: var(--locked-ink); text-align: center; padding: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; margin-bottom: 12px; }
+    .ticker.ok { background: var(--free); color: var(--jade); }
+    .ticker.dead { background: #f8e4e2; color: #b42318; }
+    .row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 14px; }
+    .k { color: var(--muted); }
+    .err { color: #b42318; font-size: 13px; margin: 8px 0; }
+    .empty { text-align: center; padding: 16px; color: var(--busy-ink); border: 1px dashed #c9cfcb; border-radius: 10px; background: #fff; }
+    .st { font-size: 11px; color: var(--locked-ink); background: var(--locked); padding: 2px 8px; border-radius: 4px; }
+    .no-wallet { text-align: center; color: var(--busy-ink); font-size: 12px; margin-top: 18px; }
+    .aside { width: 280px; color: #24352f; font-size: 13px; line-height: 1.55; }
+    .aside h2 { margin: 0 0 8px; font-size: 18px; color: var(--jade); }
+    .aside code { background: #e8f0ec; padding: 1px 5px; border-radius: 4px; }
+    .api { margin-top: 12px; font-size: 12px; color: #3d524a; }
+    .api b { display: block; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="phone" id="phone">
+      <div class="screen">
+        <div class="status"><span>9:41</span><span>C 端 · mock</span></div>
+        <div class="nav" id="nav"><span class="back" id="back" hidden>‹</span><span id="nav-title">预约</span></div>
+        <div class="content" id="app"></div>
+      </div>
+    </div>
+    <aside class="aside">
+      <h2>C1–C4 / C6 预览</h2>
+      <p>微信开发者工具可能缺失。此页在服务端 <code>dev</code> 起来时打真实 API。</p>
+      <p class="api">
+        <b>GET</b> /api/v1/c/stores · therapists · projects · symptoms
+        <b>GET</b> /api/v1/c/availability?includeBusy=1
+        <b>POST</b> /api/v1/c/auth/wechat <code>{"code":"dev"}</code>
+        <b>POST</b> /api/v1/c/bookings · /{id}/pay · /{id}/cancel
+        <b>POST</b> /api/v1/pay/wechat/notify（dev mock 支付）
+        <b>GET</b> /api/v1/c/bookings
+      </p>
+      <p>C6 <strong>无</strong>资金总览 / 储值 / 礼卡 / 券。</p>
+      <p id="api-base"></p>
+    </aside>
+  </div>
+<script>
+const API = new URLSearchParams(location.search).get('api') || 'http://127.0.0.1:8080';
+document.getElementById('api-base').textContent = 'API ' + API;
+const DEMO_DATE = '2026-08-14';
+const S = {
+  route: 'home',
+  token: '',
+  customerId: '',
+  stores: [],
+  therapists: [],
+  projects: [],
+  symptoms: [],
+  symptomProjects: [],
+  symptomHint: '',
+  selectedSymptom: null,
+  pickedStore: null,
+  pickedTherapist: null,
+  storeId: '',
+  storeName: '',
+  therapistId: '',
+  therapistName: '',
+  projectId: '',
+  projectName: '',
+  priceFen: 0,
+  durationMinutes: 60,
+  bufferMinutes: 15,
+  date: DEMO_DATE,
+  availability: null,
+  selected: null,
+  order: null,
+  remain: '15:00',
+  expired: false,
+  paid: false,
+  error: '',
+  loading: false,
+  bookings: [],
+};
+let tickTimer = null;
+
+function fen(n) { return (Number(n || 0) / 100).toFixed(Number(n) % 100 ? 2 : 0); }
+function rating(x) { return ((Number(x) || 0) / 100).toFixed(1); }
+function level(l) { return ({ SENIOR: '首席', MIDDLE: '中级', JUNIOR: '初级' }[l] || l || ''); }
+function statusLabel(s) {
+  return ({ PENDING_PAY: '待支付', BOOKED: '已预约', CHECKED_IN: '已到店', IN_SERVICE: '服务中',
+    COMPLETED: '已完成', CLOSED: '已关闭', CANCELLED: '已取消' }[s] || s);
+}
+function ongoing(s) { return ['PENDING_PAY', 'BOOKED', 'CHECKED_IN', 'IN_SERVICE'].includes(s); }
+function rid(p) { return p + '-' + Date.now() + '-' + Math.random().toString(16).slice(2, 8); }
+function addDays(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+}
+function week(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return '日一二三四五六'[new Date(y, m - 1, d).getDay()];
+}
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (opts.auth && S.token) headers.Authorization = 'Bearer ' + S.token;
+  const res = await fetch(API + path, {
+    method: opts.method || 'GET',
+    headers,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (body.code === 'SUCCESS') return body;
+  if (!(res.ok) || body.code !== 0) {
+    throw new Error(body.message || ('HTTP ' + res.status));
+  }
+  return body.data;
+}
+
+async function login() {
+  if (S.token) return;
+  const data = await api('/api/v1/c/auth/wechat', { method: 'POST', body: { code: 'dev' } });
+  S.token = data.token;
+  S.customerId = data.customerId;
+}
+
+function go(route, extra) {
+  Object.assign(S, extra || {});
+  S.route = route;
+  S.error = '';
+  location.hash = route;
+  render();
+}
+
+function back() {
+  if (S.route === 'confirm') return go('calendar');
+  if (S.route === 'calendar') return go(S.therapistId ? 'therapists' : 'stores');
+  if (S.route === 'stores' && S.selectedSymptom) return go('symptom');
+  go('home');
+}
+
+async function loadCatalog() {
+  const [stores, therapists, projects, symptoms] = await Promise.all([
+    api('/api/v1/c/stores'),
+    api('/api/v1/c/therapists'),
+    api('/api/v1/c/projects'),
+    api('/api/v1/c/symptoms'),
+  ]);
+  S.stores = stores.items || [];
+  S.therapists = therapists.items || [];
+  S.projects = projects.items || [];
+  S.symptoms = symptoms.items || [];
+}
+
+async function loadAvailability() {
+  S.loading = true; render();
+  try {
+    let path = `/api/v1/c/availability?storeId=${S.storeId}&date=${S.date}&projectId=${S.projectId}&includeBusy=1`;
+    if (S.therapistId) path += `&therapistId=${S.therapistId}`;
+    S.availability = await api(path);
+  } catch (e) {
+    S.error = e.message;
+  } finally {
+    S.loading = false; render();
+  }
+}
+
+function remainMs(iso) {
+  const t = Date.parse(iso);
+  return Number.isNaN(t) ? 0 : Math.max(0, t - Date.now());
+}
+function mmss(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+function startTick() {
+  if (tickTimer) clearInterval(tickTimer);
+  const step = () => {
+    const ms = remainMs(S.order && S.order.lockExpireAt);
+    S.remain = mmss(ms);
+    S.expired = ms <= 0;
+    const el = document.getElementById('countdown');
+    if (el) el.textContent = S.expired ? '锁已过期，请返回重选时段' : ('已锁定 · 剩余 ' + S.remain + ' 支付，超时自动释放');
+    if (el && S.expired) el.className = 'ticker dead';
+    if (ms <= 0 && tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+  };
+  step();
+  tickTimer = setInterval(step, 1000);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function titles() {
+  return { home: '预约', symptom: '症状路由', stores: '选择门店', therapists: '选择技师',
+    calendar: '选择时段', confirm: '确认支付', mine: '我的' }[S.route] || '肌松大师';
+}
+
+function paintSlots(t) {
+  const starts = {};
+  (t.starts || []).forEach((s) => { starts[s.slotNo] = s; });
+  return (t.blocks || []).map((b) => {
+    const sel = S.selected && S.selected.therapistId === t.therapistId && S.selected.slotNo === b.slotNo;
+    let kind = 'busy';
+    if (sel) kind = 'sel';
+    else if (starts[b.slotNo]) kind = 'free';
+    else if (b.state === 'LOCKED') kind = 'locked';
+    else if (b.state === 'BOOKED') kind = 'booked';
+    return { ...b, kind, bookable: !!starts[b.slotNo], priceFen: starts[b.slotNo] && starts[b.slotNo].priceFen };
+  });
+}
+
+function render() {
+  const nav = document.getElementById('nav-title');
+  const backBtn = document.getElementById('back');
+  nav.textContent = titles();
+  backBtn.hidden = S.route === 'home' || S.route === 'mine';
+  document.getElementById('app').innerHTML = view();
+  bind();
+}
+
+function view() {
+  if (S.route === 'home') return viewHome();
+  if (S.route === 'symptom') return viewSymptom();
+  if (S.route === 'stores') return viewStores();
+  if (S.route === 'therapists') return viewTherapists();
+  if (S.route === 'calendar') return viewCalendar();
+  if (S.route === 'confirm') return viewConfirm();
+  if (S.route === 'mine') return viewMine();
+  return '';
+}
+
+function dock(active) {
+  return `<div class="dock">
+    <button class="${active === 'home' ? 'on' : ''}" data-go="home"><span class="ico">约</span>预约</button>
+    <button class="${active === 'mine' ? 'on' : ''}" data-go="mine"><span class="ico">我</span>我的</button>
+  </div>`;
+}
+
+function viewHome() {
+  return `<div id="c1-home">
+    <div class="hero"><div class="mark">松</div><h1>肌松大师</h1>
+      <div class="sub">选症状 · 选门店 · 选技师，同一套库存</div></div>
+    <div class="entry" id="entry-symptom" data-go="symptom"><div class="entry-ico">症</div>
+      <div><b>按症状预约</b><p>肩颈 / 腰骶 / 酸胀</p></div></div>
+    <div class="entry" id="entry-store" data-go="stores"><div class="entry-ico">店</div>
+      <div><b>按门店预约</b><p>附近门店 · 营业时段</p></div></div>
+    <div class="entry" id="entry-therapist" data-go="therapists"><div class="entry-ico">师</div>
+      <div><b>按技师预约</b><p>指定技师 · 看空档</p></div></div>
+    <div class="promo" id="promo-placeholder"><span class="tag">即将上线</span>
+      <h3>特惠空档</h3><p>精确到技师 · 时段 · 折扣的卡片是 P2，此处仅占位</p></div>
+    ${dock('home')}
+  </div>`;
+}
+
+function viewSymptom() {
+  const parts = S.symptoms.filter((s) => s.type === 'BODY_PART');
+  const disc = S.symptoms.filter((s) => s.type === 'DISCOMFORT');
+  const chip = (s) => `<button class="chip ${S.selectedSymptom && S.selectedSymptom.id === s.id ? 'on' : ''}" data-sym="${esc(s.id)}">${esc(s.name)}</button>`;
+  const projs = S.symptomProjects.map((p) => `<div class="card" data-proj="${esc(p.projectId)}">
+    <b>${esc(p.name)}</b><div class="hint">${p.durationMinutes}+${p.bufferMinutes} 分钟</div>
+    <div class="price">¥${fen(p.priceFen)}</div></div>`).join('');
+  return `<div id="c2-symptom">
+    <div class="sub">选择部位或不适，收敛到项目 SKU</div>
+    <div class="sec">部位</div><div class="chips">${parts.map(chip).join('')}</div>
+    <div class="sec">不适</div><div class="chips">${disc.map(chip).join('')}</div>
+    ${S.selectedSymptom ? `<div class="sec">推荐项目 · ${esc(S.selectedSymptom.name)}</div>` : ''}
+    ${S.symptomHint ? `<div class="empty" id="empty-hint">${esc(S.symptomHint)}</div>` : ''}
+    ${projs || ''}
+    ${S.error ? `<div class="err">${esc(S.error)}</div>` : ''}
+  </div>`;
+}
+
+function viewStores() {
+  return `<div>${S.projectName ? `<div class="hint">已选项目 ${esc(S.projectName)}</div>` : ''}
+    ${S.stores.map((s) => `<div class="card entry" data-store="${esc(s.storeId)}">
+      <div><b>${esc(s.name)}</b><p>${esc(s.businessStart)}–${esc(s.businessEnd)} · ${s.open ? '营业中' : '未开业'}</p></div>
+    </div>`).join('')}
+    ${!S.projectId && S.pickedStore ? `<div class="sec">选择项目</div>${S.projects.map(pCard).join('')}` : ''}
+    ${S.error ? `<div class="err">${esc(S.error)}</div>` : ''}
+  </div>`;
+}
+
+function pCard(p) {
+  return `<div class="card" data-proj="${esc(p.projectId)}"><b>${esc(p.name)}</b>
+    <div class="hint">${p.durationMinutes}+${p.bufferMinutes} 分钟</div>
+    <div class="price">¥${fen(p.priceFen)}</div></div>`;
+}
+
+function viewTherapists() {
+  return `<div>${S.therapists.map((t) => `<div class="card entry" data-th="${esc(t.therapistId)}">
+    <div><b>${esc(t.name)}</b><p>${level(t.level)} · ${rating(t.ratingX100)} · ${esc(t.intro || '')}</p></div>
+  </div>`).join('')}
+    ${S.pickedTherapist ? `<div class="sec">选择项目</div>${S.projects.map(pCard).join('')}` : ''}
+    ${S.error ? `<div class="err">${esc(S.error)}</div>` : ''}
+  </div>`;
+}
+
+function viewCalendar() {
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const iso = addDays(DEMO_DATE, i);
+    dates.push(`<button class="date ${S.date === iso ? 'on' : ''}" data-date="${iso}"><div>周${week(iso)}</div><b>${iso.slice(8)}</b></button>`);
+  }
+  const ths = ((S.availability && S.availability.therapists) || []).map((t) => {
+    const slots = paintSlots(t).map((s) =>
+      `<div class="slot ${s.kind}" data-tid="${esc(t.therapistId)}" data-tname="${esc(t.name)}" data-slot="${s.slotNo}" data-start="${esc(s.start)}" data-price="${s.priceFen || 0}" data-bookable="${s.bookable ? 1 : 0}">${esc(s.start)}</div>`).join('');
+    return `<div class="card"><div class="th-name">${esc(t.name)} <span class="hint">${level(t.level)} · ${rating(t.ratingX100)}</span></div>
+      <div class="slots">${slots}</div></div>`;
+  }).join('');
+  return `<div id="c3-calendar" style="padding-bottom:72px">
+    <div class="hint">${esc(S.storeName)} · ${esc(S.projectName)} · ${S.durationMinutes}+${S.bufferMinutes} 分</div>
+    <div class="dates">${dates.join('')}</div>
+    <div class="legend">
+      <span class="lg free">可约</span><span class="lg locked">锁定中</span>
+      <span class="lg booked">已选/已预约</span><span class="lg busy">不可约</span>
+    </div>
+    ${S.loading ? '<div class="hint">加载中… GET /c/availability?includeBusy=1</div>' : ''}
+    ${S.error ? `<div class="err">${esc(S.error)}</div>` : ''}
+    ${ths || '<div class="empty">当天无排班</div>'}
+    <div class="bar">
+      <div><div class="hint">${S.selected ? (S.selected.therapistName + ' ' + S.selected.start) : '点绿色起点预约'}</div>
+        <div class="price">¥${fen(S.selected ? S.selected.priceFen : S.priceFen)}</div></div>
+      <button class="btn" id="go-confirm" style="width:auto" ${S.selected ? '' : 'disabled'}>去预约</button>
+    </div>
+  </div>`;
+}
+
+function viewConfirm() {
+  const o = S.order;
+  return `<div id="c4-confirm">
+    ${o && !S.paid && !S.expired ? `<div class="ticker" id="countdown">已锁定 · 剩余 ${esc(S.remain)} 支付，超时自动释放</div>` : ''}
+    ${S.expired && !S.paid ? '<div class="ticker dead" id="countdown">锁已过期，请返回重选时段</div>' : ''}
+    ${S.paid ? '<div class="ticker ok">支付成功 · 订单已预约</div>' : ''}
+    <div class="card">
+      <div class="row"><span class="k">门店</span><span>${esc(S.storeName)}</span></div>
+      <div class="row"><span class="k">技师</span><span>${esc(S.therapistName)}</span></div>
+      <div class="row"><span class="k">项目</span><span>${esc(S.projectName)} · ${S.durationMinutes}+${S.bufferMinutes} 分</span></div>
+      <div class="row"><span class="k">时间</span><span>${esc(S.date)} ${esc(S.selected && S.selected.start)}</span></div>
+      <div class="row"><span class="k">单号</span><span>${esc((o && o.orderNo) || '确认后生成')}</span></div>
+      <div class="row"><span class="k">应付</span><span class="price">¥${fen((o && o.payableFen) || S.priceFen)}</span></div>
+    </div>
+    ${S.error ? `<div class="err">${esc(S.error)}</div>` : ''}
+    ${!o && !S.paid ? '<button class="btn" id="lock-btn">确认下单（锁定 15 分钟）</button>' : ''}
+    ${o && !S.paid && !S.expired ? '<button class="btn" id="pay-btn">立即支付（dev mock）</button>' : ''}
+    ${o && !S.paid ? '<button class="btn ghost" id="cancel-btn">取消预约</button>' : ''}
+    ${S.paid ? '<button class="btn" id="to-mine">查看订单</button>' : ''}
+  </div>`;
+}
+
+function viewMine() {
+  const on = S.bookings.filter((o) => ongoing(o.status));
+  const nameOf = (tid) => { const t = S.therapists.find((x) => x.therapistId === tid); return t ? t.name : tid; };
+  const storeOf = (id) => { const s = S.stores.find((x) => x.storeId === id); return s ? s.name : id; };
+  const card = (o, extra) => `<div class="card" data-oid="${esc(o.orderId)}">
+    <div class="row"><span class="hint">${esc(o.orderNo)}</span><span class="st">${esc(statusLabel(o.status))}</span></div>
+    <div>${esc(storeOf(o.storeId))} · ${esc(nameOf(o.therapistId))}</div>
+    <div class="hint">${esc(o.date)} ${esc(o.start)}</div>
+    ${extra ? `<div class="price">¥${fen(o.payableFen)}</div>` : ''}
+  </div>`;
+  return `<div id="c6-mine">
+    <div class="card" style="display:flex;gap:10px;align-items:center">
+      <div class="mark" style="margin:0">我</div>
+      <div><b>我的预约</b><div class="hint">${S.customerId ? ('已登录 · ' + S.customerId) : '未登录'}</div></div>
+    </div>
+    <div class="sec">进行中预约</div>
+    ${on.length ? on.map((o) => card(o, true)).join('') : '<div class="empty">暂无进行中的预约</div>'}
+    <div class="sec">订单</div>
+    ${S.bookings.length ? S.bookings.map((o) => card(o, false)).join('') : '<div class="empty">暂无订单</div>'}
+    <div class="no-wallet" id="no-wallet">P0 无资金总览 · 无储值 / 礼卡 / 券</div>
+    ${S.error ? `<div class="err">${esc(S.error)}</div>` : ''}
+    ${dock('mine')}
+  </div>`;
+}
+
+function bind() {
+  document.querySelectorAll('[data-go]').forEach((el) => {
+    el.onclick = () => {
+      const r = el.getAttribute('data-go');
+      if (r === 'mine') return openMine();
+      if (r === 'stores') { S.projectId = ''; S.projectName = ''; S.selectedSymptom = null; S.pickedStore = null; }
+      if (r === 'therapists') { S.pickedTherapist = null; S.therapistId = ''; S.therapistName = ''; S.projectId = ''; }
+      if (r === 'symptom') { S.selectedSymptom = null; S.symptomProjects = []; S.symptomHint = ''; }
+      go(r);
+    };
+  });
+  document.querySelectorAll('[data-sym]').forEach((el) => {
+    el.onclick = async () => {
+      const id = el.getAttribute('data-sym');
+      S.selectedSymptom = S.symptoms.find((s) => s.id === id);
+      try {
+        const data = await api('/api/v1/c/symptoms/' + id + '/projects');
+        S.symptomProjects = data.items || [];
+        S.symptomHint = S.symptomProjects.length ? '' : (data.hint || '面诊后调整');
+      } catch (e) { S.error = e.message; }
+      render();
+    };
+  });
+  document.querySelectorAll('[data-store]').forEach((el) => {
+    el.onclick = async () => {
+      const store = S.stores.find((s) => s.storeId === el.getAttribute('data-store'));
+      S.pickedStore = store;
+      S.storeId = store.storeId;
+      S.storeName = store.name;
+      if (S.projectId) {
+        S.therapistId = ''; S.selected = null;
+        go('calendar'); loadAvailability();
+        return;
+      }
+      render();
+    };
+  });
+  document.querySelectorAll('[data-th]').forEach((el) => {
+    el.onclick = () => {
+      const t = S.therapists.find((x) => x.therapistId === el.getAttribute('data-th'));
+      S.pickedTherapist = t;
+      S.therapistId = t.therapistId;
+      S.therapistName = t.name;
+      if (!S.storeId && S.stores[0]) { S.storeId = S.stores[0].storeId; S.storeName = S.stores[0].name; }
+      render();
+    };
+  });
+  document.querySelectorAll('[data-proj]').forEach((el) => {
+    el.onclick = () => {
+      const p = (S.symptomProjects.find((x) => x.projectId === el.getAttribute('data-proj'))
+        || S.projects.find((x) => x.projectId === el.getAttribute('data-proj')));
+      S.projectId = p.projectId;
+      S.projectName = p.name;
+      S.priceFen = p.priceFen;
+      S.durationMinutes = p.durationMinutes;
+      S.bufferMinutes = p.bufferMinutes;
+      S.selected = null;
+      if (S.route === 'symptom') { go('stores'); return; }
+      if (!S.storeId && S.stores[0]) { S.storeId = S.stores[0].storeId; S.storeName = S.stores[0].name; }
+      go('calendar'); loadAvailability();
+    };
+  });
+  document.querySelectorAll('[data-date]').forEach((el) => {
+    el.onclick = () => { S.date = el.getAttribute('data-date'); S.selected = null; loadAvailability(); };
+  });
+  document.querySelectorAll('.slot').forEach((el) => {
+    el.onclick = () => {
+      if (el.getAttribute('data-bookable') !== '1') return;
+      S.selected = {
+        therapistId: el.getAttribute('data-tid'),
+        therapistName: el.getAttribute('data-tname'),
+        slotNo: Number(el.getAttribute('data-slot')),
+        start: el.getAttribute('data-start'),
+        priceFen: Number(el.getAttribute('data-price')),
+      };
+      S.therapistId = S.selected.therapistId;
+      S.therapistName = S.selected.therapistName;
+      S.priceFen = S.selected.priceFen;
+      render();
+    };
+  });
+  const goConfirm = document.getElementById('go-confirm');
+  if (goConfirm) goConfirm.onclick = () => { S.order = null; S.paid = false; S.expired = false; go('confirm'); };
+  const lockBtn = document.getElementById('lock-btn');
+  if (lockBtn) lockBtn.onclick = lockOrder;
+  const payBtn = document.getElementById('pay-btn');
+  if (payBtn) payBtn.onclick = payOrder;
+  const cancelBtn = document.getElementById('cancel-btn');
+  if (cancelBtn) cancelBtn.onclick = cancelOrder;
+  const toMine = document.getElementById('to-mine');
+  if (toMine) toMine.onclick = openMine;
+}
+
+async function lockOrder() {
+  S.error = ''; render();
+  try {
+    await login();
+    const data = await api('/api/v1/c/bookings', {
+      method: 'POST', auth: true,
+      body: {
+        requestId: rid('book'),
+        storeId: S.storeId,
+        therapistId: S.therapistId,
+        projectId: S.projectId,
+        date: S.date,
+        startSlotNo: S.selected.slotNo,
+      },
+    });
+    S.order = data;
+    S.paid = false;
+    startTick();
+    render();
+  } catch (e) {
+    S.error = e.message; render();
+  }
+}
+
+async function payOrder() {
+  try {
+    await login();
+    const pay = await api('/api/v1/c/bookings/' + S.order.orderId + '/pay', {
+      method: 'POST', auth: true, body: { requestId: rid('pay') },
+    });
+    await api('/api/v1/pay/wechat/notify', {
+      method: 'POST',
+      body: { out_trade_no: pay.paymentNo, transaction_id: 'wx_mock_' + pay.paymentNo, amount_fen: pay.amountFen },
+    });
+    S.paid = true;
+    S.order.status = 'BOOKED';
+    render();
+  } catch (e) {
+    S.error = e.message; render();
+  }
+}
+
+async function cancelOrder() {
+  try {
+    await login();
+    const data = await api('/api/v1/c/bookings/' + S.order.orderId + '/cancel', {
+      method: 'POST', auth: true, body: { requestId: rid('cancel'), reason: 'user' },
+    });
+    S.order.status = data.status;
+    render();
+  } catch (e) { S.error = e.message; render(); }
+}
+
+async function openMine() {
+  try {
+    await login();
+    const page = await api('/api/v1/c/bookings', { auth: true });
+    S.bookings = page.items || [];
+  } catch (e) { S.error = e.message; }
+  go('mine');
+}
+
+document.getElementById('back').onclick = back;
+
+async function applyHash() {
+  const hash = (location.hash || '#home').replace('#', '').replace('/', '') || 'home';
+  if (hash === 'calendar' && S.stores[0] && S.projects[0]) {
+    S.storeId = S.stores[0].storeId;
+    S.storeName = S.stores[0].name;
+    S.projectId = S.projects[0].projectId;
+    S.projectName = S.projects[0].name;
+    S.priceFen = S.projects[0].priceFen;
+    S.durationMinutes = S.projects[0].durationMinutes;
+    S.bufferMinutes = S.projects[0].bufferMinutes;
+    go('calendar');
+    await loadAvailability();
+    return;
+  }
+  if (hash === 'mine') { await openMine(); return; }
+  go(hash === 'c1' ? 'home' : hash);
+}
+
+window.addEventListener('hashchange', () => { applyHash(); });
+
+(async function boot() {
+  try { await loadCatalog(); } catch (e) { S.error = e.message; }
+  await applyHash();
+})();
+</script>
+</body>
+</html>

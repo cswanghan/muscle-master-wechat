@@ -1,15 +1,48 @@
-<view class="page">
+<view class="page" id="c1-home">
   <view class="hero">
-    <view class="mark">玉</view>
-    <view class="title">{{title}}</view>
-    <view class="hint">附近门店 · {{apiBase}}</view>
+    <view class="mark">松</view>
+    <view class="title">肌松大师</view>
+    <view class="hint">选症状 · 选门店 · 选技师，同一套库存</view>
   </view>
-  <view wx:if="{{loading}}" class="hint">加载中…</view>
-  <view wx:if="{{error}}" class="error">{{error}}</view>
-  <view class="list">
-    <view class="store" wx:for="{{stores}}" wx:key="storeId">
-      <view class="store-name">{{item.name}}</view>
-      <view class="store-hours">{{item.businessStart}}–{{item.businessEnd}}</view>
+
+  <view class="entries">
+    <view class="entry" id="entry-symptom" bindtap="goSymptom">
+      <view class="entry-ico">症</view>
+      <view class="entry-body">
+        <view class="entry-name">按症状预约</view>
+        <view class="entry-sub">肩颈 / 腰骶 / 酸胀</view>
+      </view>
+    </view>
+    <view class="entry" id="entry-store" bindtap="goStores">
+      <view class="entry-ico">店</view>
+      <view class="entry-body">
+        <view class="entry-name">按门店预约</view>
+        <view class="entry-sub">附近门店 · 营业时段</view>
+      </view>
+    </view>
+    <view class="entry" id="entry-therapist" bindtap="goTherapists">
+      <view class="entry-ico">师</view>
+      <view class="entry-body">
+        <view class="entry-name">按技师预约</view>
+        <view class="entry-sub">指定技师 · 看空档</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="promo" id="promo-placeholder">
+    <view class="promo-tag">即将上线</view>
+    <view class="promo-title">特惠空档</view>
+    <view class="promo-sub">精确到技师 · 时段 · 折扣的卡片是 P2，此处仅占位</view>
+  </view>
+
+  <view class="dock">
+    <view class="dock-item on">
+      <view class="dock-ico">约</view>
+      <view>预约</view>
+    </view>
+    <view class="dock-item" bindtap="goMine">
+      <view class="dock-ico">我</view>
+      <view>我的</view>
     </view>
   </view>
 </view>

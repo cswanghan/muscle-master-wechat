@@ -1,6 +1,12 @@
 {
   "pages": [
-    "pages/index/index"
+    "pages/index/index",
+    "pages/symptom/symptom",
+    "pages/stores/stores",
+    "pages/therapists/therapists",
+    "pages/calendar/calendar",
+    "pages/confirm/confirm",
+    "pages/mine/mine"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1E5C4A",

@@ -1,16 +1,21 @@
 package com.jisuodashi.order;
 
 import com.jisuodashi.common.ApiException;
+import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.inventory.LockNewCommand;
 import com.jisuodashi.inventory.LockNewResult;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
+import com.jisuodashi.inventory.SlotTimes;
 import com.jisuodashi.payment.PaymentDtos;
 import com.jisuodashi.payment.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -89,6 +94,60 @@ public class BookingService {
                 }
             }
             throw ex;
+        }
+    }
+
+    public BookingDtos.Page<BookingDtos.BookingListItem> list(long customerId, String cursor, Integer limit) {
+        int size = limit == null ? 20 : limit;
+        if (size < 1 || size > 100) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "limit 须为 1–100");
+        }
+        Long afterId = parseCursor(cursor);
+        List<BookingOrderRef> all = occupy.listOrdersByCustomer(customerId);
+        List<BookingDtos.BookingListItem> sliced = new ArrayList<>();
+        boolean skipping = afterId != null;
+        String next = null;
+        for (BookingOrderRef row : all) {
+            if (skipping) {
+                if (row.id() == afterId) {
+                    skipping = false;
+                }
+                continue;
+            }
+            if (sliced.size() == size) {
+                next = String.valueOf(row.id());
+                break;
+            }
+            sliced.add(toListItem(row));
+        }
+        return new BookingDtos.Page<>(sliced, next);
+    }
+
+    private static BookingDtos.BookingListItem toListItem(BookingOrderRef row) {
+        String expire = row.lockExpireAt() == null
+                ? null
+                : row.lockExpireAt().atZone(AppClock.SHANGHAI).toOffsetDateTime().toString();
+        return new BookingDtos.BookingListItem(
+                String.valueOf(row.id()),
+                row.orderNo(),
+                row.status(),
+                row.payableFen(),
+                String.valueOf(row.storeId()),
+                String.valueOf(row.therapistId()),
+                row.serviceDate() == null ? null : row.serviceDate().toString(),
+                row.startSlotNo(),
+                SlotTimes.toTime(row.startSlotNo()).format(DateTimeFormatter.ofPattern("HH:mm")),
+                expire);
+    }
+
+    private static Long parseCursor(String cursor) {
+        if (cursor == null || cursor.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(cursor);
+        } catch (NumberFormatException e) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "cursor 无效");
         }
     }
 

@@ -80,6 +80,9 @@ public interface SlotOccupyStore extends DelayedJobStore {
     /** Plain {@code SELECT} — never {@code FOR UPDATE}. D23 poll and job lookup. */
     BookingOrderRef findOrderById(long orderId);
 
+    /** C6: customer's orders, newest id first (snowflake ≈ created_at). */
+    List<BookingOrderRef> listOrdersByCustomer(long customerId);
+
     /** Occupancy whose slot row is still LOCKED for this hold. */
     int deleteOccupancyForLockedHold(long holdId);
 

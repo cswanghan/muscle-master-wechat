@@ -1,0 +1,45 @@
+<view class="page" id="c2-symptom">
+  <view class="lead">选择部位或不适，收敛到项目 SKU</view>
+  <view wx:if="{{loading && !selectedId}}" class="hint">加载中…</view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+
+  <view class="sec">部位</view>
+  <view class="chips">
+    <view
+      wx:for="{{parts}}"
+      wx:key="id"
+      class="chip {{selectedId===item.id?'on':''}}"
+      data-id="{{item.id}}"
+      data-name="{{item.name}}"
+      bindtap="pickSymptom"
+    >{{item.name}}</view>
+  </view>
+
+  <view class="sec">不适</view>
+  <view class="chips">
+    <view
+      wx:for="{{discomforts}}"
+      wx:key="id"
+      class="chip {{selectedId===item.id?'on':''}}"
+      data-id="{{item.id}}"
+      data-name="{{item.name}}"
+      bindtap="pickSymptom"
+    >{{item.name}}</view>
+  </view>
+
+  <view wx:if="{{selectedId}}" class="sec">推荐项目 · {{selectedName}}</view>
+  <view wx:if="{{hint}}" id="empty-hint" class="empty">{{hint}}</view>
+  <view class="list">
+    <view
+      wx:for="{{projects}}"
+      wx:key="projectId"
+      class="card proj"
+      data-item="{{item}}"
+      bindtap="pickProject"
+    >
+      <view class="proj-name">{{item.name}}</view>
+      <view class="hint">{{item.durationMinutes}}+{{item.bufferMinutes}} 分钟</view>
+      <view class="price">¥{{item.priceYuan}}</view>
+    </view>
+  </view>
+</view>

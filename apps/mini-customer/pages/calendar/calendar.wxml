@@ -1,0 +1,57 @@
+<view class="page cal-page" id="c3-calendar">
+  <view class="meta">{{storeName}} · {{projectName}} · {{durationMinutes}}+{{bufferMinutes}} 分</view>
+
+  <scroll-view class="dates" scroll-x>
+    <view
+      wx:for="{{dates}}"
+      wx:key="iso"
+      class="date {{item.on?'on':''}}"
+      data-iso="{{item.iso}}"
+      bindtap="pickDate"
+    >
+      <view class="date-w">周{{item.week}}</view>
+      <view class="date-d">{{item.day}}</view>
+    </view>
+  </scroll-view>
+
+  <view class="legend">
+    <view class="lg free">可约</view>
+    <view class="lg locked">锁定中</view>
+    <view class="lg booked">已选/已预约</view>
+    <view class="lg busy">不可约</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint">加载中… GET /c/availability?includeBusy=1</view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+
+  <view wx:for="{{therapists}}" wx:key="therapistId" class="th-block">
+    <view class="th-head">
+      <view class="th-name">{{item.name}}</view>
+      <view class="hint">{{item.levelLabel}} · {{item.rating}}</view>
+    </view>
+    <view class="slots">
+      <view
+        wx:for="{{item.slots}}"
+        wx:for-item="s"
+        wx:key="slotNo"
+        class="slot {{s.kind}}"
+        data-tid="{{item.therapistId}}"
+        data-tname="{{item.name}}"
+        data-slot="{{s.slotNo}}"
+        data-start="{{s.start}}"
+        data-price="{{s.priceFen}}"
+        data-bookable="{{s.bookable}}"
+        bindtap="pickSlot"
+      >{{s.start}}</view>
+    </view>
+  </view>
+
+  <view class="bar">
+    <view>
+      <view class="bar-sub" wx:if="{{selected}}">{{selected.therapistName}} {{selected.start}}</view>
+      <view class="bar-sub" wx:else>点绿色起点预约</view>
+      <view class="bar-price">¥{{priceYuan}}</view>
+    </view>
+    <view class="btn bar-btn {{selected?'':'dim'}}" id="go-confirm" bindtap="goConfirm">去预约</view>
+  </view>
+</view>

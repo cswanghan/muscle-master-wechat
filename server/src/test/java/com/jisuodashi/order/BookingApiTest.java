@@ -168,6 +168,40 @@ class BookingApiTest {
     }
 
     @Test
+    void listReturnsOwnOrdersNewestFirst() {
+        String token = customerToken();
+        Map<String, Object> first = data(post(body("req-list-a", 44), token));
+        Map<String, Object> second = data(post(body("req-list-b", 64), token));
+        String other = jwt.issue(JwtPrincipal.customer(8_100_000_000_000_000_099L)).token();
+        data(post(body("req-list-other", 72), other));
+
+        ResponseEntity<Map<String, Object>> res = list(token, null);
+        Map<String, Object> page = dataOk(res);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) page.get("items");
+        assertThat(items).hasSize(2);
+        assertThat(items.get(0).get("orderId")).isEqualTo(second.get("orderId"));
+        assertThat(items.get(1).get("orderId")).isEqualTo(first.get("orderId"));
+        assertThat(items.get(0).get("status")).isEqualTo("PENDING_PAY");
+        assertThat(items.get(0).get("start")).isEqualTo("16:00");
+        assertThat(items.get(0).get("date")).isEqualTo("2026-08-14");
+
+        ResponseEntity<Map<String, Object>> limited = list(token, "1");
+        Map<String, Object> slim = dataOk(limited);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> one = (List<Map<String, Object>>) slim.get("items");
+        assertThat(one).hasSize(1);
+        assertThat(slim.get("nextCursor")).isEqualTo(first.get("orderId"));
+    }
+
+    @Test
+    void listRequiresCustomerJwt() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/c/bookings"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(40101));
+    }
+
+    @Test
     void staffJwtIs40301() {
         String staff = jwt.issue(JwtPrincipal.staff(
                 DemoStaffIds.MANAGER, TokenType.F, "STORE", List.of(DemoCatalogIds.STORE))).token();
@@ -199,6 +233,15 @@ class BookingApiTest {
             headers.setBearerAuth(bearer);
         }
         return rest.exchange("/api/v1/c/bookings", HttpMethod.POST, new HttpEntity<>(body, headers), MAP);
+    }
+
+    private ResponseEntity<Map<String, Object>> list(String bearer, String limit) {
+        HttpHeaders headers = new HttpHeaders();
+        if (bearer != null) {
+            headers.setBearerAuth(bearer);
+        }
+        String url = limit == null ? "/api/v1/c/bookings" : "/api/v1/c/bookings?limit=" + limit;
+        return rest.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), MAP);
     }
 
     private ResponseEntity<Map<String, Object>> cancel(String orderId, String requestId, String bearer) {

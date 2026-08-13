@@ -483,6 +483,15 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public List<BookingOrderRef> listOrdersByCustomer(long customerId) {
+        return orders.values().stream()
+                .filter(row -> row.customerId() == customerId)
+                .sorted(Comparator.comparingLong(BookingOrderInsert::id).reversed())
+                .map(this::toRef)
+                .toList();
+    }
+
+    @Override
     public BookingOrderRef findOrderById(long orderId) {
         BookingOrderInsert row = orders.get(orderId);
         return row == null ? null : toRef(row);

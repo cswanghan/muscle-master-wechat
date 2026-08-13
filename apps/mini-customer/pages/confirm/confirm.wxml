@@ -1,0 +1,23 @@
+<view class="page" id="c4-confirm">
+  <view wx:if="{{orderId && !paid && !expired}}" class="ticker" id="countdown">
+    已锁定 · 剩余 {{remain}} 支付，超时自动释放
+  </view>
+  <view wx:if="{{expired && !paid}}" class="ticker dead">锁已过期，请返回重选时段</view>
+  <view wx:if="{{paid}}" class="ticker ok">支付成功 · 订单已预约</view>
+
+  <view class="card summary">
+    <view class="row"><text class="k">门店</text><text>{{storeName}}</text></view>
+    <view class="row"><text class="k">技师</text><text>{{therapistName}}</text></view>
+    <view class="row"><text class="k">项目</text><text>{{projectName}} · {{durationMinutes}}+{{bufferMinutes}} 分</text></view>
+    <view class="row"><text class="k">时间</text><text>{{date}} {{start}}</text></view>
+    <view class="row"><text class="k">单号</text><text>{{orderNo || '确认后生成'}}</text></view>
+    <view class="row price-row"><text class="k">应付</text><text class="price">¥{{priceYuan}}</text></view>
+  </view>
+
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+
+  <view wx:if="{{!orderId && !paid && !expired}}" class="btn" id="lock-btn" bindtap="lockOrder">确认下单（锁定 15 分钟）</view>
+  <view wx:if="{{orderId && !paid && !expired}}" class="btn" id="pay-btn" bindtap="lockAndPay">立即支付（dev mock）</view>
+  <view wx:if="{{orderId && !paid}}" class="btn ghost" bindtap="cancelOrder">取消预约</view>
+  <view wx:if="{{paid}}" class="btn" bindtap="goMine">查看订单</view>
+</view>

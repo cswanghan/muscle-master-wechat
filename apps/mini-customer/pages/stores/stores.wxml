@@ -1,0 +1,31 @@
+<view class="page">
+  <view wx:if="{{projectName}}" class="hint">已选项目 {{projectName}}</view>
+  <view wx:if="{{loading && !pickedStore}}" class="hint">加载中…</view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+  <view class="list">
+    <view
+      wx:for="{{stores}}"
+      wx:key="storeId"
+      class="card store {{pickedStore.storeId===item.storeId?'on':''}}"
+      data-item="{{item}}"
+      bindtap="pickStore"
+    >
+      <view class="store-name">{{item.name}}</view>
+      <view class="hint">{{item.businessStart}}–{{item.businessEnd}} · {{item.open ? '营业中' : '未开业'}}</view>
+    </view>
+  </view>
+  <view wx:if="{{pickedStore && !projectId}}" class="sec">选择项目</view>
+  <view class="list">
+    <view
+      wx:for="{{projects}}"
+      wx:key="projectId"
+      class="card proj"
+      data-item="{{item}}"
+      bindtap="pickProject"
+    >
+      <view class="proj-name">{{item.name}}</view>
+      <view class="hint">{{item.durationMinutes}}+{{item.bufferMinutes}} 分钟</view>
+      <view class="price">¥{{item.priceYuan}}</view>
+    </view>
+  </view>
+</view>

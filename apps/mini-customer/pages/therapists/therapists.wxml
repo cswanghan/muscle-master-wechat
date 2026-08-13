@@ -1,0 +1,30 @@
+<view class="page">
+  <view wx:if="{{loading && !picked}}" class="hint">加载中…</view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+  <view class="list">
+    <view
+      wx:for="{{therapists}}"
+      wx:key="therapistId"
+      class="card th {{picked.therapistId===item.therapistId?'on':''}}"
+      data-item="{{item}}"
+      bindtap="pickTherapist"
+    >
+      <view class="th-name">{{item.name}}</view>
+      <view class="hint">{{item.levelLabel}} · {{item.rating}} · {{item.intro}}</view>
+    </view>
+  </view>
+  <view wx:if="{{picked}}" class="sec">选择项目</view>
+  <view class="list">
+    <view
+      wx:for="{{projects}}"
+      wx:key="projectId"
+      class="card proj"
+      data-item="{{item}}"
+      bindtap="pickProject"
+    >
+      <view class="proj-name">{{item.name}}</view>
+      <view class="hint">{{item.durationMinutes}}+{{item.bufferMinutes}} 分钟</view>
+      <view class="price">¥{{item.priceYuan}}</view>
+    </view>
+  </view>
+</view>

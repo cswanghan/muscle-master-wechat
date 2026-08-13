@@ -1,0 +1,67 @@
+.lead {
+  font-size: 26rpx;
+  color: #6b7a74;
+  margin-bottom: 24rpx;
+}
+
+.sec {
+  margin: 28rpx 0 16rpx;
+  font-size: 24rpx;
+  color: #1e5c4a;
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.chip {
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  border: 1rpx solid #d7e6df;
+  color: #1a1c1b;
+}
+
+.chip.on {
+  background: #1e5c4a;
+  color: #f4f1ea;
+  border-color: #1e5c4a;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.proj {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8rpx 16rpx;
+}
+
+.proj-name {
+  flex: 1;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.price {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1e5c4a;
+}
+
+.empty {
+  padding: 36rpx;
+  text-align: center;
+  color: #8b948f;
+  background: #fff;
+  border: 2rpx dashed #c9cfcb;
+  border-radius: 16rpx;
+}
