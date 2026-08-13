@@ -18,6 +18,8 @@
 - [ ] C 端 AppID 已写入构建配置
 - [ ] 员工端 AppID 已写入构建配置
 
+生产 `wechat.mock=false` 必须设置 `WX_C_APP_ID` / `WX_C_APP_SECRET`（缺省则进程拒绝启动）。绑手机走 `getuserphonenumber`（`access_token` + `phone_code`）。Compose 演示默认 `WECHAT_MOCK=true`。
+
 ## 直连商户号（D17）
 
 - [ ] 直连商户号（`mchid`）已开通，非服务商子商户

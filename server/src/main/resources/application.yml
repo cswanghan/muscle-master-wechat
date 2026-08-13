@@ -55,6 +55,23 @@ app:
     enabled: ${APP_JOBS_ENABLED:false}
   snowflake:
     worker-id: ${SNOWFLAKE_WORKER_ID:1}
+  jwt:
+    secret: ${JWT_SECRET:change-me-dev-only-hs256-key-32bytes!}
+    customer-ttl: 2h
+    staff-ttl: 8h
+  wechat:
+    mock: ${WECHAT_MOCK:false}
+    customer-app-id: ${WX_C_APP_ID:}
+    customer-app-secret: ${WX_C_APP_SECRET:}
+    staff-app-id: ${WX_STAFF_APP_ID:}
+    staff-app-secret: ${WX_STAFF_APP_SECRET:}
+    mock-staff-username: demo.admin
+  crypto:
+    phone-pepper: ${PHONE_PEPPER:change-me-dev-phone-pepper}
+    dek-base64: ${PHONE_DEK_BASE64:}
+  catalog:
+    near-meters: 1500
+    store-cache-ttl: 5m
 
 logging:
   pattern:

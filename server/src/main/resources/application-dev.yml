@@ -27,3 +27,16 @@ management:
 app:
   jobs:
     enabled: false
+  jwt:
+    secret: dev-only-jwt-hs256-secret-key-32b
+    customer-ttl: 2h
+    staff-ttl: 8h
+  wechat:
+    mock: true
+    mock-staff-username: demo.admin
+  crypto:
+    phone-pepper: dev-phone-pepper
+    dek-base64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  catalog:
+    near-meters: 1500
+    store-cache-ttl: 5m

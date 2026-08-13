@@ -40,8 +40,10 @@ curl --noproxy '*' -s http://127.0.0.1:8080/actuator/health
 ```bash
 cd apps/admin-web
 npm install
-npm run dev          # http://127.0.0.1:5173/health
+npm run dev          # http://127.0.0.1:5173/health  ·  /catalog
 ```
+
+`dev` 微信登录可 mock（无需真实 AppID）：`POST /api/v1/c/auth/wechat` `{"code":"dev"}`（C JWT 2h）；`POST /api/v1/staff/auth/wechat` `{"code":"dev-staff"}`（员工 JWT 8h）。目录 `GET /api/v1/c/stores|therapists|projects|symptoms` 无需登录。
 
 默认 `app.jobs.enabled=false`。Compose 里唯一的 `server` 服务才设为 `true`。
 
