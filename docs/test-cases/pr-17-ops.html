@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR17 满班率 · 漂移 · 灰度</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; --paper:#f4f1ea; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; opacity:.85; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:28px 40px 48px; }
+    h2 { font-size:16px; color:var(--brand); margin:24px 0 10px; }
+    table { width:100%; border-collapse:collapse; background:#fff;
+            box-shadow:0 1px 3px rgba(20,53,44,.06); }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    tr.ok td:last-child { color:#1E5C4A; font-weight:700; }
+    tr.bad td:last-child { color:#c0392b; font-weight:700; }
+    .callout { background:#fff; border-left:4px solid #1E5C4A; padding:12px 16px;
+               margin:16px 0; }
+    .flow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .st { padding:8px 10px; border-radius:8px; font-size:12px; font-weight:700;
+          border:2px solid var(--brand); background:#e8f1ed; }
+    .st.pay { background:#1E5C4A; color:#fff; }
+    .st.bad { background:#fdecea; border-color:#e85d4c; color:#8a2418; }
+    .arr { font-size:12px; color:#4a6a5f; }
+    .desk { width:1024px; max-width:100%; background:var(--paper); border:10px solid #1a1c1b;
+            border-radius:18px; padding:20px; box-sizing:border-box; }
+    .bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .bar h3 { margin:0; color:var(--brand); }
+    .rate { font-size:22px; font-weight:700; color:var(--brand); text-align:right; }
+    .rate small { display:block; font-size:12px; font-weight:400; color:#4a5a54; }
+    .hours { display:flex; gap:8px; flex-wrap:wrap; }
+    .hour { background:#fff; border:1px solid #d7e6df; border-radius:8px; padding:8px 12px;
+            min-width:72px; }
+    .hour b { display:block; color:var(--brand); }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+    footer { padding:0 40px 32px; color:#6b7c75; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PR17 · 满班率 + inventory.drift + 灰度 / 开关</h1>
+    <p>GET /f/metrics/utilization · Prometheus 60s · app.gray.store-ids · app.flags</p>
+    <span class="badge ">ALL PASS · 7 / 7</span>
+  </header>
+  <main>
+    <div class="flow">
+      <div class="st">therapist_slot.store_id</div>
+      <div class="arr">BOOKED+BUFFER+LOCKED / ≠REST</div>
+      <div class="st pay">rateX10000 + byHour</div>
+    </div>
+    <div class="flow">
+      <div class="st">occupancy XOR LOCKED/BOOKED/BUFFER</div>
+      <div class="arr">60s scrape</div>
+      <div class="st pay">inventory.drift</div>
+    </div>
+    <div class="flow">
+      <div class="st">app.gray.store-ids</div>
+      <div class="arr">非灰度</div>
+      <div class="st bad">40401</div>
+      <div class="arr">booking.lock=false</div>
+      <div class="st bad">403 lockNew/book</div>
+    </div>
+    <div class="callout">
+      <strong>M1 / 前台顶栏</strong>
+      <div>分母不含 REST；BUFFER 算占用。跨店支援按 slot 店。0 分母 → <code>null</code>。
+      不要缩成单数字，始终带 <code>byHour</code>。
+      漂移禁止 15s 打热表。C 端门店列表只回灰度店。</div>
+    </div>
+    <h2>iPad 前台顶栏 · 满班率</h2>
+    <div class="desk" id="desk-utilization">
+      <div class="bar">
+        <h3>门店前台</h3>
+        <div class="rate">满班率 42.85%
+          <small>2026-08-14 · byHour</small>
+        </div>
+      </div>
+      <div class="hours"><div class='hour'><b>10:00</b><span>66.66%</span></div><div class='hour'><b>11:00</b><span>25.0%</span></div></div>
+    </div>
+    <h2>验收项</h2>
+    <table>
+      <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>UTIL</td><td>全日 + byHour 满班率，REST 不进分母，BUFFER 算占用</td><td>rate=4285 hours=2</td><td>PASS</td></tr>
+<tr class='ok'><td>EMPTY</td><td>空日 rateX10000=null 且仍返回 byHour=[]</td><td>rate=null byHour=0</td><td>PASS</td></tr>
+<tr class='ok'><td>GRAY</td><td>C 端列表只回灰度店；非灰度 GET 40401</td><td>list=1 east40401=true</td><td>PASS</td></tr>
+<tr class='ok'><td>VISIT</td><td>过滤键是 slot.store_id / store.id，不是 home_store_id</td><td>home=3100000000000000001 eastAllowed=false</td><td>PASS</td></tr>
+<tr class='ok'><td>LOCK</td><td>booking.lock.enabled=false → lockNew/book 403</td><td>forbidden=true</td><td>PASS</td></tr>
+<tr class='ok'><td>LOCKON</td><td>开关打开后 lockNew 成功</td><td>occ=10</td><td>PASS</td></tr>
+<tr class='ok'><td>DRIFT</td><td>occupancy vs FREE 失配使 inventory.drift +1（60s 刮取）</td><td>before=0 after=1</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>Generated by OpsReportTest · GET /f/metrics/utilization · inventory.drift · gray.store-ids</footer>
+</body>
+</html>

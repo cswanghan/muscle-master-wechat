@@ -8,6 +8,8 @@ import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
 import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.common.FeatureFlags;
+import com.jisuodashi.common.GrayStores;
 import com.jisuodashi.common.SnowflakeIdGenerator;
 import com.jisuodashi.inventory.SlotOccupyStore.BedRef;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderInsert;
@@ -92,6 +94,8 @@ public class SlotOccupyService {
     private final StringRedisTemplate redis;
     private final Counter stalePaid;
     private final AvailabilityCache availCache;
+    private FeatureFlags flags;
+    private GrayStores gray;
 
     @Autowired
     public SlotOccupyService(
@@ -170,9 +174,25 @@ public class SlotOccupyService {
         }
     }
 
+    @Autowired(required = false)
+    public void setFeatureFlags(FeatureFlags flags) {
+        this.flags = flags;
+    }
+
+    @Autowired(required = false)
+    public void setGrayStores(GrayStores gray) {
+        this.gray = gray;
+    }
+
     public LockNewResult lockNew(LockNewCommand cmd) {
         if (cmd.requestId() == null || cmd.requestId().isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        if (flags != null) {
+            flags.assertBookingWritable();
+        }
+        if (gray != null) {
+            gray.require(cmd.storeId());
         }
         String token = dayLock.tryAcquire(cmd.therapistId(), cmd.date());
         if (token == null) {

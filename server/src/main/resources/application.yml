@@ -84,6 +84,25 @@ app:
     force-release:
       enabled: ${APP_INTERNAL_FORCE_RELEASE:false}
       token: ${APP_INTERNAL_FORCE_RELEASE_TOKEN:}
+  gray:
+    store-ids: ${APP_GRAY_STORE_IDS:3100000000000000001}
+  flags:
+    booking:
+      enabled: ${APP_FLAGS_BOOKING_ENABLED:true}
+      lock:
+        enabled: ${APP_FLAGS_BOOKING_LOCK_ENABLED:true}
+    pay:
+      wechat:
+        enabled: ${APP_FLAGS_PAY_WECHAT_ENABLED:true}
+    workflow:
+      reschedule:
+        enabled: ${APP_FLAGS_WORKFLOW_RESCHEDULE_ENABLED:true}
+      add-on:
+        enabled: ${APP_FLAGS_WORKFLOW_ADD_ON_ENABLED:true}
+      swap:
+        enabled: ${APP_FLAGS_WORKFLOW_SWAP_ENABLED:true}
+      refund:
+        enabled: ${APP_FLAGS_WORKFLOW_REFUND_ENABLED:true}
 
 logging:
   pattern:

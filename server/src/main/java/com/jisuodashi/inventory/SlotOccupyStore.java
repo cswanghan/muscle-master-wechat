@@ -101,6 +101,12 @@ public interface SlotOccupyStore extends DelayedJobStore {
     /** LOCKED rows with {@code lock_expire_at < cutoff} on both slot tables. */
     int countLockedExpiredBefore(LocalDateTime cutoff);
 
+    /** therapist_slot rows for utilization; keyed by slot store_id. */
+    List<SlotRow> listTherapistSlotsByStore(long storeId, LocalDate date);
+
+    /** occupancy exists XOR status in LOCKED/BOOKED/BUFFER. */
+    int countInventoryDrift();
+
     int confirmPaidTherapistSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now);
 
     int confirmPaidBedSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now);

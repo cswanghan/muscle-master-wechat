@@ -190,4 +190,15 @@ public final class FrontDeskDtos {
 
     public record HumanTaskListResponse(List<HumanTaskView> items) {
     }
+
+    public record HourUtilization(int hour, Integer rateX10000) {
+    }
+
+    public record UtilizationResponse(
+            String storeId,
+            String date,
+            Integer rateX10000,
+            List<HourUtilization> byHour
+    ) {
+    }
 }

@@ -9,6 +9,7 @@ import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.common.FeatureFlags;
 import com.jisuodashi.common.PhoneCrypto;
 import com.jisuodashi.inventory.ExtendOwnResult;
 import com.jisuodashi.inventory.LockNewCommand;
@@ -29,6 +30,7 @@ import com.jisuodashi.payment.PaymentDtos;
 import com.jisuodashi.payment.PaymentService;
 import com.jisuodashi.rbac.StoreScope;
 import com.jisuodashi.rbac.StoreScopeContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -47,6 +49,7 @@ public class FrontDeskService {
     private final PhoneCrypto phones;
     private final AppClock clock;
     private final CatalogRepository catalog;
+    private FeatureFlags flags;
 
     public FrontDeskService(
             SlotOccupyService occupy,
@@ -68,6 +71,11 @@ public class FrontDeskService {
         this.phones = phones;
         this.clock = clock;
         this.catalog = catalog;
+    }
+
+    @Autowired(required = false)
+    public void setFeatureFlags(FeatureFlags flags) {
+        this.flags = flags;
     }
 
     public FrontDeskDtos.CheckInResponse checkIn(String orderIdRaw, FrontDeskDtos.CheckInRequest req) {
@@ -363,6 +371,9 @@ public class FrontDeskService {
 
     public FrontDeskDtos.AddOnResponse addOn(String orderIdRaw, FrontDeskDtos.AddOnRequest req) {
         AuthContext.requireStaff();
+        if (flags != null) {
+            flags.assertWorkflow(flags.workflowAddOnEnabled(), "加钟");
+        }
         if (req == null) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }
@@ -415,6 +426,9 @@ public class FrontDeskService {
     public FrontDeskDtos.SwapTherapistResponse swapTherapist(
             String orderIdRaw, FrontDeskDtos.SwapTherapistRequest req) {
         AuthContext.requireStaff();
+        if (flags != null) {
+            flags.assertWorkflow(flags.workflowSwapEnabled(), "换师");
+        }
         long orderId = parseId(orderIdRaw, "orderId");
         if (req == null || req.requestId() == null || req.requestId().isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
@@ -440,6 +454,9 @@ public class FrontDeskService {
 
     public FrontDeskDtos.RescheduleResponse reschedule(String orderIdRaw, FrontDeskDtos.RescheduleRequest req) {
         AuthContext.requireStaff();
+        if (flags != null) {
+            flags.assertWorkflow(flags.workflowRescheduleEnabled(), "改约");
+        }
         long orderId = parseId(orderIdRaw, "orderId");
         BookingOrderRef order = requireScopedOrder(orders.findOrderById(orderId));
         JwtPrincipal principal = AuthContext.get();
@@ -472,6 +489,9 @@ public class FrontDeskService {
 
     public FrontDeskDtos.RefundResponse refund(String orderIdRaw, FrontDeskDtos.RefundRequest req) {
         AuthContext.requireStaff();
+        if (flags != null) {
+            flags.assertWorkflow(flags.workflowRefundEnabled(), "退款");
+        }
         if (req == null) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }

@@ -16,6 +16,8 @@ public class AppProperties {
     private final Booking booking = new Booking();
     private final Internal internal = new Internal();
     private final Availability availability = new Availability();
+    private final Gray gray = new Gray();
+    private final Flags flags = new Flags();
 
     public Jobs getJobs() {
         return jobs;
@@ -51,6 +53,14 @@ public class AppProperties {
 
     public Availability getAvailability() {
         return availability;
+    }
+
+    public Gray getGray() {
+        return gray;
+    }
+
+    public Flags getFlags() {
+        return flags;
     }
 
     public static class Jobs {
@@ -292,6 +302,121 @@ public class AppProperties {
 
         public static class Captcha {
             private boolean enabled = false;
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+        }
+    }
+
+    public static class Gray {
+        /** Comma-separated store ids. C-end only returns these. */
+        private String storeIds = "3100000000000000001";
+
+        public String getStoreIds() {
+            return storeIds;
+        }
+
+        public void setStoreIds(String storeIds) {
+            this.storeIds = storeIds;
+        }
+    }
+
+    public static class Flags {
+        private final BookingFlags booking = new BookingFlags();
+        private final PayFlags pay = new PayFlags();
+        private final WorkflowFlags workflow = new WorkflowFlags();
+
+        public BookingFlags getBooking() {
+            return booking;
+        }
+
+        public PayFlags getPay() {
+            return pay;
+        }
+
+        public WorkflowFlags getWorkflow() {
+            return workflow;
+        }
+
+        public static class BookingFlags {
+            private boolean enabled = true;
+            private final Lock lock = new Lock();
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public Lock getLock() {
+                return lock;
+            }
+
+            public static class Lock {
+                private boolean enabled = true;
+
+                public boolean isEnabled() {
+                    return enabled;
+                }
+
+                public void setEnabled(boolean enabled) {
+                    this.enabled = enabled;
+                }
+            }
+        }
+
+        public static class PayFlags {
+            private final Wechat wechat = new Wechat();
+
+            public Wechat getWechat() {
+                return wechat;
+            }
+
+            public static class Wechat {
+                private boolean enabled = true;
+
+                public boolean isEnabled() {
+                    return enabled;
+                }
+
+                public void setEnabled(boolean enabled) {
+                    this.enabled = enabled;
+                }
+            }
+        }
+
+        public static class WorkflowFlags {
+            private final Toggle reschedule = new Toggle();
+            private final Toggle addOn = new Toggle();
+            private final Toggle swap = new Toggle();
+            private final Toggle refund = new Toggle();
+
+            public Toggle getReschedule() {
+                return reschedule;
+            }
+
+            public Toggle getAddOn() {
+                return addOn;
+            }
+
+            public Toggle getSwap() {
+                return swap;
+            }
+
+            public Toggle getRefund() {
+                return refund;
+            }
+        }
+
+        public static class Toggle {
+            private boolean enabled = true;
 
             public boolean isEnabled() {
                 return enabled;

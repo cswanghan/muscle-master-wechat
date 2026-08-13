@@ -12,6 +12,7 @@ import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.OrderChangeLogInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotRow;
+import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -1159,4 +1160,44 @@ public interface InventoryOccupyMapper {
              LIMIT 1
             """)
     OrderItemInsert findProjectItem(@Param("orderId") long orderId);
+
+    @Select("""
+            SELECT slot_no AS slotNo, status
+              FROM therapist_slot
+             WHERE store_id = #{storeId} AND slot_date = #{date}
+             ORDER BY slot_no
+            """)
+    List<SlotRow> listTherapistSlotsByStore(@Param("storeId") long storeId, @Param("date") LocalDate date);
+
+    @Select("""
+            SELECT
+              (SELECT COUNT(*) FROM therapist_slot ts
+                LEFT JOIN slot_occupancy o
+                  ON o.resource_type = 'THERAPIST'
+                 AND o.resource_id = ts.therapist_id
+                 AND o.slot_date = ts.slot_date
+                 AND o.slot_no = ts.slot_no
+               WHERE (o.id IS NOT NULL) <> (ts.status IN ('LOCKED','BOOKED','BUFFER')))
+              +
+              (SELECT COUNT(*) FROM bed_slot bs
+                LEFT JOIN slot_occupancy o
+                  ON o.resource_type = 'BED'
+                 AND o.resource_id = bs.bed_id
+                 AND o.slot_date = bs.slot_date
+                 AND o.slot_no = bs.slot_no
+               WHERE (o.id IS NOT NULL) <> (bs.status IN ('LOCKED','BOOKED','BUFFER')))
+              +
+              (SELECT COUNT(*) FROM slot_occupancy o
+                WHERE (o.resource_type = 'THERAPIST' AND NOT EXISTS (
+                         SELECT 1 FROM therapist_slot ts
+                          WHERE ts.therapist_id = o.resource_id
+                            AND ts.slot_date = o.slot_date
+                            AND ts.slot_no = o.slot_no))
+                   OR (o.resource_type = 'BED' AND NOT EXISTS (
+                         SELECT 1 FROM bed_slot bs
+                          WHERE bs.bed_id = o.resource_id
+                            AND bs.slot_date = o.slot_date
+                            AND bs.slot_no = o.slot_no)))
+            """)
+    int countInventoryDrift();
 }

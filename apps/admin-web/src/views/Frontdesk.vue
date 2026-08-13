@@ -121,9 +121,23 @@ const refundAmountFen = ref('0')
 const refundLoading = ref(false)
 const refundResult = ref<{ status: string; workflowStatus: string; refunds?: unknown[] } | null>(null)
 
+const utilization = ref<{
+  storeId: string
+  date: string
+  rateX10000: number | null
+  byHour: { hour: number; rateX10000: number | null }[]
+} | null>(null)
+
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => addOn.value?.codeUrl || walkIn.value?.codeUrl || '')
 const qrMarkup = computed(() => (qrText.value ? qrSvg(qrText.value) : ''))
+
+function formatRate(rate: number | null | undefined) {
+  if (rate == null) {
+    return '—'
+  }
+  return (rate / 100).toFixed(2) + '%'
+}
 
 function authHeaders(): HeadersInit {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -153,6 +167,7 @@ async function devLogin() {
     const data = await readEnvelope<LoginData>(res)
     token.value = data.token
     staffName.value = data.name || '前台'
+    await loadUtilization()
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
@@ -383,6 +398,16 @@ async function submitRefund() {
   }
 }
 
+async function loadUtilization() {
+  try {
+    const q = encodeURIComponent(date.value || '今天')
+    const res = await fetch(`/api/v1/f/metrics/utilization?date=${q}`, { headers: authHeaders() })
+    utilization.value = await readEnvelope(res)
+  } catch {
+    utilization.value = null
+  }
+}
+
 onUnmounted(stopPoll)
 </script>
 
@@ -392,6 +417,10 @@ onUnmounted(stopPoll)
       <div>
         <h1>门店前台</h1>
         <p>iPad 横屏 1024 · 核销 / 现金 / 微信收款码 / 加钟</p>
+      </div>
+      <div id="desk-utilization" class="util" v-if="utilization">
+        满班率 {{ formatRate(utilization.rateX10000) }}
+        <small>{{ utilization.date }} · {{ utilization.byHour.length }} 时段</small>
       </div>
       <el-button id="desk-login-btn" type="primary" :loading="loginLoading" @click="devLogin">
         {{ loggedIn ? staffName : '登录前台 demo.front' }}

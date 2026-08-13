@@ -11,6 +11,7 @@ import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
 import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.common.FeatureFlags;
 import com.jisuodashi.common.SnowflakeIdGenerator;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore;
@@ -72,10 +73,16 @@ public class PaymentService {
     private final TransactionTemplate tx;
     private final SlotOccupyService occupy;
     private StaffUserRepository staffUsers;
+    private FeatureFlags flags;
 
     @Autowired(required = false)
     public void setStaffUsers(StaffUserRepository staffUsers) {
         this.staffUsers = staffUsers;
+    }
+
+    @Autowired(required = false)
+    public void setFeatureFlags(FeatureFlags flags) {
+        this.flags = flags;
     }
 
     @Autowired
@@ -156,6 +163,9 @@ public class PaymentService {
         if (requestId == null || requestId.isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }
+        if (flags != null) {
+            flags.assertWechatPay();
+        }
         return retryDeadlock(() -> doRepay(customerId, orderId));
     }
 
@@ -177,6 +187,9 @@ public class PaymentService {
     public PaymentDtos.NativePayResponse nativePrepay(long customerId, long orderId, String requestId) {
         if (requestId == null || requestId.isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        if (flags != null) {
+            flags.assertWechatPay();
         }
         return retryDeadlock(() -> doNative(customerId, orderId));
     }
@@ -437,6 +450,9 @@ public class PaymentService {
         }
         if (amountFen <= 0) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "加钟金额无效");
+        }
+        if (flags != null) {
+            flags.assertWechatPay();
         }
         return retryDeadlock(() -> doNativeAddOn(orderId, amountFen));
     }

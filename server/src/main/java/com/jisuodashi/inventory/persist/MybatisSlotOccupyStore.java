@@ -9,6 +9,7 @@ import com.jisuodashi.inventory.SlotOccupyStore.OrderItemInsert;
 import com.jisuodashi.inventory.SlotOccupyStore.RescheduleAcquire;
 import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotKey;
 import com.jisuodashi.inventory.SlotOccupyStore.RescheduleSlotRow;
+import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
@@ -246,6 +247,17 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     @Override
     public int countLockedExpiredBefore(LocalDateTime cutoff) {
         return mapper.countLockedExpiredBefore(cutoff);
+    }
+
+    @Override
+    public List<SlotRow> listTherapistSlotsByStore(long storeId, LocalDate date) {
+        List<SlotRow> rows = mapper.listTherapistSlotsByStore(storeId, date);
+        return rows == null ? List.of() : rows;
+    }
+
+    @Override
+    public int countInventoryDrift() {
+        return mapper.countInventoryDrift();
     }
 
     @Override

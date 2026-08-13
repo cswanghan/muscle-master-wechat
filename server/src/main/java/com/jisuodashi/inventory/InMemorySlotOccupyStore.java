@@ -615,6 +615,44 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         return countExpiredRows(therapistSlots, cutoff) + countExpiredRows(bedSlots, cutoff);
     }
 
+    @Override
+    public List<SlotRow> listTherapistSlotsByStore(long storeId, LocalDate date) {
+        return therapistSlots.values().stream()
+                .filter(slot -> slot.storeId == storeId && date.equals(slot.date))
+                .sorted(Comparator.comparingInt(slot -> slot.slotNo))
+                .map(slot -> new SlotRow(slot.slotNo, slot.status))
+                .toList();
+    }
+
+    @Override
+    public int countInventoryDrift() {
+        int n = countSlotDrift(therapistSlots, ResourceType.THERAPIST)
+                + countSlotDrift(bedSlots, ResourceType.BED);
+        for (OccupancyInsert occ : occupancies.values()) {
+            MutableSlot slot = ResourceType.THERAPIST.equals(occ.resourceType())
+                    ? therapistSlots.get(tkey(occ.resourceId(), occ.slotDate(), occ.slotNo()))
+                    : bedSlots.get(bkey(occ.resourceId(), occ.slotDate(), occ.slotNo()));
+            if (slot == null) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private int countSlotDrift(Map<String, MutableSlot> slots, String type) {
+        int n = 0;
+        for (MutableSlot slot : slots.values()) {
+            boolean occ = occupancies.containsKey(okey(type, slot.resourceId, slot.date, slot.slotNo));
+            boolean busy = SlotStatus.LOCKED.equals(slot.status)
+                    || SlotStatus.BOOKED.equals(slot.status)
+                    || SlotStatus.BUFFER.equals(slot.status);
+            if (occ != busy) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     private static int countExpiredRows(Map<String, MutableSlot> slots, LocalDateTime cutoff) {
         int n = 0;
         for (MutableSlot slot : slots.values()) {
