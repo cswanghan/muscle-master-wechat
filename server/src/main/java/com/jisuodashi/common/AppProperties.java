@@ -115,6 +115,10 @@ public class AppProperties {
         private String staffAppId = "";
         private String staffAppSecret = "";
         private String mockStaffUsername = "demo.admin";
+        /** D17: platform default mchid when store.wx_mchid is blank. */
+        private String mchid = "";
+        /** WeChat prepay_id TTL; repay re-signs until this elapses. */
+        private Duration prepayTtl = Duration.ofHours(2);
 
         public boolean isMock() {
             return mock;
@@ -162,6 +166,22 @@ public class AppProperties {
 
         public void setMockStaffUsername(String mockStaffUsername) {
             this.mockStaffUsername = mockStaffUsername;
+        }
+
+        public String getMchid() {
+            return mchid;
+        }
+
+        public void setMchid(String mchid) {
+            this.mchid = mchid;
+        }
+
+        public Duration getPrepayTtl() {
+            return prepayTtl;
+        }
+
+        public void setPrepayTtl(Duration prepayTtl) {
+            this.prepayTtl = prepayTtl;
         }
     }
 

@@ -1,10 +1,14 @@
 package com.jisuodashi.order;
 
 import com.jisuodashi.auth.AuthContext;
+import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.ApiResponse;
+import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.payment.PaymentDtos;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,5 +29,20 @@ public class CBookingController {
             @Valid @RequestBody BookingDtos.CreateBookingRequest request) {
         var data = bookings.create(AuthContext.requireCustomer().subjectId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(data));
+    }
+
+    @PostMapping("/{id}/pay")
+    public ApiResponse<PaymentDtos.PayResponse> pay(
+            @PathVariable("id") String id,
+            @Valid @RequestBody BookingDtos.PayRequest request) {
+        return ApiResponse.ok(bookings.pay(AuthContext.requireCustomer().subjectId(), parseId(id), request));
+    }
+
+    private static long parseId(String raw) {
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException e) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "orderId 无效");
+        }
     }
 }

@@ -77,6 +77,10 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     BookingOrderRef lockOrderById(long orderId);
 
+    default BookingOrderRef findOrderById(long orderId) {
+        return lockOrderById(orderId);
+    }
+
     /** Occupancy whose slot row is still LOCKED for this hold. */
     int deleteOccupancyForLockedHold(long holdId);
 

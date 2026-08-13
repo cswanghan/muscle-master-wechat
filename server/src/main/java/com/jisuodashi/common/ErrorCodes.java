@@ -12,12 +12,15 @@ public final class ErrorCodes {
     public static final int FORBIDDEN = 40301;
     public static final int DATA_SCOPE = 40302;
     public static final int NOT_FOUND = 40401;
+    public static final int PREPAY_FAILED = 40201;
     public static final int SLOT_UNAVAILABLE = 40901;
     public static final int NO_FREE_BED = 40902;
     public static final int LOCK_CONFLICT = 40903;
     public static final int ILLEGAL_TRANSITION = 40904;
+    public static final int PAY_EXPIRED = 40905;
     public static final int CUSTOMER_COLLISION = 40908;
     public static final int INTERNAL = 50001;
+    public static final int CHANNEL_ERROR = 50002;
 
     private ErrorCodes() {
     }
@@ -29,7 +32,10 @@ public final class ErrorCodes {
             case UNAUTHORIZED, TOKEN_EXPIRED -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN, DATA_SCOPE -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case CUSTOMER_COLLISION, SLOT_UNAVAILABLE, NO_FREE_BED, LOCK_CONFLICT, ILLEGAL_TRANSITION
+            case PREPAY_FAILED -> HttpStatus.PAYMENT_REQUIRED;
+            case CHANNEL_ERROR -> HttpStatus.BAD_GATEWAY;
+            case CUSTOMER_COLLISION, SLOT_UNAVAILABLE, NO_FREE_BED, LOCK_CONFLICT, ILLEGAL_TRANSITION,
+                    PAY_EXPIRED
                     -> HttpStatus.CONFLICT;
             default -> {
                 if (code >= 40900 && code < 41000) {

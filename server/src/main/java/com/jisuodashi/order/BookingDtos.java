@@ -32,4 +32,9 @@ public final class BookingDtos {
             Map<String, String> payParams
     ) {
     }
+
+    public record PayRequest(
+            @NotBlank(message = "requestId 不能为空") String requestId
+    ) {
+    }
 }

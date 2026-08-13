@@ -1,13 +1,18 @@
 package com.jisuodashi.job;
 
+import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.inventory.DelayedJobStore;
 import com.jisuodashi.inventory.DelayedJobStore.DelayedJobRow;
 import com.jisuodashi.inventory.SlotOccupyService;
+import com.jisuodashi.order.FireContext;
+import com.jisuodashi.order.OrderEvent;
+import com.jisuodashi.order.OrderStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Configuration;
@@ -18,11 +23,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Single runner (D16). Gated by {@code app.jobs.enabled}.
  * Claim: {@code PENDING ∧ run_at<=now} or {@code RUNNING ∧ lease_until<now}.
- * {@code 40904} is DONE. RELEASE_LOCK is a no-op until fire() exists (PR6/7).
+ * {@code 40904} is DONE. RELEASE_LOCK only {@code fire(PAY_TIMEOUT)} (Law A).
  */
 @Configuration
 @EnableScheduling
@@ -33,6 +40,7 @@ public class JobRunner {
     public static final int CLAIM_LIMIT = 50;
 
     private static final Logger log = LoggerFactory.getLogger(JobRunner.class);
+    private static final Pattern ORDER_ID = Pattern.compile("\"orderId\"\\s*:\\s*(\\d+)");
 
     private final SlotGenerateJob slotGenerateJob;
     private final SlotScanJob slotScanJob;
@@ -40,6 +48,7 @@ public class JobRunner {
     private final AppClock clock;
     private final String instanceId;
     private final TransactionTemplate tx;
+    private final OrderStateMachine machine;
 
     public JobRunner(
             SlotGenerateJob slotGenerateJob,
@@ -47,11 +56,13 @@ public class JobRunner {
             DelayedJobStore delayedJobs,
             AppClock clock,
             AppProperties properties,
-            PlatformTransactionManager txManager
+            PlatformTransactionManager txManager,
+            @Autowired(required = false) OrderStateMachine machine
     ) {
         this(slotGenerateJob, slotScanJob, delayedJobs, clock,
                 "w" + properties.getSnowflake().getWorkerId(),
-                new TransactionTemplate(txManager));
+                new TransactionTemplate(txManager),
+                machine);
     }
 
     public JobRunner(
@@ -62,12 +73,25 @@ public class JobRunner {
             String instanceId,
             TransactionTemplate tx
     ) {
+        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, null);
+    }
+
+    public JobRunner(
+            SlotGenerateJob slotGenerateJob,
+            SlotScanJob slotScanJob,
+            DelayedJobStore delayedJobs,
+            AppClock clock,
+            String instanceId,
+            TransactionTemplate tx,
+            OrderStateMachine machine
+    ) {
         this.slotGenerateJob = slotGenerateJob;
         this.slotScanJob = slotScanJob;
         this.delayedJobs = delayedJobs;
         this.clock = clock;
         this.instanceId = instanceId;
         this.tx = tx;
+        this.machine = machine;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -130,14 +154,43 @@ public class JobRunner {
     }
 
     /**
-     * RELEASE_LOCK / RELEASE_ADDON: fire() lands in PR6/7. A no-op here is
-     * success (same as a later 40904 from BOOKED+PAY_TIMEOUT).
+     * RELEASE_LOCK only {@code fire(PAY_TIMEOUT)}. Already-paid → 40904 → DONE (D25).
      */
-    int dispatch(DelayedJobRow job) {
-        if (SlotOccupyService.JOB_RELEASE_LOCK.equals(job.jobType())
-                || SlotOccupyService.JOB_RELEASE_ADDON.equals(job.jobType())) {
+    public int dispatch(DelayedJobRow job) {
+        if (SlotOccupyService.JOB_RELEASE_LOCK.equals(job.jobType())) {
+            return firePayTimeout(job);
+        }
+        if (SlotOccupyService.JOB_RELEASE_ADDON.equals(job.jobType())) {
             return ErrorCodes.OK;
         }
         return ErrorCodes.OK;
+    }
+
+    private int firePayTimeout(DelayedJobRow job) {
+        if (machine == null) {
+            return ErrorCodes.OK;
+        }
+        Long orderId = orderIdFromPayload(job.payload());
+        if (orderId == null) {
+            log.warn("RELEASE_LOCK missing orderId job={}", job.id());
+            return ErrorCodes.OK;
+        }
+        try {
+            machine.fire(orderId, OrderEvent.PAY_TIMEOUT, FireContext.job());
+            return ErrorCodes.OK;
+        } catch (ApiException ex) {
+            return ex.getCode();
+        }
+    }
+
+    static Long orderIdFromPayload(String payload) {
+        if (payload == null || payload.isBlank()) {
+            return null;
+        }
+        Matcher m = ORDER_ID.matcher(payload);
+        if (!m.find()) {
+            return null;
+        }
+        return Long.parseLong(m.group(1));
     }
 }
