@@ -54,6 +54,7 @@ public class PaymentService {
     public static final String TASK_AMOUNT_MISMATCH = "AMOUNT_MISMATCH";
     public static final String TASK_REFUND_APPROVE = "REFUND_APPROVE";
     public static final String TASK_REFUND_FAILED = "REFUND_FAILED";
+    public static final String TASK_REFUND_DENIED = "REFUND_DENIED";
     public static final String REFUND_REASON_CLOSED_PAID = "CLOSED_ORDER_AUTO_REFUND";
     public static final long APPROVAL_THRESHOLD_FEN = 50_000L;
     static final int DEADLOCK_RETRIES = 3;
@@ -528,8 +529,8 @@ public class PaymentService {
         FireContext fireCtx = enrichRefundContext(ctx);
         RefundPlan plan = retryDeadlock(
                 () -> inBothTx(() -> persistRefundsAndFire(orderId, requestId, amountFen, reason, fireCtx)));
-        if (!plan.replay() && !plan.waitApproval()) {
-            settleChannelRefunds(plan.refunds(), plan.workflowId(), operatorId(fireCtx));
+        if (needsChannelSettle(plan)) {
+            settleChannelRefunds(pendingOf(plan.refunds()), plan.workflowId(), operatorId(fireCtx));
         }
         return toRefundOutcome(orderId, plan.replay());
     }
@@ -539,10 +540,17 @@ public class PaymentService {
         return retryDeadlock(() -> doApprove(taskId, requestId, principal.staffId()));
     }
 
+    public PaymentDtos.RefundOutcome deny(long taskId, String requestId) {
+        JwtPrincipal principal = AuthContext.requireStaff();
+        return retryDeadlock(() -> doDeny(taskId, requestId, principal.staffId()));
+    }
+
     public List<PaymentDtos.HumanTaskItem> listHumanTasks(String status) {
         String wanted = status == null || status.isBlank() ? "OPEN" : status.trim();
+        StoreScope scope = StoreScopeContext.get();
         return payments.listHumanTasks().stream()
                 .filter(t -> wanted.equals(t.getStatus()))
+                .filter(t -> visibleInScope(scope, t))
                 .map(this::toTaskItem)
                 .toList();
     }
@@ -590,7 +598,11 @@ public class PaymentService {
                     WorkflowInstance.WAIT_APPROVAL.equals(wf == null ? "" : wf.status()),
                     existing);
         }
-        long totalFen = openPays.stream().mapToLong(Payment::amountFen).sum();
+        long remaining = openPays.stream().mapToLong(Payment::amountFen).sum();
+        if (amountFen != remaining) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "amountFen 须等于待退金额 " + remaining);
+        }
+        long totalFen = remaining;
         boolean wait = totalFen >= APPROVAL_THRESHOLD_FEN;
         LocalDateTime now = clock.now();
         long wfId = ids.nextId();
@@ -637,19 +649,21 @@ public class PaymentService {
             }
         }
         if (wait) {
-            insertRefundTask(TASK_REFUND_APPROVE, "refund_approve:" + wfId, "退款待审批 ≥¥500",
-                    wfId, orderId);
+            insertRefundTask(TASK_REFUND_APPROVE, "refund_approve:" + wfId, "退款待审批 ≥¥500（审批=放款）",
+                    wfId, orderId, order.storeId());
         }
+        // ≥50000: fire now (cancel/release); approve only releases money. Deny → REFUND_DENIED.
         machine.fire(orderId, OrderEvent.REFUND, ctx);
         return new RefundPlan(false, wfId, wait, created);
     }
 
     private PaymentDtos.RefundOutcome doApprove(long taskId, String requestId, Long staffId) {
         ApproveHold hold = inBothTx(() -> {
-            HumanTask task = payments.findHumanTaskById(taskId);
+            HumanTask task = payments.lockHumanTaskById(taskId);
             if (task == null) {
                 throw new ApiException(ErrorCodes.NOT_FOUND, "任务不存在");
             }
+            assertTaskStore(task);
             long wfId = task.getWorkflowInstanceId() != null
                     ? task.getWorkflowInstanceId()
                     : parseWorkflowId(task.getBizKey());
@@ -658,7 +672,10 @@ public class PaymentService {
                 throw new ApiException(ErrorCodes.NOT_FOUND, "退款流程不存在");
             }
             if ("DONE".equals(task.getStatus())) {
-                return new ApproveHold(wf.orderId(), List.of(), wfId, true);
+                List<Refund> stillPending = payments.listRefundsByOrderId(wf.orderId()).stream()
+                        .filter(Refund::pending)
+                        .toList();
+                return new ApproveHold(wf.orderId(), stillPending, wfId, true);
             }
             if (!TASK_REFUND_APPROVE.equals(task.getTaskType()) || !"OPEN".equals(task.getStatus())) {
                 throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "非法状态转移");
@@ -682,10 +699,48 @@ public class PaymentService {
             payments.updateHumanTask(task);
             return new ApproveHold(wf.orderId(), pending, wfId, false);
         });
-        if (!hold.replay()) {
+        if (!hold.pending().isEmpty()) {
             settleChannelRefunds(hold.pending(), hold.workflowId(), staffId);
         }
         return toRefundOutcome(hold.orderId(), hold.replay());
+    }
+
+    private PaymentDtos.RefundOutcome doDeny(long taskId, String requestId, Long staffId) {
+        return inBothTx(() -> {
+            HumanTask task = payments.lockHumanTaskById(taskId);
+            if (task == null) {
+                throw new ApiException(ErrorCodes.NOT_FOUND, "任务不存在");
+            }
+            assertTaskStore(task);
+            long wfId = task.getWorkflowInstanceId() != null
+                    ? task.getWorkflowInstanceId()
+                    : parseWorkflowId(task.getBizKey());
+            WorkflowInstance wf = payments.findWorkflowById(wfId);
+            if (wf == null) {
+                throw new ApiException(ErrorCodes.NOT_FOUND, "退款流程不存在");
+            }
+            if ("IGNORED".equals(task.getStatus()) || TASK_REFUND_DENIED.equals(task.getTaskType())) {
+                return toRefundOutcome(wf.orderId(), true);
+            }
+            if (!TASK_REFUND_APPROVE.equals(task.getTaskType()) || !"OPEN".equals(task.getStatus())) {
+                throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "非法状态转移");
+            }
+            LocalDateTime now = clock.now();
+            payments.updateWorkflow(wf.withStatus(WorkflowInstance.MANUAL, now));
+            task.setStatus("IGNORED");
+            task.setResolvedAt(clock.instant());
+            task.setResolvedBy(staffId);
+            payments.updateHumanTask(task);
+            Long storeId = resolveStoreId(task);
+            insertRefundTask(
+                    TASK_REFUND_DENIED,
+                    "refund_deny:" + wfId,
+                    "大额退款已拒绝放款（订单已取消，钱未退）",
+                    wfId,
+                    wf.orderId(),
+                    storeId == null ? 0L : storeId);
+            return toRefundOutcome(wf.orderId(), false);
+        });
     }
 
     private void settleChannelRefunds(List<Refund> rows, long workflowId, Long operatorId) {
@@ -759,12 +814,14 @@ public class PaymentService {
             Refund latest = payments.lockByRefundNo(row.refundNo());
             Refund base = latest == null ? row : latest;
             payments.updateRefund(base.failed(clock.now()));
+            Long storeId = storeIdOfOrder(base.orderId());
             insertRefundTask(
                     TASK_REFUND_FAILED,
                     "refund_fail:" + base.refundNo(),
                     "微信退款失败",
                     workflowId,
-                    base.orderId());
+                    base.orderId(),
+                    storeId == null ? 0L : storeId);
             return true;
         });
     }
@@ -824,7 +881,8 @@ public class PaymentService {
                 task.getBizKey());
     }
 
-    private void insertRefundTask(String type, String bizKey, String title, long workflowId, long orderId) {
+    private void insertRefundTask(
+            String type, String bizKey, String title, long workflowId, long orderId, long storeId) {
         HumanTask task = new HumanTask();
         task.setId(ids.nextId());
         task.setTaskType(type);
@@ -834,7 +892,60 @@ public class PaymentService {
         task.setCreatedAt(clock.instant());
         task.setWorkflowInstanceId(workflowId);
         task.setOrderId(orderId);
+        task.setStoreId(storeId == 0L ? null : storeId);
         payments.insertHumanTask(task);
+    }
+
+    private void assertTaskStore(HumanTask task) {
+        StoreScope scope = StoreScopeContext.get();
+        if (scope == null) {
+            return;
+        }
+        Long storeId = resolveStoreId(task);
+        if (storeId == null) {
+            if (!scope.all()) {
+                throw new ApiException(ErrorCodes.DATA_SCOPE, "数据域拒绝");
+            }
+            return;
+        }
+        scope.assertContains(storeId);
+    }
+
+    private boolean visibleInScope(StoreScope scope, HumanTask task) {
+        if (scope == null || scope.all()) {
+            return true;
+        }
+        Long storeId = resolveStoreId(task);
+        return storeId != null && scope.contains(storeId);
+    }
+
+    private Long resolveStoreId(HumanTask task) {
+        if (task.getStoreId() != null) {
+            return task.getStoreId();
+        }
+        if (task.getOrderId() == null) {
+            return null;
+        }
+        return storeIdOfOrder(task.getOrderId());
+    }
+
+    private Long storeIdOfOrder(long orderId) {
+        BookingOrderRef order = orders.findOrderById(orderId);
+        return order == null ? null : order.storeId();
+    }
+
+    private static boolean needsChannelSettle(RefundPlan plan) {
+        if (plan == null || plan.waitApproval() || plan.workflowId() == 0L) {
+            return false;
+        }
+        return plan.refunds().stream().anyMatch(Refund::pending);
+    }
+
+    private static List<Refund> pendingOf(List<Refund> rows) {
+        if (rows == null) {
+            return List.of();
+        }
+        return rows.stream().filter(Refund::pending).toList();
     }
 
     private FireContext enrichRefundContext(FireContext ctx) {

@@ -316,6 +316,13 @@ public class InMemoryPaymentStore implements PaymentStore {
     }
 
     @Override
+    public HumanTask lockHumanTaskById(long id) {
+        Work w = requireWork();
+        lockRow("ht:" + id, w);
+        return findHumanTaskById(id);
+    }
+
+    @Override
     public void updateHumanTask(HumanTask task) {
         Work w = requireWork();
         HumanTask prev = findHumanTaskById(task.getId());

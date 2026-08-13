@@ -188,7 +188,7 @@ public class JdbcPaymentStore implements PaymentStore {
                     null,
                     task.getStatus(),
                     null,
-                    null,
+                    task.getStoreId(),
                     JdbcTimes.ts(task.getCreatedAt()),
                     JdbcTimes.ts(task.getResolvedAt()),
                     task.getResolvedBy());
@@ -217,7 +217,7 @@ public class JdbcPaymentStore implements PaymentStore {
     public List<HumanTask> listHumanTasks() {
         return jdbc.query(
                 """
-                SELECT id, workflow_instance_id, order_id, task_type, biz_key, title, status,
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
                        created_at, resolved_at, resolved_by
                   FROM human_task
                 """,
@@ -262,6 +262,8 @@ public class JdbcPaymentStore implements PaymentStore {
         t.setWorkflowInstanceId(rs.wasNull() ? null : wf);
         long oid = rs.getLong("order_id");
         t.setOrderId(rs.wasNull() ? null : oid);
+        long sid = rs.getLong("store_id");
+        t.setStoreId(rs.wasNull() ? null : sid);
         t.setTaskType(rs.getString("task_type"));
         t.setBizKey(rs.getString("biz_key"));
         t.setTitle(rs.getString("title"));
@@ -332,9 +334,21 @@ public class JdbcPaymentStore implements PaymentStore {
     public HumanTask findHumanTaskById(long id) {
         List<HumanTask> rows = jdbc.query(
                 """
-                SELECT id, workflow_instance_id, order_id, task_type, biz_key, title, status,
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
                        created_at, resolved_at, resolved_by
                   FROM human_task WHERE id=?
+                """,
+                HUMAN_TASK, id);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
+    public HumanTask lockHumanTaskById(long id) {
+        List<HumanTask> rows = jdbc.query(
+                """
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
+                       created_at, resolved_at, resolved_by
+                  FROM human_task WHERE id=? FOR UPDATE
                 """,
                 HUMAN_TASK, id);
         return rows.isEmpty() ? null : rows.getFirst();

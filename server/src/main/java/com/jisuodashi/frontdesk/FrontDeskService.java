@@ -279,7 +279,8 @@ public class FrontDeskService {
                 customerMask(order.customerId()),
                 String.valueOf(order.therapistId()),
                 order.startSlotNo(),
-                order.serviceDate().toString());
+                order.serviceDate().toString(),
+                order.payableFen());
     }
 
     private FrontDeskDtos.WalkInResponse toWalkIn(
@@ -375,6 +376,13 @@ public class FrontDeskService {
         long taskId = parseId(taskIdRaw, "taskId");
         String requestId = req == null ? null : req.requestId();
         return toRefund(payments.approve(taskId, requestId));
+    }
+
+    public FrontDeskDtos.RefundResponse denyTask(String taskIdRaw, FrontDeskDtos.ApproveRequest req) {
+        AuthContext.requireStaff();
+        long taskId = parseId(taskIdRaw, "taskId");
+        String requestId = req == null ? null : req.requestId();
+        return toRefund(payments.deny(taskId, requestId));
     }
 
     public FrontDeskDtos.HumanTaskListResponse listHumanTasks(String status) {

@@ -111,6 +111,108 @@ class HumanTaskApproveApiTest {
     }
 
     @Test
+    void otherStoreCannotListOrApprove() {
+        String customer = customerToken();
+        Map<String, Object> created = data(post("/api/v1/c/bookings", booking("ht-scope", 64), customer),
+                HttpStatus.CREATED);
+        long orderId = Long.parseLong(String.valueOf(created.get("orderId")));
+        Map<String, Object> pay = data(post("/api/v1/c/bookings/" + orderId + "/pay",
+                Map.of("requestId", "pay-ht-scope"), customer), HttpStatus.OK);
+        notify(String.valueOf(pay.get("paymentNo")), 19800);
+        insertAddon(orderId, 40_000L);
+        data(post("/api/v1/f/orders/" + orderId + "/refund",
+                refundBody("ht-rf-scope", 59800), frontToken()), HttpStatus.OK);
+
+        String other = jwt.issue(JwtPrincipal.staff(
+                DemoStaffIds.MANAGER, TokenType.F, "STORE", List.of(99L))).token();
+        Map<String, Object> listed = data(get("/api/v1/f/human-tasks?status=OPEN", other), HttpStatus.OK);
+        assertThat(items(listed, "items")).noneMatch(
+                t -> PaymentService.TASK_REFUND_APPROVE.equals(t.get("taskType")));
+
+        String taskId = payments.listHumanTasks().stream()
+                .filter(t -> PaymentService.TASK_REFUND_APPROVE.equals(t.getTaskType()))
+                .map(t -> String.valueOf(t.getId()))
+                .findFirst()
+                .orElseThrow();
+        ResponseEntity<Map<String, Object>> denied = post(
+                "/api/v1/f/human-tasks/" + taskId + "/approve",
+                Map.of("requestId", "ap-other"),
+                other);
+        assertThat(denied.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(denied.getBody()).isNotNull();
+        assertThat(denied.getBody().get("code")).isEqualTo(40302);
+    }
+
+    @Test
+    void denyCreatesVisibleManualTask() {
+        String customer = customerToken();
+        Map<String, Object> created = data(post("/api/v1/c/bookings", booking("ht-deny", 60), customer),
+                HttpStatus.CREATED);
+        long orderId = Long.parseLong(String.valueOf(created.get("orderId")));
+        Map<String, Object> pay = data(post("/api/v1/c/bookings/" + orderId + "/pay",
+                Map.of("requestId", "pay-ht-deny"), customer), HttpStatus.OK);
+        notify(String.valueOf(pay.get("paymentNo")), 19800);
+        insertAddon(orderId, 40_000L);
+        data(post("/api/v1/f/orders/" + orderId + "/refund",
+                refundBody("ht-rf-deny", 59800), frontToken()), HttpStatus.OK);
+        String taskId = payments.listHumanTasks().stream()
+                .filter(t -> PaymentService.TASK_REFUND_APPROVE.equals(t.getTaskType()))
+                .map(t -> String.valueOf(t.getId()))
+                .findFirst()
+                .orElseThrow();
+
+        Map<String, Object> denied = data(post(
+                "/api/v1/f/human-tasks/" + taskId + "/deny",
+                Map.of("requestId", "dn-mgr"),
+                managerToken()), HttpStatus.OK);
+        assertThat(denied.get("workflowStatus")).isEqualTo(WorkflowInstance.MANUAL);
+        assertThat(items(denied, "refunds")).allMatch(r -> Refund.WAIT_APPROVAL.equals(r.get("status")));
+        assertThat(((MockWeChatPayClient) wechat).refundCalls()).isEmpty();
+
+        Map<String, Object> listed = data(
+                get("/api/v1/f/human-tasks?status=OPEN", managerToken()), HttpStatus.OK);
+        assertThat(items(listed, "items"))
+                .anyMatch(t -> PaymentService.TASK_REFUND_DENIED.equals(t.get("taskType")));
+        assertThat(occupyStore.findOrderById(orderId).status()).isEqualTo("CANCELLED");
+    }
+
+    @Test
+    void approveReplayResumesPending() {
+        String customer = customerToken();
+        Map<String, Object> created = data(post("/api/v1/c/bookings", booking("ht-ap-re", 56), customer),
+                HttpStatus.CREATED);
+        long orderId = Long.parseLong(String.valueOf(created.get("orderId")));
+        Map<String, Object> pay = data(post("/api/v1/c/bookings/" + orderId + "/pay",
+                Map.of("requestId", "pay-ht-ap-re"), customer), HttpStatus.OK);
+        notify(String.valueOf(pay.get("paymentNo")), 19800);
+        insertAddon(orderId, 40_000L);
+        data(post("/api/v1/f/orders/" + orderId + "/refund",
+                refundBody("ht-rf-ap-re", 59800), frontToken()), HttpStatus.OK);
+        var task = payments.listHumanTasks().stream()
+                .filter(t -> PaymentService.TASK_REFUND_APPROVE.equals(t.getTaskType()))
+                .findFirst()
+                .orElseThrow();
+        var now = LocalDateTime.of(2026, 8, 14, 19, 0);
+        payments.beginWork();
+        task.setStatus("DONE");
+        payments.updateHumanTask(task);
+        for (Refund row : payments.listRefundsByOrderId(orderId)) {
+            payments.updateRefund(row.withStatus(Refund.PENDING, now));
+        }
+        var wf = payments.listWorkflowsByOrderId(orderId).getFirst();
+        payments.updateWorkflow(wf.withStatus(WorkflowInstance.RUNNING, now));
+        payments.commitWork();
+
+        Map<String, Object> approved = data(post(
+                "/api/v1/f/human-tasks/" + task.getId() + "/approve",
+                Map.of("requestId", "ap-replay"),
+                managerToken()), HttpStatus.OK);
+        assertThat(approved.get("workflowStatus")).isEqualTo(WorkflowInstance.SUCCESS);
+        assertThat(items(approved, "refunds")).allMatch(r -> Refund.SUCCESS.equals(r.get("status")));
+        assertThat(((MockWeChatPayClient) wechat).refundCalls()).isNotEmpty();
+    }
+
+    @Test
     void wechatFailCreatesManualTask() {
         String customer = customerToken();
         Map<String, Object> created = data(post("/api/v1/c/bookings", booking("ht-fail", 72), customer),

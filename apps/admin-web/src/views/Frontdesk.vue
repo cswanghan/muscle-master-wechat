@@ -26,6 +26,7 @@ type LookupItem = {
   customerMask: string
   startSlotNo: number
   serviceDate: string
+  payableFen?: number
 }
 
 type CheckInData = {
@@ -158,6 +159,10 @@ async function lookup() {
     const res = await fetch(`/api/v1/f/orders/lookup?keyword=${q}`, { headers: authHeaders() })
     const data = await readEnvelope<{ items: LookupItem[] }>(res)
     lookupItems.value = data.items
+    const first = data.items[0]
+    if (first) {
+      fillRefund(first.orderId, first.payableFen ?? refundAmount.value)
+    }
   } catch (e) {
     lookupItems.value = []
     error.value = e instanceof Error ? e.message : String(e)
@@ -239,6 +244,7 @@ async function submitWalkIn() {
     })
     const data = await readEnvelope<WalkInData>(res)
     walkIn.value = data
+    fillRefund(data.orderId, data.payableFen)
     if (data.payChannel === 'WECHAT' && data.paymentNo) {
       await pollPayment(data.paymentNo, data.orderId, data.alreadyInStore)
     }
@@ -256,6 +262,11 @@ async function submitWalkIn() {
   } finally {
     walkLoading.value = false
   }
+}
+
+function fillRefund(orderId: string, remaining: number) {
+  refundOrderId.value = orderId
+  refundAmount.value = remaining
 }
 
 async function submitRefund() {
@@ -292,6 +303,24 @@ async function loadTasks() {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
     taskLoading.value = false
+  }
+}
+
+async function denyTask(id: string) {
+  approveLoading.value = id
+  error.value = ''
+  try {
+    const res = await fetch(`/api/v1/f/human-tasks/${id}/deny`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ requestId: `dn-${Date.now()}` }),
+    })
+    refundResult.value = await readEnvelope<RefundData>(res)
+    await loadTasks()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    approveLoading.value = ''
   }
 }
 
@@ -451,12 +480,12 @@ onUnmounted(stopPoll)
     <div class="desk-grid">
       <section class="desk-card" id="refund-panel">
         <h2>按支付单退款</h2>
-        <p class="hint">POST /f/orders/{id}/refund · 一 workflow / 每张 SUCCESS payment 一张退款 · ≥¥500 待审</p>
+        <p class="hint">P0 全额 = SUM(SUCCESS)−已退。金额锁定为 remaining，不符则 40001。≥¥500 审批=放款（订单已取消）。</p>
         <div class="form">
           <label>订单 ID</label>
           <el-input id="refund-order" v-model="refundOrderId" size="large" placeholder="orderId" />
-          <label>金额（分）</label>
-          <el-input-number id="refund-amount" v-model="refundAmount" :min="1" size="large" />
+          <label>待退金额（分，锁定 remaining）</label>
+          <el-input-number id="refund-amount" v-model="refundAmount" :min="1" size="large" disabled />
           <label>原因</label>
           <el-input id="refund-reason" v-model="refundReason" size="large" />
           <el-button
@@ -480,7 +509,7 @@ onUnmounted(stopPoll)
 
       <section class="desk-card" id="approve-panel">
         <h2>退款审批</h2>
-        <p class="hint">GET /f/human-tasks?status=OPEN · POST /f/human-tasks/{id}/approve · refund:approve</p>
+        <p class="hint">审批=放款，不是决定是否取消。拒绝后订单仍取消、钱未退，生成 REFUND_DENIED。</p>
         <el-button id="task-refresh" size="large" :loading="taskLoading" @click="loadTasks">刷新待办</el-button>
         <article v-for="task in humanTasks" :key="task.id" class="hit">
           <div>
@@ -488,14 +517,23 @@ onUnmounted(stopPoll)
             <span>{{ task.title }} · 单 {{ task.orderId }}</span>
             <em>{{ task.status }}</em>
           </div>
-          <el-button
-            type="primary"
-            size="large"
-            :loading="approveLoading === task.id"
-            @click="approveTask(task.id)"
-          >
-            审批通过
-          </el-button>
+          <div v-if="task.taskType === 'REFUND_APPROVE'" class="row">
+            <el-button
+              type="primary"
+              size="large"
+              :loading="approveLoading === task.id"
+              @click="approveTask(task.id)"
+            >
+              审批放款
+            </el-button>
+            <el-button
+              size="large"
+              :loading="approveLoading === task.id"
+              @click="denyTask(task.id)"
+            >
+              拒绝放款
+            </el-button>
+          </div>
         </article>
         <p v-if="humanTasks.length === 0" class="hint">暂无 OPEN 任务</p>
       </section>

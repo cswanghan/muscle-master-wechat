@@ -75,7 +75,8 @@ public final class FrontDeskDtos {
             String customerMask,
             String therapistId,
             int startSlotNo,
-            String serviceDate
+            String serviceDate,
+            long payableFen
     ) {
     }
 

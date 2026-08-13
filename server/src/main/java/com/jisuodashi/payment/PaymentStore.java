@@ -64,5 +64,7 @@ public interface PaymentStore {
 
     HumanTask findHumanTaskById(long id);
 
+    HumanTask lockHumanTaskById(long id);
+
     void updateHumanTask(HumanTask task);
 }

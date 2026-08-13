@@ -1,6 +1,9 @@
 package com.jisuodashi.payment;
 
+import com.jisuodashi.auth.AuthContext;
 import com.jisuodashi.auth.HumanTask;
+import com.jisuodashi.auth.JwtPrincipal;
+import com.jisuodashi.auth.TokenType;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
@@ -136,6 +139,66 @@ class RefundTest {
                 .isEqualTo(ErrorCodes.ILLEGAL_TRANSITION);
         assertThat(f.payments.listRefundsByOrderId(f.locked.orderId())).isEmpty();
         assertThat(f.wechat.refundCalls()).isEmpty();
+    }
+
+    @Test
+    void amountFenMismatchIs40001() {
+        Fixture f = booked("rf-amt");
+        assertThatThrownBy(() -> f.svc.refund(f.locked.orderId(), "req-amt", 1, "少退", desk()))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getCode())
+                .isEqualTo(ErrorCodes.BAD_REQUEST);
+        assertThat(f.payments.listRefundsByOrderId(f.locked.orderId())).isEmpty();
+        assertThat(f.wechat.refundCalls()).isEmpty();
+    }
+
+    @Test
+    void replayResumesPendingRefunds() {
+        Fixture f = booked("rf-pend-resume");
+        Payment pay = f.payments.listByOrderId(f.locked.orderId()).getFirst();
+        var now = TODAY.atTime(LocalTime.of(19, 0));
+        long wfId = f.ids.nextId();
+        f.payments.beginWork();
+        f.payments.insertWorkflow(new WorkflowInstance(
+                wfId, WorkflowInstance.TYPE_REFUND, f.locked.orderId(), WorkflowInstance.RUNNING,
+                PaymentService.refundContextJson("req-resume", 19800L), null, now, now));
+        f.payments.insertRefund(new Refund(
+                f.ids.nextId(), PaymentService.refundNoOf(pay.id()), pay.id(), f.locked.orderId(),
+                19800, "中断", Refund.PENDING, null, null, now, now));
+        f.payments.commitWork();
+
+        PaymentDtos.RefundOutcome out = f.svc.refund(
+                f.locked.orderId(), "req-resume", 19800, "中断", desk());
+        assertThat(out.replay()).isTrue();
+        assertThat(out.refunds()).hasSize(1);
+        assertThat(out.refunds().getFirst().status()).isEqualTo(Refund.SUCCESS);
+        assertThat(f.wechat.refundCalls()).hasSize(1);
+    }
+
+    @Test
+    void denyCreatesVisibleManualTask() {
+        Fixture f = booked("rf-deny");
+        insertSuccess(f, 40_000L);
+        f.svc.refund(f.locked.orderId(), "req-deny", 59800, "大额", desk());
+        HumanTask approve = f.payments.listHumanTasks().stream()
+                .filter(t -> PaymentService.TASK_REFUND_APPROVE.equals(t.getTaskType()))
+                .findFirst()
+                .orElseThrow();
+        AuthContext.set(JwtPrincipal.staff(3_100_000_000_000_000_302L, TokenType.F, "STORE",
+                List.of(OccupyFixtures.STORE)));
+        try {
+            PaymentDtos.RefundOutcome denied = f.svc.deny(approve.getId(), "deny-1");
+            assertThat(denied.workflowStatus()).isEqualTo(WorkflowInstance.MANUAL);
+            assertThat(f.payments.listRefundsByOrderId(f.locked.orderId()))
+                    .allMatch(Refund::waitApproval);
+            assertThat(f.wechat.refundCalls()).isEmpty();
+            assertThat(f.payments.listHumanTasks())
+                    .anyMatch(t -> PaymentService.TASK_REFUND_DENIED.equals(t.getTaskType())
+                            && "OPEN".equals(t.getStatus()));
+            assertThat(f.store.findOrderById(f.locked.orderId()).status()).isEqualTo("CANCELLED");
+        } finally {
+            AuthContext.clear();
+        }
     }
 
     @Test

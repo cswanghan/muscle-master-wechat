@@ -180,6 +180,25 @@ class FrontDeskRefundApiTest {
     }
 
     @Test
+    void amountFenMismatchIs40001() {
+        String customer = customerToken();
+        Map<String, Object> created = data(post("/api/v1/c/bookings", booking("fd-rf-amt", 40), customer),
+                HttpStatus.CREATED);
+        long orderId = Long.parseLong(String.valueOf(created.get("orderId")));
+        Map<String, Object> pay = data(post("/api/v1/c/bookings/" + orderId + "/pay",
+                Map.of("requestId", "pay-fd-amt"), customer), HttpStatus.OK);
+        notify(String.valueOf(pay.get("paymentNo")), 19800);
+        ResponseEntity<Map<String, Object>> res = post(
+                "/api/v1/f/orders/" + orderId + "/refund",
+                refundBody("fd-rf-amt-1", 1),
+                frontToken());
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(res.getBody()).isNotNull();
+        assertThat(res.getBody().get("code")).isEqualTo(40001);
+        assertThat(payments.listRefundsByOrderId(orderId)).isEmpty();
+    }
+
+    @Test
     void pendingPayRefundIs40904() {
         String customer = customerToken();
         Map<String, Object> created = data(post("/api/v1/c/bookings", booking("fd-rf-pp", 44), customer),

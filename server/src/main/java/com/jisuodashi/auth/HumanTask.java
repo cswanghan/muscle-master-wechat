@@ -61,6 +61,7 @@ public class HumanTask {
 
     private Long workflowInstanceId;
     private Long orderId;
+    private Long storeId;
     private Instant resolvedAt;
     private Long resolvedBy;
 
@@ -78,6 +79,14 @@ public class HumanTask {
 
     public void setOrderId(Long orderId) {
         this.orderId = orderId;
+    }
+
+    public Long getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(Long storeId) {
+        this.storeId = storeId;
     }
 
     public Instant getResolvedAt() {

@@ -133,6 +133,55 @@ class RefundReportTest {
                         .anyMatch(t -> PaymentService.TASK_REFUND_FAILED.equals(t.getTaskType())),
                 "wf=" + failed.workflowStatus() + " refund=" + failed.refunds().getFirst().status()));
 
+        Fixture amt = booked("rpt-amt");
+        boolean amt400 = false;
+        try {
+            amt.svc.refund(amt.locked.orderId(), "rpt-amt-req", 1, "少退", desk());
+        } catch (ApiException ex) {
+            amt400 = ex.getCode() == ErrorCodes.BAD_REQUEST;
+        }
+        rows.add(row("AMT", "amountFen ≠ remaining → 40001",
+                amt400 && amt.payments.listRefundsByOrderId(amt.locked.orderId()).isEmpty(),
+                "40001=" + amt400));
+
+        Fixture resume = booked("rpt-resume");
+        Payment resumePay = resume.payments.listByOrderId(resume.locked.orderId()).getFirst();
+        var resumeNow = TODAY.atTime(LocalTime.of(19, 0));
+        long resumeWf = resume.ids.nextId();
+        resume.payments.beginWork();
+        resume.payments.insertWorkflow(new WorkflowInstance(
+                resumeWf, WorkflowInstance.TYPE_REFUND, resume.locked.orderId(), WorkflowInstance.RUNNING,
+                PaymentService.refundContextJson("rpt-resume-req", 19800L), null, resumeNow, resumeNow));
+        resume.payments.insertRefund(new Refund(
+                resume.ids.nextId(), PaymentService.refundNoOf(resumePay.id()), resumePay.id(),
+                resume.locked.orderId(), 19800, "中断", Refund.PENDING, null, null, resumeNow, resumeNow));
+        resume.payments.commitWork();
+        PaymentDtos.RefundOutcome resumed = resume.svc.refund(
+                resume.locked.orderId(), "rpt-resume-req", 19800, "中断", desk());
+        rows.add(row("RESUME", "PENDING 重放继续打微信",
+                resumed.replay() && Refund.SUCCESS.equals(resumed.refunds().getFirst().status())
+                        && resume.wechat.refundCalls().size() == 1,
+                "replay=" + resumed.replay() + " wechat=" + resume.wechat.refundCalls().size()));
+
+        Fixture deny = booked("rpt-deny");
+        insertSuccess(deny, 40_000);
+        deny.svc.refund(deny.locked.orderId(), "rpt-deny-req", 59800, "大额", desk());
+        HumanTask denyTask = deny.payments.listHumanTasks().stream()
+                .filter(t -> PaymentService.TASK_REFUND_APPROVE.equals(t.getTaskType()))
+                .findFirst()
+                .orElse(null);
+        AuthContext.set(JwtPrincipal.staff(3_100_000_000_000_000_302L, TokenType.F, "STORE",
+                List.of(OccupyFixtures.STORE)));
+        PaymentDtos.RefundOutcome denied = deny.svc.deny(denyTask == null ? 0L : denyTask.getId(), "dn-1");
+        AuthContext.clear();
+        rows.add(row("DENY", "拒绝放款 → MANUAL + REFUND_DENIED，订单仍取消",
+                WorkflowInstance.MANUAL.equals(denied.workflowStatus())
+                        && deny.wechat.refundCalls().isEmpty()
+                        && deny.payments.listHumanTasks().stream()
+                        .anyMatch(t -> PaymentService.TASK_REFUND_DENIED.equals(t.getTaskType()))
+                        && "CANCELLED".equals(deny.store.findOrderById(deny.locked.orderId()).status()),
+                "wf=" + denied.workflowStatus() + " deniedTask=OPEN"));
+
         String html = render(rows);
         Path docs = resolveRepoRoot().resolve("docs/test-cases");
         Files.createDirectories(docs);
@@ -148,7 +197,8 @@ class RefundReportTest {
 
         List<Row> failedRows = rows.stream().filter(r -> !r.pass).toList();
         assertThat(failedRows).as("pr-16 report failures: %s", failedRows).isEmpty();
-        assertThat(html).contains("WAIT_APPROVAL").contains("refund_no").contains("MANUAL");
+        assertThat(html).contains("WAIT_APPROVAL").contains("refund_no").contains("MANUAL")
+                .contains("REFUND_DENIED").contains("40001");
         assertThat(report).exists();
         assertThat(shot).exists();
     }
@@ -285,10 +335,10 @@ class RefundReportTest {
                     </div>
                     <div class="callout">
                       <strong>§3.2 / §3.3</strong>
-                      <div>P0 全额 = SUM(SUCCESS) − 已退。同一 <code>refund_no=R{paymentId}</code> /
-                      <code>requestId</code> 重放。Law A：释放只走 <code>fire(REFUND)</code> 副作用。
-                      <code>PENDING_PAY</code> 走 ReleaseLock 不走本 API。<code>IN_SERVICE</code> 需
-                      <code>refund:after_start</code>。</div>
+                      <div>P0 全额 = SUM(SUCCESS) − 已退；<code>amountFen</code> 必须等于 remaining 否则 40001。
+                      同一 <code>refund_no</code> / <code>requestId</code> 重放；若仍 <code>PENDING</code> 则继续打微信。
+                      ≥¥500 审批=放款（<code>fire(REFUND)</code> 已取消订单）；拒绝放款写 <code>REFUND_DENIED</code>。
+                      Law A：释放只走 <code>fire(REFUND)</code>。human_task 带 <code>store_id</code> 并按门店过滤。</div>
                     </div>
                     <h2>iPad 前台 · 退款 / 审批</h2>
                     <div class="ipad" id="ipad-refund">
@@ -299,10 +349,10 @@ class RefundReportTest {
                         <button class="btn">发起退款</button>
                       </section>
                       <section class="pad">
-                        <h3>¥500 审批</h3>
+                        <h3>¥500 审批=放款</h3>
                         <div class="fake">REFUND_APPROVE · OPEN</div>
-                        <button class="btn">审批通过</button>
-                        <p style="color:#4a6a5f;font-size:15px;margin-top:16px;">task_type=REFUND_APPROVE</p>
+                        <button class="btn">审批放款</button>
+                        <p style="color:#4a6a5f;font-size:15px;margin-top:16px;">拒绝 → REFUND_DENIED（钱未退）</p>
                       </section>
                     </div>
                     <h2>验收项</h2>

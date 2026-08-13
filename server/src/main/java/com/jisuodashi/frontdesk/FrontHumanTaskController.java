@@ -38,4 +38,13 @@ public class FrontHumanTaskController {
             @Valid @RequestBody(required = false) FrontDeskDtos.ApproveRequest request) {
         return ApiResponse.ok(desk.approveTask(id, request));
     }
+
+    @PostMapping("/{id}/deny")
+    @StoreScoped
+    @RequirePerm("refund:approve")
+    public ApiResponse<FrontDeskDtos.RefundResponse> deny(
+            @PathVariable("id") String id,
+            @Valid @RequestBody(required = false) FrontDeskDtos.ApproveRequest request) {
+        return ApiResponse.ok(desk.denyTask(id, request));
+    }
 }
