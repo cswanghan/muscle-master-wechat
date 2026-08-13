@@ -12,6 +12,8 @@ import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.PhoneCrypto;
 import com.jisuodashi.inventory.LockNewCommand;
 import com.jisuodashi.inventory.LockNewResult;
+import com.jisuodashi.inventory.RescheduleCommand;
+import com.jisuodashi.inventory.RescheduleResult;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
@@ -352,5 +354,36 @@ public class FrontDeskService {
         } catch (NumberFormatException e) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, field + " 无效");
         }
+    }
+
+    public FrontDeskDtos.RescheduleResponse reschedule(String orderIdRaw, FrontDeskDtos.RescheduleRequest req) {
+        AuthContext.requireStaff();
+        long orderId = parseId(orderIdRaw, "orderId");
+        BookingOrderRef order = requireScopedOrder(orders.findOrderById(orderId));
+        JwtPrincipal principal = AuthContext.get();
+        RescheduleResult moved = occupy.reschedule(new RescheduleCommand(
+                req.requestId(),
+                order.id(),
+                req.date(),
+                req.startSlotNo(),
+                parseId(req.therapistId(), "therapistId"),
+                principal == null ? null : principal.staffId()));
+        machine.fire(orderId, OrderEvent.RESCHEDULE, deskContext().withRescheduleOk());
+        BookingOrderRef after = orders.findOrderById(orderId);
+        BookingOrderRef view = after == null ? order : after;
+        return new FrontDeskDtos.RescheduleResponse(
+                String.valueOf(view.id()),
+                view.orderNo(),
+                view.status(),
+                String.valueOf(moved.therapistId()),
+                String.valueOf(moved.bedId()),
+                String.valueOf(moved.roomId()),
+                moved.serviceDate().toString(),
+                moved.startSlotNo(),
+                moved.endSlotNo(),
+                roomName(moved.roomId()),
+                bedName(moved.bedId()),
+                customerMask(view.customerId()),
+                moved.replay());
     }
 }

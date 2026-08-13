@@ -24,8 +24,23 @@ type LookupItem = {
   roomName: string
   bedName: string
   customerMask: string
+  therapistId: string
   startSlotNo: number
   serviceDate: string
+}
+
+type RescheduleData = {
+  orderId: string
+  orderNo: string
+  status: string
+  therapistId: string
+  serviceDate: string
+  startSlotNo: number
+  endSlotNo: number
+  roomName: string
+  bedName: string
+  customerMask: string
+  replay: boolean
 }
 
 type CheckInData = {
@@ -53,6 +68,7 @@ type WalkInData = {
 
 const STORE = '3100000000000000001'
 const THERAPIST = '3100000000000000401'
+const THERAPIST_CHEN = '3100000000000000402'
 const PROJECT = '3100000000000000501'
 
 const token = ref('')
@@ -76,6 +92,13 @@ const walkLoading = ref(false)
 const walkIn = ref<WalkInData | null>(null)
 const pollStatus = ref('')
 let pollTimer: number | undefined
+
+const rsOrder = ref<LookupItem | null>(null)
+const rsDate = ref('2026-08-14')
+const rsStart = ref(64)
+const rsTherapist = ref(THERAPIST)
+const rsLoading = ref(false)
+const rsResult = ref<RescheduleData | null>(null)
 
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => walkIn.value?.codeUrl ?? '')
@@ -225,6 +248,40 @@ async function submitWalkIn() {
   }
 }
 
+function selectReschedule(item: LookupItem) {
+  rsOrder.value = item
+  rsDate.value = item.serviceDate
+  rsStart.value = item.startSlotNo
+  rsTherapist.value = item.therapistId || THERAPIST
+  rsResult.value = null
+}
+
+async function submitReschedule() {
+  if (!rsOrder.value) {
+    error.value = '先查找并选择要改约的订单'
+    return
+  }
+  rsLoading.value = true
+  error.value = ''
+  try {
+    const res = await fetch(`/api/v1/f/orders/${rsOrder.value.orderId}/reschedule`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        requestId: `rs-${Date.now()}`,
+        date: rsDate.value,
+        startSlotNo: rsStart.value,
+        therapistId: rsTherapist.value,
+      }),
+    })
+    rsResult.value = await readEnvelope<RescheduleData>(res)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    rsLoading.value = false
+  }
+}
+
 onUnmounted(stopPoll)
 </script>
 
@@ -233,7 +290,7 @@ onUnmounted(stopPoll)
     <header class="desk-bar">
       <div>
         <h1>门店前台</h1>
-        <p>iPad 横屏 1024 · 核销 / 现金 / 微信收款码</p>
+        <p>iPad 横屏 1024 · 核销 / 现金 / 微信收款码 / 改约</p>
       </div>
       <el-button id="desk-login-btn" type="primary" :loading="loginLoading" @click="devLogin">
         {{ loggedIn ? staffName : '登录前台 demo.front' }}
@@ -270,14 +327,17 @@ onUnmounted(stopPoll)
             <span>{{ item.customerMask }} · {{ item.roomName }} {{ item.bedName }}</span>
             <em>{{ item.status }}</em>
           </div>
-          <el-button
-            type="primary"
-            size="large"
-            :loading="checkInLoading"
-            @click="checkIn(item.orderId)"
-          >
-            核销到店
-          </el-button>
+          <div class="row">
+            <el-button
+              type="primary"
+              size="large"
+              :loading="checkInLoading"
+              @click="checkIn(item.orderId)"
+            >
+              核销到店
+            </el-button>
+            <el-button size="large" @click="selectReschedule(item)">改约</el-button>
+          </div>
         </article>
         <div v-if="checkInResult" id="checkin-result" class="result">
           {{ checkInResult.status }} · {{ checkInResult.roomName }} {{ checkInResult.bedName }} ·
@@ -316,6 +376,45 @@ onUnmounted(stopPoll)
         </div>
       </section>
     </div>
+
+    <section class="desk-card" id="reschedule-panel">
+      <h2>改约</h2>
+      <p class="hint">仅 BOOKED · 同店同项目同价 · POST /f/orders/{id}/reschedule · 无 C 端</p>
+      <div class="form">
+        <label>订单</label>
+        <el-input
+          id="rs-order"
+          :model-value="rsOrder ? `${rsOrder.orderNo} · ${rsOrder.status}` : '从核销结果点「改约」'"
+          size="large"
+          disabled
+        />
+        <label>日期 / 起始格</label>
+        <div class="row">
+          <el-input id="rs-date" v-model="rsDate" size="large" />
+          <el-input-number id="rs-start" v-model="rsStart" :min="40" :max="87" size="large" />
+        </div>
+        <label>技师</label>
+        <el-radio-group id="rs-therapist" v-model="rsTherapist" size="large">
+          <el-radio-button :value="THERAPIST">林晓</el-radio-button>
+          <el-radio-button :value="THERAPIST_CHEN">陈默</el-radio-button>
+        </el-radio-group>
+        <el-button
+          id="rs-submit"
+          type="primary"
+          size="large"
+          :loading="rsLoading"
+          @click="submitReschedule"
+        >
+          确认改约
+        </el-button>
+      </div>
+      <div v-if="rsResult" id="rs-result" class="result">
+        {{ rsResult.status }} · {{ rsResult.serviceDate }} #{{ rsResult.startSlotNo }}–{{
+          rsResult.endSlotNo
+        }}
+        · {{ rsResult.roomName }} {{ rsResult.bedName }}
+      </div>
+    </section>
 
     <section v-if="walkIn" id="qr-panel" class="desk-card qr-card">
       <div>
