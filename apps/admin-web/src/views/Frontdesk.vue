@@ -77,6 +77,39 @@ const walkIn = ref<WalkInData | null>(null)
 const pollStatus = ref('')
 let pollTimer: number | undefined
 
+const refundOrderId = ref('')
+const refundAmount = ref(19800)
+const refundReason = ref('客户改期无法改约')
+const refundLoading = ref(false)
+const refundResult = ref<RefundData | null>(null)
+
+const taskLoading = ref(false)
+const approveLoading = ref('')
+const humanTasks = ref<HumanTaskItem[]>([])
+
+type RefundData = {
+  orderId: string
+  status: string
+  workflowStatus: string
+  replay?: boolean
+  refunds: Array<{
+    refundNo: string
+    paymentId: string
+    amountFen: number
+    status: string
+    wxRefundId?: string | null
+  }>
+}
+
+type HumanTaskItem = {
+  id: string
+  taskType: string
+  title: string
+  status: string
+  orderId?: string | null
+  bizKey?: string | null
+}
+
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => walkIn.value?.codeUrl ?? '')
 const qrMarkup = computed(() => (qrText.value ? qrSvg(qrText.value) : ''))
@@ -225,6 +258,80 @@ async function submitWalkIn() {
   }
 }
 
+async function submitRefund() {
+  refundLoading.value = true
+  error.value = ''
+  try {
+    const res = await fetch(`/api/v1/f/orders/${refundOrderId.value.trim()}/refund`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        requestId: `rf-${Date.now()}`,
+        amountFen: Number(refundAmount.value),
+        reason: refundReason.value,
+      }),
+    })
+    refundResult.value = await readEnvelope<RefundData>(res)
+    await loadTasks()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    refundLoading.value = false
+  }
+}
+
+async function loadTasks() {
+  taskLoading.value = true
+  error.value = ''
+  try {
+    const res = await fetch('/api/v1/f/human-tasks?status=OPEN', { headers: authHeaders() })
+    const data = await readEnvelope<{ items: HumanTaskItem[] }>(res)
+    humanTasks.value = data.items
+  } catch (e) {
+    humanTasks.value = []
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    taskLoading.value = false
+  }
+}
+
+async function approveTask(id: string) {
+  approveLoading.value = id
+  error.value = ''
+  try {
+    const res = await fetch(`/api/v1/f/human-tasks/${id}/approve`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ requestId: `ap-${Date.now()}` }),
+    })
+    refundResult.value = await readEnvelope<RefundData>(res)
+    await loadTasks()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    approveLoading.value = ''
+  }
+}
+
+async function managerLogin() {
+  loginLoading.value = true
+  error.value = ''
+  try {
+    const res = await fetch('/api/v1/staff/auth/wechat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: 'dev-staff-manager' }),
+    })
+    const data = await readEnvelope<LoginData>(res)
+    token.value = data.token
+    staffName.value = data.name || '店长'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    loginLoading.value = false
+  }
+}
+
 onUnmounted(stopPoll)
 </script>
 
@@ -233,11 +340,14 @@ onUnmounted(stopPoll)
     <header class="desk-bar">
       <div>
         <h1>门店前台</h1>
-        <p>iPad 横屏 1024 · 核销 / 现金 / 微信收款码</p>
+        <p>iPad 横屏 1024 · 核销 / 现金 / 微信收款码 / 退款</p>
       </div>
-      <el-button id="desk-login-btn" type="primary" :loading="loginLoading" @click="devLogin">
-        {{ loggedIn ? staffName : '登录前台 demo.front' }}
-      </el-button>
+      <div class="row">
+        <el-button id="desk-login-btn" type="primary" :loading="loginLoading" @click="devLogin">
+          {{ loggedIn ? staffName : '登录前台 demo.front' }}
+        </el-button>
+        <el-button id="desk-mgr-btn" :loading="loginLoading" @click="managerLogin">店长审批</el-button>
+      </div>
     </header>
 
     <el-alert
@@ -337,5 +447,58 @@ onUnmounted(stopPoll)
         <code>{{ qrText }}</code>
       </div>
     </section>
+
+    <div class="desk-grid">
+      <section class="desk-card" id="refund-panel">
+        <h2>按支付单退款</h2>
+        <p class="hint">POST /f/orders/{id}/refund · 一 workflow / 每张 SUCCESS payment 一张退款 · ≥¥500 待审</p>
+        <div class="form">
+          <label>订单 ID</label>
+          <el-input id="refund-order" v-model="refundOrderId" size="large" placeholder="orderId" />
+          <label>金额（分）</label>
+          <el-input-number id="refund-amount" v-model="refundAmount" :min="1" size="large" />
+          <label>原因</label>
+          <el-input id="refund-reason" v-model="refundReason" size="large" />
+          <el-button
+            id="refund-submit"
+            type="primary"
+            size="large"
+            :loading="refundLoading"
+            @click="submitRefund"
+          >
+            发起退款
+          </el-button>
+        </div>
+        <div v-if="refundResult" id="refund-result" class="result">
+          {{ refundResult.status }} · {{ refundResult.workflowStatus }} ·
+          {{ refundResult.refunds.length }} 张
+          <span v-for="row in refundResult.refunds" :key="row.refundNo">
+            {{ row.refundNo }}={{ row.status }}
+          </span>
+        </div>
+      </section>
+
+      <section class="desk-card" id="approve-panel">
+        <h2>退款审批</h2>
+        <p class="hint">GET /f/human-tasks?status=OPEN · POST /f/human-tasks/{id}/approve · refund:approve</p>
+        <el-button id="task-refresh" size="large" :loading="taskLoading" @click="loadTasks">刷新待办</el-button>
+        <article v-for="task in humanTasks" :key="task.id" class="hit">
+          <div>
+            <strong>{{ task.taskType }}</strong>
+            <span>{{ task.title }} · 单 {{ task.orderId }}</span>
+            <em>{{ task.status }}</em>
+          </div>
+          <el-button
+            type="primary"
+            size="large"
+            :loading="approveLoading === task.id"
+            @click="approveTask(task.id)"
+          >
+            审批通过
+          </el-button>
+        </article>
+        <p v-if="humanTasks.length === 0" class="hint">暂无 OPEN 任务</p>
+      </section>
+    </div>
   </div>
 </template>

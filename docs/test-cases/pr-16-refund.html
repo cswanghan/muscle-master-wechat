@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR16 退款 · 按 payment + ¥500 审批</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; --paper:#f4f1ea; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; opacity:.85; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:28px 40px 48px; }
+    h2 { font-size:16px; color:var(--brand); margin:24px 0 10px; }
+    table { width:100%; border-collapse:collapse; background:#fff;
+            box-shadow:0 1px 3px rgba(20,53,44,.06); }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    tr.ok td:last-child { color:#1E5C4A; font-weight:700; }
+    tr.bad td:last-child { color:#c0392b; font-weight:700; }
+    .callout { background:#fff; border-left:4px solid #1E5C4A; padding:12px 16px;
+               margin:16px 0; }
+    .warn { border-left-color:#e85d4c; }
+    .flow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .st { padding:8px 10px; border-radius:8px; font-size:12px; font-weight:700;
+          border:2px solid var(--brand); background:#e8f1ed; }
+    .st.pay { background:#1E5C4A; color:#fff; }
+    .st.wait { background:#f4e3b2; border-color:#c9a227; }
+    .st.bad { background:#fdecea; border-color:#e85d4c; color:#8a2418; }
+    .arr { font-size:12px; color:#4a6a5f; }
+    .ipad { width:1024px; max-width:100%; background:var(--paper); border:10px solid #1a1c1b;
+            border-radius:18px; padding:20px; display:grid; grid-template-columns:1fr 1fr;
+            gap:16px; box-sizing:border-box; }
+    .pad { background:#fff; border-radius:12px; padding:16px 18px; min-height:220px; }
+    .pad h3 { margin:0 0 12px; color:var(--brand); font-size:18px; }
+    .fake { height:48px; border:1px solid #d7e6df; border-radius:8px; background:#f8faf9;
+            display:flex; align-items:center; padding:0 12px; font-size:16px; margin-bottom:10px; }
+    .btn { height:48px; border:none; border-radius:8px; background:var(--brand); color:#fff;
+           font-size:16px; font-weight:700; padding:0 20px; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+    footer { padding:0 40px 32px; color:#6b7c75; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PR16 · 按 payment 退款 + ¥500 审批</h1>
+    <p>POST /f/orders/{id}/refund · GET /f/human-tasks?status=OPEN · POST /f/human-tasks/{id}/approve</p>
+    <span class="badge ">ALL PASS · 8 / 8</span>
+  </header>
+  <main>
+    <div class="flow">
+      <div class="st">SUCCESS payment × N</div>
+      <div class="arr">POST /f/orders/{id}/refund</div>
+      <div class="st pay">1 workflow REFUND</div>
+      <div class="arr">+</div>
+      <div class="st pay">N 张 refund</div>
+      <div class="arr">fire(REFUND)</div>
+      <div class="st pay">CANCELLED + ReleaseUnconsumed</div>
+    </div>
+    <div class="flow">
+      <div class="st">合计 ≥ 50000 分</div>
+      <div class="arr">→</div>
+      <div class="st wait">WAIT_APPROVAL</div>
+      <div class="arr">POST /f/human-tasks/{id}/approve</div>
+      <div class="st pay">WeChat refund</div>
+    </div>
+    <div class="flow">
+      <div class="st">CASH</div>
+      <div class="arr">只记账</div>
+      <div class="st pay">SUCCESS</div>
+      <div class="arr">微信失败</div>
+      <div class="st bad">MANUAL + human_task</div>
+    </div>
+    <div class="callout">
+      <strong>§3.2 / §3.3</strong>
+      <div>P0 全额 = SUM(SUCCESS) − 已退。同一 <code>refund_no=R{paymentId}</code> /
+      <code>requestId</code> 重放。Law A：释放只走 <code>fire(REFUND)</code> 副作用。
+      <code>PENDING_PAY</code> 走 ReleaseLock 不走本 API。<code>IN_SERVICE</code> 需
+      <code>refund:after_start</code>。</div>
+    </div>
+    <h2>iPad 前台 · 退款 / 审批</h2>
+    <div class="ipad" id="ipad-refund">
+      <section class="pad">
+        <h3>按支付单退款</h3>
+        <div class="fake">orderId · 19800 分</div>
+        <div class="fake">客户改期无法改约</div>
+        <button class="btn">发起退款</button>
+      </section>
+      <section class="pad">
+        <h3>¥500 审批</h3>
+        <div class="fake">REFUND_APPROVE · OPEN</div>
+        <button class="btn">审批通过</button>
+        <p style="color:#4a6a5f;font-size:15px;margin-top:16px;">task_type=REFUND_APPROVE</p>
+      </section>
+    </div>
+    <h2>验收项</h2>
+    <table>
+      <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>ONE</td><td>单张 SUCCESS 微信 → 一张退款 + fire(REFUND) 释放格子</td><td>refunds=1 wechat=1 occ=0 status=CANCELLED</td><td>PASS</td></tr>
+<tr class='ok'><td>TWO</td><td>双 SUCCESS payment → 两张退款 / 两次微信</td><td>refunds=2 wechat=2</td><td>PASS</td></tr>
+<tr class='ok'><td>CASH</td><td>现金只记账不调微信</td><td>wxId=CASH wechat=0</td><td>PASS</td></tr>
+<tr class='ok'><td>APPROVE</td><td>≥50000 先 WAIT_APPROVAL，approve 后再调微信</td><td>wait=WAIT_APPROVAL after=SUCCESS wechat=2</td><td>PASS</td></tr>
+<tr class='ok'><td>IDEM</td><td>同一 requestId / refund_no 重放</td><td>refundNo=R81615935345004544 replay=true</td><td>PASS</td></tr>
+<tr class='ok'><td>PERM</td><td>IN_SERVICE 无 refund:after_start → 40904</td><td>40904=true</td><td>PASS</td></tr>
+<tr class='ok'><td>PENDING</td><td>PENDING_PAY 禁止走退款 API</td><td>status=PENDING_PAY → 40904</td><td>PASS</td></tr>
+<tr class='ok'><td>FAIL</td><td>微信退款失败 → workflow MANUAL + human_task</td><td>wf=MANUAL refund=FAILED</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>Generated by RefundReportTest · §3.2 REFUND · ¥500 WAIT_APPROVAL · Law A</footer>
+</body>
+</html>

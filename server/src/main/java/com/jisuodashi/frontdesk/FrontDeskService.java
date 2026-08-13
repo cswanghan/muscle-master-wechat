@@ -353,4 +353,52 @@ public class FrontDeskService {
             throw new ApiException(ErrorCodes.BAD_REQUEST, field + " 无效");
         }
     }
+
+    public FrontDeskDtos.RefundResponse refund(String orderIdRaw, FrontDeskDtos.RefundRequest req) {
+        AuthContext.requireStaff();
+        if (req == null) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        long orderId = parseId(orderIdRaw, "orderId");
+        requireScopedOrder(orders.findOrderById(orderId));
+        var outcome = payments.refund(
+                orderId,
+                req.requestId(),
+                req.amountFen() == null ? 0L : req.amountFen(),
+                req.reason(),
+                deskContext());
+        return toRefund(outcome);
+    }
+
+    public FrontDeskDtos.RefundResponse approveTask(String taskIdRaw, FrontDeskDtos.ApproveRequest req) {
+        AuthContext.requireStaff();
+        long taskId = parseId(taskIdRaw, "taskId");
+        String requestId = req == null ? null : req.requestId();
+        return toRefund(payments.approve(taskId, requestId));
+    }
+
+    public FrontDeskDtos.HumanTaskListResponse listHumanTasks(String status) {
+        AuthContext.requireStaff();
+        return new FrontDeskDtos.HumanTaskListResponse(
+                payments.listHumanTasks(status).stream()
+                        .map(t -> new FrontDeskDtos.HumanTaskView(
+                                t.id(), t.taskType(), t.title(), t.status(), t.orderId(), t.bizKey()))
+                        .toList());
+    }
+
+    private static FrontDeskDtos.RefundResponse toRefund(PaymentDtos.RefundOutcome outcome) {
+        return new FrontDeskDtos.RefundResponse(
+                outcome.orderId(),
+                outcome.orderStatus(),
+                outcome.workflowStatus(),
+                outcome.refunds() == null ? List.of() : outcome.refunds().stream()
+                        .map(r -> new FrontDeskDtos.RefundView(
+                                r.refundNo(),
+                                String.valueOf(r.paymentId()),
+                                r.amountFen(),
+                                r.status(),
+                                r.wxRefundId()))
+                        .toList(),
+                outcome.replay());
+    }
 }

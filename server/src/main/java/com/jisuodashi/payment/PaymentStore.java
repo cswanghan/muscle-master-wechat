@@ -49,4 +49,20 @@ public interface PaymentStore {
 
     default void clear() {
     }
+
+    Payment findById(long id);
+
+    Refund findByRefundNo(String refundNo);
+
+    Refund lockByRefundNo(String refundNo);
+
+    void updateRefund(Refund refund);
+
+    void updateWorkflow(WorkflowInstance instance);
+
+    WorkflowInstance findWorkflowById(long id);
+
+    HumanTask findHumanTaskById(long id);
+
+    void updateHumanTask(HumanTask task);
 }

@@ -20,4 +20,9 @@ public interface WeChatPayClient {
     Map<String, String> resign(String prepayId);
 
     WeChatNotify parseAndVerify(String body, Map<String, String> headers);
+
+    record RefundResult(String wxRefundId) {
+    }
+
+    RefundResult refund(String refundNo, String paymentNo, long amountFen, String reason);
 }

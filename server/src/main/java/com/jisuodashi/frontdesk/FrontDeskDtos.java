@@ -81,4 +81,46 @@ public final class FrontDeskDtos {
 
     public record LookupResponse(List<OrderPreview> items) {
     }
+
+    public record RefundRequest(
+            @NotBlank(message = "requestId 不能为空") String requestId,
+            @NotNull(message = "amountFen 不能为空")
+            @Min(value = 1, message = "amountFen 无效") Long amountFen,
+            String reason
+    ) {
+    }
+
+    public record RefundView(
+            String refundNo,
+            String paymentId,
+            long amountFen,
+            String status,
+            String wxRefundId
+    ) {
+    }
+
+    public record RefundResponse(
+            String orderId,
+            String status,
+            String workflowStatus,
+            List<RefundView> refunds,
+            boolean replay
+    ) {
+    }
+
+    public record ApproveRequest(String requestId) {
+    }
+
+    public record HumanTaskView(
+            String id,
+            String taskType,
+            String title,
+            String status,
+            String orderId,
+            String bizKey
+    ) {
+    }
+
+    public record HumanTaskListResponse(List<HumanTaskView> items) {
+    }
 }

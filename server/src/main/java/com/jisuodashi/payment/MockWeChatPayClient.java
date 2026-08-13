@@ -9,10 +9,13 @@ import com.jisuodashi.common.ErrorCodes;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Dev / test prepay. No merchant cert, no HTTP. Notify body is the decrypted
@@ -23,6 +26,8 @@ public class MockWeChatPayClient implements WeChatPayClient {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final AppClock clock;
+    public final List<RefundCall> refundCalls = new CopyOnWriteArrayList<>();
+    public volatile boolean failRefunds;
 
     public MockWeChatPayClient(AppClock clock) {
         this.clock = clock;
@@ -116,5 +121,29 @@ public class MockWeChatPayClient implements WeChatPayClient {
         } catch (NoSuchAlgorithmException e) {
             return "MOCK_SIGN";
         }
+    }
+
+    @Override
+    public RefundResult refund(String refundNo, String paymentNo, long amountFen, String reason) {
+        refundCalls.add(new RefundCall(refundNo, paymentNo, amountFen, reason));
+        if (failRefunds) {
+            throw new ApiException(ErrorCodes.CHANNEL_ERROR, "微信退款失败");
+        }
+        if (refundNo == null || refundNo.isBlank()) {
+            throw new ApiException(ErrorCodes.CHANNEL_ERROR, "微信退款失败");
+        }
+        return new RefundResult("mock_rf_" + refundNo);
+    }
+
+    public void resetRefunds() {
+        refundCalls.clear();
+        failRefunds = false;
+    }
+
+    public List<RefundCall> refundCalls() {
+        return new ArrayList<>(refundCalls);
+    }
+
+    public record RefundCall(String refundNo, String paymentNo, long amountFen, String reason) {
     }
 }

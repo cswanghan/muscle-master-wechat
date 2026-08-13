@@ -129,6 +129,9 @@ public class InMemoryPaymentStore implements PaymentStore {
     @Override
     public void insertRefund(Refund refund) {
         Work w = requireWork();
+        if (refund.refundNo() != null && refunds.stream().anyMatch(r -> refund.refundNo().equals(r.refundNo()))) {
+            throw new IllegalStateException("duplicate refund_no " + refund.refundNo());
+        }
         refunds.add(refund);
         w.undos.add(() -> refunds.remove(refund));
     }
@@ -224,5 +227,112 @@ public class InMemoryPaymentStore implements PaymentStore {
             }
             locks.clear();
         }
+    }
+
+    @Override
+    public Payment findById(long id) {
+        return byId.get(id);
+    }
+
+    @Override
+    public Refund findByRefundNo(String refundNo) {
+        if (refundNo == null) {
+            return null;
+        }
+        return refunds.stream().filter(r -> refundNo.equals(r.refundNo())).findFirst().orElse(null);
+    }
+
+    @Override
+    public Refund lockByRefundNo(String refundNo) {
+        Work w = requireWork();
+        lockRow("rf:" + refundNo, w);
+        return findByRefundNo(refundNo);
+    }
+
+    @Override
+    public void updateRefund(Refund refund) {
+        Work w = requireWork();
+        int idx = -1;
+        Refund prev = null;
+        for (int i = 0; i < refunds.size(); i++) {
+            if (refunds.get(i).id() == refund.id() || refund.refundNo().equals(refunds.get(i).refundNo())) {
+                idx = i;
+                prev = refunds.get(i);
+                break;
+            }
+        }
+        if (idx >= 0) {
+            refunds.set(idx, refund);
+        } else {
+            refunds.add(refund);
+        }
+        Refund old = prev;
+        int at = idx;
+        w.undos.add(() -> {
+            if (old == null) {
+                refunds.remove(refund);
+            } else if (at >= 0 && at < refunds.size()) {
+                refunds.set(at, old);
+            }
+        });
+    }
+
+    @Override
+    public void updateWorkflow(WorkflowInstance instance) {
+        Work w = requireWork();
+        int idx = -1;
+        WorkflowInstance prev = null;
+        for (int i = 0; i < workflows.size(); i++) {
+            if (workflows.get(i).id() == instance.id()) {
+                idx = i;
+                prev = workflows.get(i);
+                break;
+            }
+        }
+        if (idx >= 0) {
+            workflows.set(idx, instance);
+        } else {
+            workflows.add(instance);
+        }
+        WorkflowInstance old = prev;
+        int at = idx;
+        w.undos.add(() -> {
+            if (old == null) {
+                workflows.remove(instance);
+            } else if (at >= 0 && at < workflows.size()) {
+                workflows.set(at, old);
+            }
+        });
+    }
+
+    @Override
+    public WorkflowInstance findWorkflowById(long id) {
+        return workflows.stream().filter(w -> w.id() == id).findFirst().orElse(null);
+    }
+
+    @Override
+    public HumanTask findHumanTaskById(long id) {
+        return tasks.stream().filter(t -> t.getId() == id).findFirst().orElse(null);
+    }
+
+    @Override
+    public void updateHumanTask(HumanTask task) {
+        Work w = requireWork();
+        HumanTask prev = findHumanTaskById(task.getId());
+        if (prev == null) {
+            tasks.add(task);
+            w.undos.add(() -> tasks.remove(task));
+            return;
+        }
+        int idx = tasks.indexOf(prev);
+        if (idx >= 0) {
+            tasks.set(idx, task);
+        }
+        w.undos.add(() -> {
+            int at = tasks.indexOf(task);
+            if (at >= 0) {
+                tasks.set(at, prev);
+            }
+        });
     }
 }
