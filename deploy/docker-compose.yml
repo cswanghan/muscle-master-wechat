@@ -1,4 +1,3 @@
-# P0 grayscale stack. Host may not have Docker; this file is still the deploy contract.
 # Single server process: SNOWFLAKE_WORKER_ID=1, app.jobs.enabled=true (one JobRunner).
 # Do not start a second server replica without assigning a new worker id.
 
@@ -47,7 +46,7 @@ services:
       - "8080:8080"
     environment:
       TZ: Asia/Shanghai
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/muscle_master?useUnicode=true&characterEncoding=utf8&connectionTimeZone=Asia/Shanghai
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/muscle_master?useUnicode=true&characterEncoding=utf8&connectionTimeZone=Asia/Shanghai&sslMode=DISABLED&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: muscle
       SPRING_DATASOURCE_PASSWORD: muscle
       SPRING_DATA_REDIS_HOST: redis

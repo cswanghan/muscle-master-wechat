@@ -13,7 +13,7 @@ spring:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/muscle_master?useUnicode=true&characterEncoding=utf8&connectionTimeZone=Asia/Shanghai}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/muscle_master?useUnicode=true&characterEncoding=utf8&connectionTimeZone=Asia/Shanghai&sslMode=DISABLED&allowPublicKeyRetrieval=true}
     username: ${SPRING_DATASOURCE_USERNAME:muscle}
     password: ${SPRING_DATASOURCE_PASSWORD:muscle}
     driver-class-name: com.mysql.cj.jdbc.Driver
