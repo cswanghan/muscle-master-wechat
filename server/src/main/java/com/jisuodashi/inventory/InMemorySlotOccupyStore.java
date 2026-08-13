@@ -944,7 +944,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
                 .orElse(null);
     }
 
-    void expireHold(long holdId, LocalDateTime expireAt) {
+    public void expireHold(long holdId, LocalDateTime expireAt) {
         for (MutableSlot slot : therapistSlots.values()) {
             if (slot.holdId != null && slot.holdId == holdId) {
                 slot.lockExpireAt = expireAt;
@@ -1095,13 +1095,13 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         final String jobType;
         final String bizKey;
         final String payload;
-        volatile LocalDateTime runAt;
+        public volatile LocalDateTime runAt;
         public volatile String status;
         volatile String lockedBy;
         volatile LocalDateTime lockedAt;
         volatile LocalDateTime leaseUntil;
         volatile int retryCount;
-        volatile String lastError;
+        public volatile String lastError;
         volatile LocalDateTime updatedAt;
 
         MutableJob(

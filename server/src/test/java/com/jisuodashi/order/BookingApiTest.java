@@ -51,6 +51,9 @@ class BookingApiTest {
     @Autowired
     private InMemorySlotOccupyStore occupyStore;
 
+    @Autowired
+    private OrderStateMachine machine;
+
     @BeforeEach
     void resetCalendar() {
         occupyStore.resetDemoCalendar();
@@ -96,6 +99,69 @@ class BookingApiTest {
     }
 
     @Test
+    void cancelPendingPayFreesSlots() {
+        String token = customerToken();
+        Map<String, Object> created = data(post(body("req-cancel-pending", 52), token));
+        String orderId = created.get("orderId").toString();
+        assertThat(occupyStore.occupancyCount()).isEqualTo(10);
+
+        ResponseEntity<Map<String, Object>> res = cancel(orderId, "req-cancel-1", token);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> cancelled = dataOk(res);
+        assertThat(cancelled.get("status")).isEqualTo("CLOSED");
+        assertThat(cancelled.get("orderId")).isEqualTo(orderId);
+        assertThat(occupyStore.occupancyCount()).isZero();
+        assertThat(occupyStore.therapistSlot(
+                DemoCatalogIds.THERAPIST_LIN, java.time.LocalDate.of(2026, 8, 14), 52).status)
+                .isEqualTo("FREE");
+    }
+
+    @Test
+    void cancelBookedIs40904() {
+        String token = customerToken();
+        Map<String, Object> created = data(post(body("req-cancel-booked", 56), token));
+        long orderId = Long.parseLong(created.get("orderId").toString());
+        machine.fire(orderId, OrderEvent.PAY_SUCCESS);
+        assertThat(occupyStore.therapistSlot(
+                DemoCatalogIds.THERAPIST_LIN, java.time.LocalDate.of(2026, 8, 14), 56).status)
+                .isEqualTo("BOOKED");
+        assertThat(occupyStore.occupancyCount()).isEqualTo(10);
+
+        ResponseEntity<Map<String, Object>> res = cancel(String.valueOf(orderId), "req-cancel-booked-1", token);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(res.getBody()).isNotNull();
+        assertThat(res.getBody().get("code")).isEqualTo(40904);
+        assertThat(occupyStore.therapistSlot(
+                DemoCatalogIds.THERAPIST_LIN, java.time.LocalDate.of(2026, 8, 14), 56).status)
+                .isEqualTo("BOOKED");
+        assertThat(occupyStore.occupancyCount()).isEqualTo(10);
+    }
+
+    @Test
+    void cancelOtherCustomerIs40904() {
+        String owner = customerToken();
+        Map<String, Object> created = data(post(body("req-cancel-other", 48), owner));
+        String other = jwt.issue(JwtPrincipal.customer(8_100_000_000_000_000_099L)).token();
+        ResponseEntity<Map<String, Object>> res = cancel(created.get("orderId").toString(), "req-not-mine", other);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(res.getBody()).isNotNull();
+        assertThat(res.getBody().get("code")).isEqualTo(40904);
+        assertThat(occupyStore.occupancyCount()).isEqualTo(10);
+    }
+
+    @Test
+    void cancelMissingJwtIs40101() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/v1/c/bookings/1/cancel")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"requestId":"req-cancel-no-jwt","reason":"x"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(40101));
+    }
+
+    @Test
     void staffJwtIs40301() {
         String staff = jwt.issue(JwtPrincipal.staff(
                 DemoStaffIds.MANAGER, TokenType.F, "STORE", List.of(DemoCatalogIds.STORE))).token();
@@ -129,10 +195,32 @@ class BookingApiTest {
         return rest.exchange("/api/v1/c/bookings", HttpMethod.POST, new HttpEntity<>(body, headers), MAP);
     }
 
+    private ResponseEntity<Map<String, Object>> cancel(String orderId, String requestId, String bearer) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (bearer != null) {
+            headers.setBearerAuth(bearer);
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("requestId", requestId);
+        body.put("reason", "changed-mind");
+        return rest.exchange(
+                "/api/v1/c/bookings/" + orderId + "/cancel",
+                HttpMethod.POST, new HttpEntity<>(body, headers), MAP);
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> data(ResponseEntity<Map<String, Object>> res) {
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(res.getBody()).isNotNull();
+        return (Map<String, Object>) res.getBody().get("data");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> dataOk(ResponseEntity<Map<String, Object>> res) {
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(res.getBody()).isNotNull();
+        assertThat(res.getBody().get("code")).isEqualTo(0);
         return (Map<String, Object>) res.getBody().get("data");
     }
 }

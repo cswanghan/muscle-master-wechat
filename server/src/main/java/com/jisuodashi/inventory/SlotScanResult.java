@@ -2,7 +2,7 @@ package com.jisuodashi.inventory;
 
 import java.util.List;
 
-/** Dual-table expired LOCKED scan. Jobs/API fire later; this PR only frees orphans / PENDING_PAY. */
+/** Dual-table expired LOCKED scan. Production scan fires PAY_TIMEOUT for PENDING_PAY. */
 public record SlotScanResult(
         List<Long> holdIds,
         int orphansFreed,

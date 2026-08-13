@@ -1,25 +1,45 @@
 package com.jisuodashi.job;
 
+import com.jisuodashi.common.ApiException;
+import com.jisuodashi.common.ErrorCodes;
+import com.jisuodashi.inventory.ReleaseResult;
 import com.jisuodashi.inventory.SlotOccupyService;
+import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.inventory.SlotScanResult;
+import com.jisuodashi.order.FireContext;
+import com.jisuodashi.order.OrderEvent;
+import com.jisuodashi.order.OrderStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-/** Every 5 min: UNION therapist_slot ∪ bed_slot expired LOCKED. Does not fire(). */
+import java.util.List;
+
+/**
+ * Every 5 min: UNION therapist_slot ∪ bed_slot expired LOCKED.
+ * PENDING_PAY → {@code fire(PAY_TIMEOUT)} (Law A). Orphans force-free.
+ */
 @Component
 public class SlotScanJob {
 
     private static final Logger log = LoggerFactory.getLogger(SlotScanJob.class);
 
     private final SlotOccupyService occupy;
+    private final OrderStateMachine machine;
 
     public SlotScanJob(SlotOccupyService occupy) {
+        this(occupy, null);
+    }
+
+    @Autowired
+    public SlotScanJob(SlotOccupyService occupy, OrderStateMachine machine) {
         this.occupy = occupy;
+        this.machine = machine;
     }
 
     public SlotScanResult run() {
-        SlotScanResult result = occupy.scanExpiredLocks();
+        SlotScanResult result = machine == null ? occupy.scanExpiredLocks() : scanAndFire();
         if (result.holdsSeen() > 0) {
             log.info(
                     "SlotScanJob holds={} orphans={} pending={} stalePaid={} addonSkipped={}",
@@ -27,5 +47,60 @@ public class SlotScanJob {
                     result.stalePaid(), result.addonSkipped());
         }
         return result;
+    }
+
+    /**
+     * Design §2.6 path C: orphan → forceFree; add-on → skip (PR13);
+     * PENDING_PAY → fire(PAY_TIMEOUT); CLOSED leftover → ReleaseLock; else stale.
+     */
+    SlotScanResult scanAndFire() {
+        List<Long> holds = occupy.findExpiredLockedHoldIds();
+        int orphans = 0;
+        int pending = 0;
+        int stale = 0;
+        int addon = 0;
+        for (long holdId : holds) {
+            BookingOrderRef byHold = occupy.findOrderByHoldId(holdId);
+            BookingOrderRef byAddon = occupy.findOrderByAddOnHoldId(holdId);
+            if (byHold == null && byAddon == null) {
+                occupy.forceFreeByHold(holdId);
+                orphans++;
+            } else if (byAddon != null && byAddon.addOnHoldId() != null && byAddon.addOnHoldId() == holdId) {
+                addon++;
+                occupy.noteStalePaidLocked();
+            } else if (byHold != null && SlotOccupyService.ORDER_PENDING_PAY.equals(byHold.status())) {
+                if (firePayTimeout(byHold.id())) {
+                    pending++;
+                } else {
+                    stale++;
+                    occupy.noteStalePaidLocked();
+                }
+            } else if (byHold != null && SlotOccupyService.ORDER_CLOSED.equals(byHold.status())) {
+                ReleaseResult r = occupy.releaseLock(holdId);
+                if (r.skipped()) {
+                    stale++;
+                    occupy.noteStalePaidLocked();
+                } else {
+                    pending++;
+                }
+            } else {
+                stale++;
+                occupy.noteStalePaidLocked();
+            }
+        }
+        return new SlotScanResult(List.copyOf(holds), orphans, pending, stale, addon);
+    }
+
+    private boolean firePayTimeout(long orderId) {
+        try {
+            machine.fire(orderId, OrderEvent.PAY_TIMEOUT, FireContext.job());
+            return true;
+        } catch (ApiException ex) {
+            if (ex.getCode() == ErrorCodes.ILLEGAL_TRANSITION) {
+                return false;
+            }
+            log.warn("SlotScanJob fire(PAY_TIMEOUT) order={} code={}", orderId, ex.getCode());
+            return false;
+        }
     }
 }

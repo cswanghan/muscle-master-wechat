@@ -239,9 +239,27 @@ public class SlotOccupyService {
         return doReleaseAddOnHold(addHoldId);
     }
 
+    /** Dual-table expired LOCKED holds (scan caller fires or force-frees). */
+    public List<Long> findExpiredLockedHoldIds() {
+        return List.copyOf(store.findExpiredLockedHoldIds(clock.now(), SCAN_BATCH));
+    }
+
+    public SlotOccupyStore.BookingOrderRef findOrderByHoldId(long holdId) {
+        return store.findOrderByHoldId(holdId);
+    }
+
+    public SlotOccupyStore.BookingOrderRef findOrderByAddOnHoldId(long holdId) {
+        return store.findOrderByAddOnHoldId(holdId);
+    }
+
+    public void noteStalePaidLocked() {
+        incStalePaid();
+    }
+
     /**
-     * Dual-table expired LOCKED scan. Orphan → forceFree; PENDING_PAY →
-     * ReleaseLock; add-on / paid → skip (fire comes in PR6/7).
+     * Dual-table expired LOCKED scan without {@code fire()} (Law A).
+     * Orphan → forceFree; PENDING_PAY / CLOSED leftover → ReleaseLock;
+     * add-on / paid → skip. Production scan uses {@code SlotScanJob} + fire.
      */
     public SlotScanResult scanExpiredLocks() {
         List<Long> holds = store.findExpiredLockedHoldIds(clock.now(), SCAN_BATCH);

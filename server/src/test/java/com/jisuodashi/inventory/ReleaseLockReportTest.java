@@ -24,7 +24,7 @@ class ReleaseLockReportTest {
         SlotOccupyService timeoutSvc = OccupyFixtures.service(timeoutStore);
         LockNewResult timeout = timeoutSvc.lockNew(OccupyFixtures.cmd("rpt-timeout", T1, START_1930));
         timeoutStore.expireHold(timeout.holdId(), TODAY.atTime(18, 50));
-        SlotScanResult timeoutScan = new SlotScanJob(timeoutSvc).run();
+        SlotScanResult timeoutScan = scanJob(timeoutStore, timeoutSvc).run();
 
         InMemorySlotOccupyStore paidStore = OccupyFixtures.demoStore();
         SlotOccupyService paidSvc = OccupyFixtures.service(paidStore);
@@ -32,19 +32,19 @@ class ReleaseLockReportTest {
         paidSvc.confirmPaidSlots(paid.orderId());
         paidStore.setOrderStatus(paid.orderId(), "BOOKED");
         paidStore.expireHold(paid.holdId(), TODAY.atTime(18, 50));
-        SlotScanResult paidScan = new SlotScanJob(paidSvc).run();
+        SlotScanResult paidScan = scanJob(paidStore, paidSvc).run();
 
         InMemorySlotOccupyStore orphanStore = OccupyFixtures.demoStore();
         long bedHold = 6_600_000_000_000_000_022L;
         plantBedOnly(orphanStore, BED1, bedHold, TODAY.atTime(18, 40));
-        SlotScanResult bedOrphan = new SlotScanJob(OccupyFixtures.service(orphanStore)).run();
+        SlotScanResult bedOrphan = scanJob(orphanStore, OccupyFixtures.service(orphanStore)).run();
 
         InMemorySlotOccupyStore dualStore = OccupyFixtures.demoStore();
         long tHold = 6_600_000_000_000_000_031L;
         long bHold = 6_600_000_000_000_000_032L;
         plantTherapistOnly(dualStore, T2, tHold, TODAY.atTime(18, 40));
         plantBedOnly(dualStore, BED2, bHold, TODAY.atTime(18, 41));
-        SlotScanResult dual = new SlotScanJob(OccupyFixtures.service(dualStore)).run();
+        SlotScanResult dual = scanJob(dualStore, OccupyFixtures.service(dualStore)).run();
 
         assertThat(timeoutScan.pendingReleased()).isEqualTo(1);
         assertThat(timeoutStore.occupancies).isEmpty();
@@ -65,6 +65,13 @@ class ReleaseLockReportTest {
         Files.writeString(resolveTargetDir().resolve("pr-3c-release-report.html"), html, StandardCharsets.UTF_8);
         assertThat(report).exists();
         assertThat(html).contains("timeout").contains("orphan").contains("dual-table");
+    }
+
+    private static SlotScanJob scanJob(InMemorySlotOccupyStore store, SlotOccupyService service) {
+        com.jisuodashi.common.AppClock clock = new com.jisuodashi.common.AppClock(java.time.Clock.fixed(
+                TODAY.atTime(19, 0).atZone(com.jisuodashi.common.AppClock.SHANGHAI).toInstant(),
+                com.jisuodashi.common.AppClock.SHANGHAI));
+        return new SlotScanJob(service, new com.jisuodashi.order.OrderStateMachine(store, service, clock));
     }
 
     private static void plantBedOnly(InMemorySlotOccupyStore store, long bedId, long holdId, LocalDateTime expire) {

@@ -24,7 +24,7 @@ class SlotScanJobTest {
         LockNewResult locked = service.lockNew(OccupyFixtures.cmd("scan-timeout", T1, START_1930));
         store.expireHold(locked.holdId(), TODAY.atTime(18, 50));
 
-        SlotScanResult scan = new SlotScanJob(service).run();
+        SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.holdIds()).containsExactly(locked.holdId());
         assertThat(scan.pendingReleased()).isEqualTo(1);
         assertThat(scan.orphansFreed()).isZero();
@@ -32,7 +32,7 @@ class SlotScanJobTest {
         assertThat(store.therapistSlot(T1, TODAY, 78).status).isEqualTo(SlotStatus.FREE);
         assertThat(store.bedSlot(BED1, TODAY, 78).status).isEqualTo(SlotStatus.FREE);
         assertThat(store.findOrderByHoldId(locked.holdId()).status())
-                .isEqualTo(SlotOccupyService.ORDER_PENDING_PAY);
+                .isEqualTo(SlotOccupyService.ORDER_CLOSED);
     }
 
     @Test
@@ -43,7 +43,7 @@ class SlotScanJobTest {
         store.setOrderStatus(locked.orderId(), SlotOccupyService.ORDER_CLOSED);
         store.expireHold(locked.holdId(), TODAY.atTime(18, 50));
 
-        SlotScanResult scan = new SlotScanJob(service).run();
+        SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.pendingReleased()).isEqualTo(1);
         assertThat(store.occupancies).isEmpty();
         assertThat(store.therapistSlot(T1, TODAY, 78).status).isEqualTo(SlotStatus.FREE);
@@ -60,7 +60,7 @@ class SlotScanJobTest {
         store.setOrderStatus(locked.orderId(), "BOOKED");
         store.expireHold(locked.holdId(), TODAY.atTime(18, 50));
 
-        SlotScanResult scan = new SlotScanJob(service).run();
+        SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.holdsSeen()).isZero();
         assertThat(store.occupancies).hasSize(10);
         assertThat(store.therapistSlot(T1, TODAY, 78).status).isEqualTo(SlotStatus.BOOKED);
@@ -75,7 +75,7 @@ class SlotScanJobTest {
         long orphanHold = 6_600_000_000_000_000_002L;
         plantBedOnly(store, BED2, orphanHold, TODAY.atTime(18, 45));
 
-        SlotScanResult scan = new SlotScanJob(service).run();
+        SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.holdIds()).containsExactly(orphanHold);
         assertThat(scan.orphansFreed()).isEqualTo(1);
         assertThat(store.occupancies).isEmpty();
@@ -95,7 +95,7 @@ class SlotScanJobTest {
         plantTherapistOnly(store, T2, therapistHold, TODAY.atTime(18, 40));
         plantBedOnly(store, BED2, bedHold, TODAY.atTime(18, 41));
 
-        SlotScanResult scan = new SlotScanJob(service).run();
+        SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.holdIds()).containsExactly(therapistHold, bedHold);
         assertThat(scan.orphansFreed()).isEqualTo(2);
         assertThat(store.occupancies).isEmpty();
@@ -113,7 +113,7 @@ class SlotScanJobTest {
         store.setOrderStatus(locked.orderId(), "IN_SERVICE");
         plantBedOnly(store, BED2, addOn, TODAY.atTime(18, 30));
 
-        SlotScanResult scan = new SlotScanJob(service).run();
+        SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.holdIds()).contains(addOn);
         assertThat(scan.addonSkipped()).isEqualTo(1);
         assertThat(scan.orphansFreed()).isZero();
@@ -128,7 +128,7 @@ class SlotScanJobTest {
         store.setOrderStatus(locked.orderId(), "BOOKED");
         store.expireHold(locked.holdId(), TODAY.atTime(18, 50));
 
-        SlotScanResult scan = new SlotScanJob(service).run();
+        SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.stalePaid()).isEqualTo(1);
         assertThat(scan.pendingReleased()).isZero();
         assertThat(store.occupancies).hasSize(10);
@@ -150,11 +150,18 @@ class SlotScanJobTest {
         store.setOrderStatus(locked.orderId(), "BOOKED");
         store.expireHold(locked.holdId(), TODAY.atTime(18, 20));
 
-        SlotScanResult scan = new SlotScanJob(service).run();
+        SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.stalePaid()).isEqualTo(1);
         assertThat(meters.counter("slot.locked.stale_paid").count()).isEqualTo(1.0);
         assertThat(store.countLockedExpiredBefore(TODAY.atTime(18, 50))).isEqualTo(10);
         assertThat(meters.get("slot.locked.stuck_30m").gauge().value()).isEqualTo(10.0);
+    }
+
+    private static SlotScanJob scanJob(InMemorySlotOccupyStore store, SlotOccupyService service) {
+        com.jisuodashi.common.AppClock clock = new com.jisuodashi.common.AppClock(java.time.Clock.fixed(
+                TODAY.atTime(19, 0).atZone(com.jisuodashi.common.AppClock.SHANGHAI).toInstant(),
+                com.jisuodashi.common.AppClock.SHANGHAI));
+        return new SlotScanJob(service, new com.jisuodashi.order.OrderStateMachine(store, service, clock));
     }
 
     private static void plantBedOnly(InMemorySlotOccupyStore store, long bedId, long holdId, LocalDateTime expire) {

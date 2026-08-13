@@ -95,6 +95,8 @@ class SlotReleaseServiceTest {
         JobRunner runner = runner(store, service);
         assertThat(runner.drainDueJobs()).isEqualTo(1);
         assertThat(store.jobByHold(locked.holdId()).status).isEqualTo("DONE");
+        assertThat(store.jobByHold(locked.holdId()).lastError).isNull();
+        assertThat(store.findOrderByHoldId(locked.holdId()).status()).isEqualTo("BOOKED");
         assertThat(store.occupancies).hasSize(10);
         assertBookedBuffer(store, locked.orderId());
     }
@@ -181,7 +183,8 @@ class SlotReleaseServiceTest {
         JobRunner runner = runner(store, service);
         assertThat(runner.drainDueJobs()).isEqualTo(1);
         assertThat(store.jobByHold(a.holdId()).status).isEqualTo("DONE");
-        assertThat(store.occupancies).hasSize(10);
+        assertThat(store.findOrderByHoldId(a.holdId()).status()).isEqualTo("CLOSED");
+        assertThat(store.occupancies).isEmpty();
 
         LockNewResult b = OccupyFixtures.service(store).lockNew(
                 OccupyFixtures.cmd("rel-claim-b", OccupyFixtures.T2, START_1930));
@@ -192,6 +195,7 @@ class SlotReleaseServiceTest {
         assertThat(runner.drainDueJobs()).isEqualTo(1);
         assertThat(store.jobByHold(b.holdId()).status).isEqualTo("DONE");
         assertThat(store.jobByHold(b.holdId()).retryCount).isEqualTo(1);
+        assertThat(store.findOrderByHoldId(b.holdId()).status()).isEqualTo("CLOSED");
     }
 
     private static void plantLockedBed(InMemorySlotOccupyStore store, long bedId, long holdId, long orderId) {
@@ -242,14 +246,18 @@ class SlotReleaseServiceTest {
     }
 
     private static JobRunner runner(InMemorySlotOccupyStore store, SlotOccupyService service) {
+        com.jisuodashi.common.AppClock clock = new com.jisuodashi.common.AppClock(java.time.Clock.fixed(
+                TODAY.atTime(19, 0).atZone(com.jisuodashi.common.AppClock.SHANGHAI).toInstant(),
+                com.jisuodashi.common.AppClock.SHANGHAI));
+        com.jisuodashi.order.OrderStateMachine machine =
+                new com.jisuodashi.order.OrderStateMachine(store, service, clock);
         return new JobRunner(
                 new SlotGenerateJob(null),
-                new SlotScanJob(service),
+                new SlotScanJob(service, machine),
                 store,
-                new com.jisuodashi.common.AppClock(java.time.Clock.fixed(
-                        TODAY.atTime(19, 0).atZone(com.jisuodashi.common.AppClock.SHANGHAI).toInstant(),
-                        com.jisuodashi.common.AppClock.SHANGHAI)),
+                clock,
                 "w-test",
-                null);
+                null,
+                machine);
     }
 }

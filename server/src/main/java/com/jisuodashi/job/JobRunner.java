@@ -1,13 +1,19 @@
 package com.jisuodashi.job;
 
+import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.inventory.DelayedJobStore;
 import com.jisuodashi.inventory.DelayedJobStore.DelayedJobRow;
 import com.jisuodashi.inventory.SlotOccupyService;
+import com.jisuodashi.inventory.SlotOccupyStore;
+import com.jisuodashi.order.FireContext;
+import com.jisuodashi.order.OrderEvent;
+import com.jisuodashi.order.OrderStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +28,7 @@ import java.util.List;
 /**
  * Single runner (D16). Gated by {@code app.jobs.enabled}.
  * Claim: {@code PENDING ∧ run_at<=now} or {@code RUNNING ∧ lease_until<now}.
- * {@code 40904} is DONE. RELEASE_LOCK is a no-op until fire() exists (PR6/7).
+ * {@code 40904} is DONE. RELEASE_LOCK / RELEASE_ADDON only {@code fire()} (Law A).
  */
 @Configuration
 @EnableScheduling
@@ -37,21 +43,26 @@ public class JobRunner {
     private final SlotGenerateJob slotGenerateJob;
     private final SlotScanJob slotScanJob;
     private final DelayedJobStore delayedJobs;
+    private final SlotOccupyStore occupyStore;
+    private final OrderStateMachine machine;
     private final AppClock clock;
     private final String instanceId;
     private final TransactionTemplate tx;
 
+    @Autowired
     public JobRunner(
             SlotGenerateJob slotGenerateJob,
             SlotScanJob slotScanJob,
             DelayedJobStore delayedJobs,
             AppClock clock,
             AppProperties properties,
-            PlatformTransactionManager txManager
+            PlatformTransactionManager txManager,
+            OrderStateMachine machine
     ) {
         this(slotGenerateJob, slotScanJob, delayedJobs, clock,
                 "w" + properties.getSnowflake().getWorkerId(),
-                new TransactionTemplate(txManager));
+                new TransactionTemplate(txManager),
+                machine);
     }
 
     public JobRunner(
@@ -62,9 +73,23 @@ public class JobRunner {
             String instanceId,
             TransactionTemplate tx
     ) {
+        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, null);
+    }
+
+    public JobRunner(
+            SlotGenerateJob slotGenerateJob,
+            SlotScanJob slotScanJob,
+            DelayedJobStore delayedJobs,
+            AppClock clock,
+            String instanceId,
+            TransactionTemplate tx,
+            OrderStateMachine machine
+    ) {
         this.slotGenerateJob = slotGenerateJob;
         this.slotScanJob = slotScanJob;
         this.delayedJobs = delayedJobs;
+        this.occupyStore = delayedJobs instanceof SlotOccupyStore store ? store : null;
+        this.machine = machine;
         this.clock = clock;
         this.instanceId = instanceId;
         this.tx = tx;
@@ -130,14 +155,98 @@ public class JobRunner {
     }
 
     /**
-     * RELEASE_LOCK / RELEASE_ADDON: fire() lands in PR6/7. A no-op here is
-     * success (same as a later 40904 from BOOKED+PAY_TIMEOUT).
+     * Law A: only {@code fire()}. Never {@code ReleaseLock} first.
+     * {@code BOOKED + PAY_TIMEOUT} → 40904, treated as DONE by {@link #completeJob}.
      */
     int dispatch(DelayedJobRow job) {
-        if (SlotOccupyService.JOB_RELEASE_LOCK.equals(job.jobType())
-                || SlotOccupyService.JOB_RELEASE_ADDON.equals(job.jobType())) {
+        if (machine == null) {
             return ErrorCodes.OK;
         }
+        try {
+            if (SlotOccupyService.JOB_RELEASE_LOCK.equals(job.jobType())) {
+                return fireOrder(job, OrderEvent.PAY_TIMEOUT);
+            }
+            if (SlotOccupyService.JOB_RELEASE_ADDON.equals(job.jobType())) {
+                return fireOrder(job, OrderEvent.ADD_ON_PAY_TIMEOUT);
+            }
+            return ErrorCodes.OK;
+        } catch (ApiException ex) {
+            return ex.getCode();
+        }
+    }
+
+    private int fireOrder(DelayedJobRow job, OrderEvent event) {
+        Long orderId = resolveOrderId(job);
+        if (orderId == null) {
+            return ErrorCodes.OK;
+        }
+        machine.fire(orderId, event, FireContext.job());
         return ErrorCodes.OK;
+    }
+
+    Long resolveOrderId(DelayedJobRow job) {
+        Long fromPayload = parseOrderId(job.payload());
+        if (fromPayload != null) {
+            return fromPayload;
+        }
+        Long holdId = parseHoldId(job.bizKey());
+        if (holdId == null || occupyStore == null) {
+            return null;
+        }
+        var byHold = occupyStore.findOrderByHoldId(holdId);
+        if (byHold != null) {
+            return byHold.id();
+        }
+        var byAddon = occupyStore.findOrderByAddOnHoldId(holdId);
+        return byAddon == null ? null : byAddon.id();
+    }
+
+    public static Long parseOrderId(String payload) {
+        return parseJsonLong(payload, "orderId");
+    }
+
+    public static Long parseHoldId(String bizKey) {
+        if (bizKey == null || !bizKey.startsWith("hold:")) {
+            return null;
+        }
+        try {
+            return Long.parseLong(bizKey.substring("hold:".length()));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    static Long parseJsonLong(String json, String field) {
+        if (json == null || json.isBlank() || field == null) {
+            return null;
+        }
+        String key = "\"" + field + "\"";
+        int at = json.indexOf(key);
+        if (at < 0) {
+            return null;
+        }
+        int colon = json.indexOf(':', at + key.length());
+        if (colon < 0) {
+            return null;
+        }
+        int i = colon + 1;
+        while (i < json.length() && (json.charAt(i) == ' ' || json.charAt(i) == '"')) {
+            i++;
+        }
+        int j = i;
+        if (j < json.length() && json.charAt(j) == '-') {
+            j++;
+        }
+        while (j < json.length() && Character.isDigit(json.charAt(j))) {
+            j++;
+        }
+        if (j == i || (j == i + 1 && json.charAt(i) == '-')) {
+            return null;
+        }
+        try {
+            return Long.parseLong(json.substring(i, j));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }
