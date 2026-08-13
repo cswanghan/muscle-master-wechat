@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR11 前台 · 核销 / 现金 / Native 散客</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; --paper:#f4f1ea; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    header p { margin:0; opacity:.85; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:28px 40px 48px; }
+    h2 { font-size:16px; color:var(--brand); margin:24px 0 10px; }
+    table { width:100%; border-collapse:collapse; background:#fff;
+            box-shadow:0 1px 3px rgba(20,53,44,.06); }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    tr.ok td:last-child { color:#1E5C4A; font-weight:700; }
+    tr.bad td:last-child { color:#c0392b; font-weight:700; }
+    .callout { background:#fff; border-left:4px solid #1E5C4A; padding:12px 16px;
+               margin:16px 0; }
+    .flow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .st { padding:8px 10px; border-radius:8px; font-size:12px; font-weight:700;
+          border:2px solid var(--brand); background:#e8f1ed; }
+    .st.pay { background:#1E5C4A; color:#fff; }
+    .arr { font-size:12px; color:#4a6a5f; }
+    .ipad { width:1024px; max-width:100%; background:var(--paper); border:10px solid #1a1c1b;
+            border-radius:18px; padding:20px; display:grid; grid-template-columns:1fr 1fr;
+            gap:16px; box-sizing:border-box; }
+    .pad { background:#fff; border-radius:12px; padding:16px 18px; min-height:280px; }
+    .pad h3 { margin:0 0 12px; color:var(--brand); font-size:18px; }
+    .field { margin:10px 0; }
+    .field label { display:block; font-size:15px; color:#4a5a54; margin-bottom:4px; }
+    .fake { height:48px; border:1px solid #d7e6df; border-radius:8px; background:#f8faf9;
+            display:flex; align-items:center; padding:0 12px; font-size:16px; }
+    .btn { height:48px; border:none; border-radius:8px; background:var(--brand); color:#fff;
+           font-size:16px; font-weight:700; padding:0 20px; }
+    .qr { width:168px; height:168px; margin:8px auto; background:
+          repeating-conic-gradient(#14352c 0% 25%, #fff 0% 50%) 50%/16px 16px;
+          border:4px solid var(--brand); }
+    .hint { font-size:15px; color:#4a6a5f; text-align:center; }
+    code { font-family: ui-monospace, Menlo, monospace; font-size:12px; }
+    footer { padding:0 40px 32px; color:#6b7c75; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PR11 · 前台核销 / 现金散客 / WeChat Native</h1>
+    <p>POST /f/orders/{id}/check-in · POST /f/walk-ins · GET /f/payments/{paymentNo}</p>
+    <span class="badge ">ALL PASS · 4 / 4</span>
+  </header>
+  <main>
+    <div class="flow">
+      <div class="st">BOOKED</div>
+      <div class="arr">POST /f/orders/{id}/check-in</div>
+      <div class="st pay">fire(CHECK_IN)</div>
+      <div class="arr">→</div>
+      <div class="st pay">CHECKED_IN</div>
+    </div>
+    <div class="flow">
+      <div class="st">CustomerMerge(null, phone)</div>
+      <div class="arr">lockNew WALK_IN</div>
+      <div class="st">CASH → PAY_SUCCESS</div>
+      <div class="arr">alreadyInStore</div>
+      <div class="st pay">CHECK_IN</div>
+    </div>
+    <div class="flow">
+      <div class="st">WECHAT Native QR</div>
+      <div class="arr">poll GET /f/payments</div>
+      <div class="st pay">SUCCESS</div>
+      <div class="arr">再</div>
+      <div class="st pay">CHECK_IN</div>
+    </div>
+    <div class="callout">
+      <strong>D19 / D23</strong>
+      <div>散客必须 11 位手机；禁止手写 <code>phone_hash</code>。微信走 Native 码 +
+      1～2s 轮询，P0 必做。核销 <code>@StoreScoped</code> + <code>frontdesk:order:*</code>。</div>
+    </div>
+    <h2>iPad 前台 1024（核销 + 收款码）</h2>
+    <div class="ipad" id="ipad-desk">
+      <section class="pad">
+        <h3>到店核销</h3>
+        <div class="field"><label>单号 / 手机</label>
+          <div class="fake">JS20260814… / 186****1111</div></div>
+        <button class="btn">核销到店</button>
+        <p class="hint" style="text-align:left;margin-top:16px;">一号房 · 1号床 · CHECKED_IN</p>
+      </section>
+      <section class="pad">
+        <h3>散客收款码</h3>
+        <div class="qr" aria-label="mock native qr"></div>
+        <p class="hint">WECHAT Native · 轮询 SUCCESS</p>
+        <p class="hint">payChannel=CASH | WECHAT</p>
+      </section>
+    </div>
+    <h2>验收项</h2>
+    <table>
+      <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>CASH</td><td>散客现金 lockNew → PAY_SUCCESS → 同事务 CHECK_IN</td><td>status=CHECKED_IN mask=186****1111</td><td>PASS</td></tr>
+<tr class='ok'><td>MERGE</td><td>同一手机 CustomerMerge 复用散客行</td><td>customer=81600536037560320 orders=9100000000000000002/9100000000000000017</td><td>PASS</td></tr>
+<tr class='ok'><td>WECHAT</td><td>Native 收款码 + GET /f/payments 轮询至 SUCCESS 再核销</td><td>qr=weixin://wxpay/bizpayurl?pr=MOCK_P81600536045948929 poll=SUCCESS checkIn=CHECKED_IN</td><td>PASS</td></tr>
+<tr class='ok'><td>LOOKUP</td><td>按手机 / 单号查找后 fire(CHECK_IN)</td><td>orderNo=JS2026081400000002 room=一号房 bed=1号床</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer>Generated by FrontDeskReportTest · D19 CustomerMerge · D23 Native + poll</footer>
+</body>
+</html>

@@ -14,6 +14,16 @@ public class UnconfiguredWeChatPayClient implements WeChatPayClient {
     }
 
     @Override
+    public NativePrepay nativePrepay(String paymentNo, long amountFen, String description) {
+        throw new ApiException(ErrorCodes.CHANNEL_ERROR, "支付渠道未配置");
+    }
+
+    @Override
+    public String nativeCodeUrl(String paymentNo) {
+        throw new ApiException(ErrorCodes.CHANNEL_ERROR, "支付渠道未配置");
+    }
+
+    @Override
     public Map<String, String> resign(String prepayId) {
         throw new ApiException(ErrorCodes.CHANNEL_ERROR, "支付渠道未配置");
     }

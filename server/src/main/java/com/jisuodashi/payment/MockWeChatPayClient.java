@@ -37,6 +37,19 @@ public class MockWeChatPayClient implements WeChatPayClient {
     }
 
     @Override
+    public NativePrepay nativePrepay(String paymentNo, long amountFen, String description) {
+        if (paymentNo == null || paymentNo.isBlank()) {
+            throw new ApiException(ErrorCodes.PREPAY_FAILED, "预支付失败");
+        }
+        return new NativePrepay(nativeCodeUrl(paymentNo), "mock_native_" + paymentNo);
+    }
+
+    @Override
+    public String nativeCodeUrl(String paymentNo) {
+        return "weixin://wxpay/bizpayurl?pr=MOCK_" + paymentNo;
+    }
+
+    @Override
     public Map<String, String> resign(String prepayId) {
         String ts = String.valueOf(clock.instant().getEpochSecond());
         String nonce = UUID.randomUUID().toString().replace("-", "");

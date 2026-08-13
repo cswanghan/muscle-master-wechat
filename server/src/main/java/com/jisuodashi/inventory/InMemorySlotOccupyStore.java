@@ -489,6 +489,29 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public BookingOrderRef findOrderByOrderNo(String orderNo) {
+        if (orderNo == null || orderNo.isBlank()) {
+            return null;
+        }
+        return orders.values().stream()
+                .filter(row -> orderNo.equals(row.orderNo()))
+                .findFirst()
+                .map(this::toRef)
+                .orElse(null);
+    }
+
+    @Override
+    public List<BookingOrderRef> listOrdersByCustomerId(long customerId) {
+        return orders.values().stream()
+                .filter(row -> row.customerId() == customerId)
+                .sorted(Comparator
+                        .comparing(BookingOrderInsert::serviceDate).reversed()
+                        .thenComparingInt(BookingOrderInsert::startSlotNo))
+                .map(this::toRef)
+                .toList();
+    }
+
+    @Override
     public int deleteOccupancyForLockedHold(long holdId) {
         Work w = requireWork();
         List<Map.Entry<String, OccupancyInsert>> removed = new ArrayList<>();

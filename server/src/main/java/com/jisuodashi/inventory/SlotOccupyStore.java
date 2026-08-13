@@ -80,6 +80,10 @@ public interface SlotOccupyStore extends DelayedJobStore {
     /** Plain {@code SELECT} — never {@code FOR UPDATE}. D23 poll and job lookup. */
     BookingOrderRef findOrderById(long orderId);
 
+    BookingOrderRef findOrderByOrderNo(String orderNo);
+
+    List<BookingOrderRef> listOrdersByCustomerId(long customerId);
+
     /** Occupancy whose slot row is still LOCKED for this hold. */
     int deleteOccupancyForLockedHold(long holdId);
 

@@ -121,6 +121,21 @@ public class PaymentService {
         return retryDeadlock(() -> inBothTx(() -> doNotify(n)));
     }
 
+    public PaymentDtos.NativePayResponse nativePrepay(long customerId, long orderId, String requestId) {
+        if (requestId == null || requestId.isBlank()) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
+        }
+        return retryDeadlock(() -> doNative(customerId, orderId));
+    }
+
+    /**
+     * Walk-in cash: insert CASH SUCCESS then {@code fire(PAY_SUCCESS)} (D23 / §3.2).
+     * Replay of an already-cashed order returns the existing row.
+     */
+    public Payment settleCash(long orderId) {
+        return retryDeadlock(() -> inBothTx(() -> doSettleCash(orderId)));
+    }
+
     public PaymentDtos.PaymentView getByPaymentNo(String paymentNo) {
         Payment p = payments.findByPaymentNo(paymentNo);
         if (p == null) {
@@ -136,6 +151,47 @@ public class PaymentService {
         }
         return new PaymentDtos.PaymentView(
                 p.paymentNo(), p.status(), p.amountFen(), String.valueOf(p.orderId()));
+    }
+
+    private PaymentDtos.NativePayResponse doNative(long customerId, long orderId) {
+        RepayPlan plan = inBothTx(() -> decideRepay(customerId, orderId));
+        if (plan.reuse != null) {
+            return toNative(plan.reuse, true);
+        }
+        WeChatPayClient.NativePrepay prepay = wechat.nativePrepay(
+                plan.paymentNo, plan.amountFen, plan.description);
+        PersistResult saved = inBothTx(() -> persistNewPrepay(
+                customerId, orderId, plan, new WeChatPayClient.Prepay(prepay.prepayId())));
+        return toNative(saved.payment(), saved.reused());
+    }
+
+    private Payment doSettleCash(long orderId) {
+        BookingOrderRef order = orders.lockOrderById(orderId);
+        if (order == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
+        }
+        LocalDateTime now = clock.now();
+        Payment existingCash = payments.listByOrderId(orderId).stream()
+                .filter(p -> Payment.CHANNEL_CASH.equals(p.channel()) && p.success())
+                .findFirst()
+                .orElse(null);
+        if (existingCash != null) {
+            return existingCash;
+        }
+        if (OrderStatus.parse(order.status()) != OrderStatus.PENDING_PAY) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "非法状态转移");
+        }
+        Payment pending = payments.lockPendingByOrderId(orderId);
+        if (pending != null && pending.pending()) {
+            payments.update(pending.closed(now));
+        }
+        long id = ids.nextId();
+        Payment cash = new Payment(
+                id, "P" + id, orderId, Payment.CHANNEL_CASH, order.payableFen(),
+                Payment.SUCCESS, null, "CASH", now, null, now, now, now);
+        payments.insert(cash);
+        machine.fire(orderId, OrderEvent.PAY_SUCCESS, FireContext.system().withPaymentMatched(true));
+        return cash;
     }
 
     /**
@@ -281,6 +337,16 @@ public class PaymentService {
                 payment.amountFen(),
                 reused,
                 params);
+    }
+
+    private PaymentDtos.NativePayResponse toNative(Payment payment, boolean reused) {
+        return new PaymentDtos.NativePayResponse(
+                String.valueOf(payment.orderId()),
+                payment.paymentNo(),
+                payment.status(),
+                payment.amountFen(),
+                reused,
+                wechat.nativeCodeUrl(payment.paymentNo()));
     }
 
     private <T> T inBothTx(Supplier<T> work) {

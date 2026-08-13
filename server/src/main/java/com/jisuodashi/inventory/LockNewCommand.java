@@ -13,6 +13,7 @@ public record LockNewCommand(
         String source
 ) {
     public static final String SOURCE_MINI_C = "MINI_C";
+    public static final String SOURCE_WALK_IN = "WALK_IN";
 
     public LockNewCommand {
         if (source == null || source.isBlank()) {
