@@ -8,6 +8,7 @@ import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.payment.PaymentDtos;
 import com.jisuodashi.payment.PaymentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -24,6 +25,7 @@ public class BookingService {
         this(occupy, machine, null);
     }
 
+    @Autowired
     public BookingService(SlotOccupyService occupy, OrderStateMachine machine, PaymentService payments) {
         this.occupy = occupy;
         this.machine = machine;
