@@ -9,8 +9,8 @@ Law A（D25）：Job / API **只** `fire(EVENT)`。`Release*` **禁止** `fire`�
 - **步骤**
   1. C JWT `POST /api/v1/c/bookings` 下单，`status=PENDING_PAY`，occupancy=10。
   2. 同一顾客 `POST /api/v1/c/bookings/{id}/cancel` `{requestId, reason}`。
-- **预期**：200；`status=CLOSED`；occupancy 0；技师/床格回到 `FREE`。副作用由 `fire(USER_CANCEL)` → `ReleaseLock` 完成。
-- **实际结果**：PASS。`BookingApiTest.cancelPendingPayFreesSlots`；`PendingCancelTimeoutTest.cancelPendingPayClosesAndFreesSlots`。
+- **预期**：200；`status=CLOSED`；occupancy 0；技师/床格回到 `FREE`。副作用由 `fire(USER_CANCEL)` → `ReleaseLock` 完成。同一 `requestId` 再取消一次仍 200、`CLOSED`。
+- **实际结果**：PASS。`BookingApiTest.cancelPendingPayFreesSlots`；`PendingCancelTimeoutTest.cancelPendingPayClosesAndFreesSlots` / `cancelClosedOwnerReplayIs200`。
 
 ## TC-7-02 取消 BOOKED 为 40904，占用保留
 
@@ -21,8 +21,8 @@ Law A（D25）：Job / API **只** `fire(EVENT)`。`Release*` **禁止** `fire`�
 ## TC-7-03 `RELEASE_LOCK` job `fire(PAY_TIMEOUT)` 关闭未支付单
 
 - **步骤**：`lockNew` 后把 `delayed_job.run_at` 拨到过去，`JobRunner.drainDueJobs()`。dispatch **只** `fire(PAY_TIMEOUT)`，不先 `ReleaseLock`。
-- **预期**：订单 `CLOSED`；格子 FREE；occupancy 0；job `DONE`。扫描过期 PENDING_PAY hold 同样 `fire(PAY_TIMEOUT)` → `CLOSED`。
-- **实际结果**：PASS。`PendingCancelTimeoutTest.timeoutJobClosesUnpaidAndReleasesLock` / `scanExpiredPendingPayFiresTimeoutAndCloses`；`SlotScanJobTest.timeoutPendingPayIsReleasedByScan`（status=`CLOSED`）。
+- **预期**：订单 `CLOSED`；格子 FREE；occupancy 0；job `DONE`。扫描过期 PENDING_PAY hold 同样 `fire(PAY_TIMEOUT)` → `CLOSED`。一条 job 抛非 `ApiException` 时标 `FAILED` 并写 `last_error`，同批其它 job 继续。
+- **实际结果**：PASS。`PendingCancelTimeoutTest.timeoutJobClosesUnpaidAndReleasesLock` / `scanExpiredPendingPayFiresTimeoutAndCloses` / `drainDueJobsIsolatesFailureAndRecordsLastError`；`SlotScanJobTest.timeoutPendingPayIsReleasedByScan`（status=`CLOSED`）。
 
 ## TC-7-04 先支付再跑原 `RELEASE_LOCK` → 仍 BOOKED、job DONE
 
@@ -42,4 +42,4 @@ Law A（D25）：Job / API **只** `fire(EVENT)`。`Release*` **禁止** `fire`�
 
 - **步骤**：`export JAVA_HOME=/opt/homebrew/opt/openjdk@21; export PATH="$JAVA_HOME/bin:$PATH"`；`mvn -f server/pom.xml test`。
 - **预期**：Surefire 全绿；`dev` 启动无 MySQL/Redis。Law A 源码扫描仍过。
-- **实际结果**：PASS。`Tests run: 198, Failures: 0, Errors: 0, Skipped: 0`。
+- **实际结果**：PASS。`Tests run: 200, Failures: 0, Errors: 0, Skipped: 0`。

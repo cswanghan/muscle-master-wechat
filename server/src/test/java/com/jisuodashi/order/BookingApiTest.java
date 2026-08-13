@@ -114,6 +114,12 @@ class BookingApiTest {
         assertThat(occupyStore.therapistSlot(
                 DemoCatalogIds.THERAPIST_LIN, java.time.LocalDate.of(2026, 8, 14), 52).status)
                 .isEqualTo("FREE");
+
+        ResponseEntity<Map<String, Object>> replay = cancel(orderId, "req-cancel-1", token);
+        Map<String, Object> replayed = dataOk(replay);
+        assertThat(replayed.get("status")).isEqualTo("CLOSED");
+        assertThat(replayed.get("orderId")).isEqualTo(orderId);
+        assertThat(occupyStore.occupancyCount()).isZero();
     }
 
     @Test

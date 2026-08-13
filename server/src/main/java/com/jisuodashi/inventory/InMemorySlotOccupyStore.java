@@ -479,6 +479,11 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     public BookingOrderRef lockOrderById(long orderId) {
         Work w = requireWork();
         lockRow("O|id|" + orderId, w);
+        return findOrderById(orderId);
+    }
+
+    @Override
+    public BookingOrderRef findOrderById(long orderId) {
         BookingOrderInsert row = orders.get(orderId);
         return row == null ? null : toRef(row);
     }

@@ -1,5 +1,6 @@
 package com.jisuodashi.order;
 
+import com.jisuodashi.catalog.DemoCatalogIds;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
@@ -88,6 +89,60 @@ class PendingCancelTimeoutTest {
         assertThat(scan.pendingReleased()).isEqualTo(1);
         assertThat(f.store.findOrderByHoldId(f.locked.holdId()).status()).isEqualTo("CLOSED");
         assertThat(f.store.occupancies).isEmpty();
+    }
+
+    @Test
+    void cancelClosedOwnerReplayIs200() {
+        Fixture f = fixture("to-cancel-replay");
+        BookingService bookings = new BookingService(f.occupy, f.machine);
+        var req = new BookingDtos.CancelBookingRequest("req-cancel-replay", "changed-mind");
+        BookingDtos.CancelBookingResponse first = bookings.cancel(
+                OccupyFixtures.CUSTOMER, String.valueOf(f.locked.orderId()), req);
+        BookingDtos.CancelBookingResponse replay = bookings.cancel(
+                OccupyFixtures.CUSTOMER, String.valueOf(f.locked.orderId()), req);
+        assertThat(first.status()).isEqualTo("CLOSED");
+        assertThat(replay.status()).isEqualTo("CLOSED");
+        assertThat(replay.orderId()).isEqualTo(first.orderId());
+        assertThat(f.store.occupancies).isEmpty();
+    }
+
+    @Test
+    void drainDueJobsIsolatesFailureAndRecordsLastError() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        SlotOccupyService occupy = OccupyFixtures.service(store);
+        AppClock clock = new AppClock(Clock.fixed(
+                LocalDate.of(2026, 8, 14).atTime(LocalTime.of(19, 0)).atZone(AppClock.SHANGHAI).toInstant(),
+                AppClock.SHANGHAI));
+        LockNewResult boom = occupy.lockNew(OccupyFixtures.cmd("drain-boom", T1, START_1930));
+        LockNewResult ok = occupy.lockNew(OccupyFixtures.cmd("drain-ok", DemoCatalogIds.THERAPIST_CHEN, START_1930));
+        store.jobByHold(boom.holdId()).runAt = LocalDate.of(2026, 8, 14).atTime(18, 50);
+        store.jobByHold(ok.holdId()).runAt = LocalDate.of(2026, 8, 14).atTime(18, 50);
+
+        OrderStateMachine machine = new OrderStateMachine(store, occupy, clock) {
+            @Override
+            public FireResult fire(long orderId, OrderEvent event, FireContext ctx) {
+                if (orderId == boom.orderId()) {
+                    throw new IllegalStateException("boom");
+                }
+                return super.fire(orderId, event, ctx);
+            }
+        };
+        JobRunner runner = new JobRunner(
+                new SlotGenerateJob(null),
+                new SlotScanJob(occupy, machine),
+                store,
+                clock,
+                "w-test",
+                null,
+                machine);
+
+        assertThat(runner.drainDueJobs()).isEqualTo(2);
+        assertThat(store.jobByHold(boom.holdId()).status).isEqualTo("FAILED");
+        assertThat(store.jobByHold(boom.holdId()).lastError).isEqualTo("boom");
+        assertThat(store.findOrderByHoldId(boom.holdId()).status()).isEqualTo("PENDING_PAY");
+        assertThat(store.jobByHold(ok.holdId()).status).isEqualTo("DONE");
+        assertThat(store.findOrderByHoldId(ok.holdId()).status()).isEqualTo("CLOSED");
+        assertThat(store.occupancies).hasSize(10);
     }
 
     @Test

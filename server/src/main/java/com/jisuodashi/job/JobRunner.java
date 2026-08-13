@@ -120,15 +120,40 @@ public class JobRunner {
         List<Long> ids = claimDueJobs();
         int n = 0;
         for (long id : ids) {
-            DelayedJobRow job = delayedJobs.findJob(id);
-            if (job == null) {
-                continue;
+            DelayedJobRow job = null;
+            try {
+                job = delayedJobs.findJob(id);
+                if (job == null) {
+                    continue;
+                }
+                completeJob(job, dispatch(job), null);
+                n++;
+            } catch (ApiException ex) {
+                n += completeCaught(job, id, ex.getCode(), ex.getMessage());
+            } catch (RuntimeException ex) {
+                log.warn("JobRunner job={} failed: {}", id, ex.toString());
+                n += completeCaught(job, id, ErrorCodes.INTERNAL, errorText(ex));
             }
-            int code = dispatch(job);
-            completeJob(job, code, null);
-            n++;
         }
         return n;
+    }
+
+    private int completeCaught(DelayedJobRow job, long id, int code, String lastError) {
+        if (job == null) {
+            log.warn("JobRunner job={} failed before load, code={}", id, code);
+            return 0;
+        }
+        try {
+            completeJob(job, code, lastError);
+        } catch (RuntimeException ex) {
+            log.warn("JobRunner complete job={} failed: {}", id, ex.toString());
+        }
+        return 1;
+    }
+
+    static String errorText(Throwable ex) {
+        String msg = ex.getMessage();
+        return msg == null || msg.isBlank() ? ex.getClass().getSimpleName() : msg;
     }
 
     public List<Long> claimDueJobs() {
@@ -162,17 +187,13 @@ public class JobRunner {
         if (machine == null) {
             return ErrorCodes.OK;
         }
-        try {
-            if (SlotOccupyService.JOB_RELEASE_LOCK.equals(job.jobType())) {
-                return fireOrder(job, OrderEvent.PAY_TIMEOUT);
-            }
-            if (SlotOccupyService.JOB_RELEASE_ADDON.equals(job.jobType())) {
-                return fireOrder(job, OrderEvent.ADD_ON_PAY_TIMEOUT);
-            }
-            return ErrorCodes.OK;
-        } catch (ApiException ex) {
-            return ex.getCode();
+        if (SlotOccupyService.JOB_RELEASE_LOCK.equals(job.jobType())) {
+            return fireOrder(job, OrderEvent.PAY_TIMEOUT);
         }
+        if (SlotOccupyService.JOB_RELEASE_ADDON.equals(job.jobType())) {
+            return fireOrder(job, OrderEvent.ADD_ON_PAY_TIMEOUT);
+        }
+        return ErrorCodes.OK;
     }
 
     private int fireOrder(DelayedJobRow job, OrderEvent event) {

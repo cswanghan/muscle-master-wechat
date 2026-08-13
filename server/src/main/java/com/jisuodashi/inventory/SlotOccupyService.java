@@ -252,6 +252,10 @@ public class SlotOccupyService {
         return store.findOrderByAddOnHoldId(holdId);
     }
 
+    public SlotOccupyStore.BookingOrderRef findOrderById(long orderId) {
+        return store.findOrderById(orderId);
+    }
+
     public void noteStalePaidLocked() {
         incStalePaid();
     }

@@ -374,6 +374,17 @@ public interface InventoryOccupyMapper {
             """)
     BookingOrderRef lockOrderById(@Param("id") long id);
 
+    @Select("""
+            SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
+                   status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
+                   start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
+                   customer_id AS customerId, therapist_id AS therapistId
+              FROM booking_order
+             WHERE id = #{id}
+            """)
+    BookingOrderRef findOrderById(@Param("id") long id);
+
     @Delete("""
             DELETE o FROM slot_occupancy o
              INNER JOIN therapist_slot ts
