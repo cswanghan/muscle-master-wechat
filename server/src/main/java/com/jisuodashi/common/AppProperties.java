@@ -14,6 +14,7 @@ public class AppProperties {
     private final Crypto crypto = new Crypto();
     private final Catalog catalog = new Catalog();
     private final Booking booking = new Booking();
+    private final Availability availability = new Availability();
 
     public Jobs getJobs() {
         return jobs;
@@ -41,6 +42,10 @@ public class AppProperties {
 
     public Booking getBooking() {
         return booking;
+    }
+
+    public Availability getAvailability() {
+        return availability;
     }
 
     public static class Jobs {
@@ -195,6 +200,18 @@ public class AppProperties {
 
         public void setStoreCacheTtl(Duration storeCacheTtl) {
             this.storeCacheTtl = storeCacheTtl;
+        }
+    }
+
+    public static class Availability {
+        private Duration cacheTtl = Duration.ofSeconds(30);
+
+        public Duration getCacheTtl() {
+            return cacheTtl;
+        }
+
+        public void setCacheTtl(Duration cacheTtl) {
+            this.cacheTtl = cacheTtl;
         }
     }
 
