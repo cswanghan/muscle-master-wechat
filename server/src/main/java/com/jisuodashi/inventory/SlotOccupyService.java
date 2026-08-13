@@ -222,6 +222,23 @@ public class SlotOccupyService {
         return inStoreTx(() -> doReleaseAddOnHold(addHoldId));
     }
 
+    /** Caller already opened store work + TX. Used by fire() after CAS. */
+    public ReleaseResult releaseLockInOpenTx(long holdId) {
+        return doReleaseLock(holdId);
+    }
+
+    public ConfirmPaidResult confirmPaidSlotsInOpenTx(long orderId) {
+        return doConfirmPaidSlots(orderId);
+    }
+
+    public ReleaseResult releaseUnconsumedInOpenTx(long orderId, int fromSlotNo) {
+        return doReleaseUnconsumed(orderId, fromSlotNo);
+    }
+
+    public ReleaseResult releaseAddOnHoldInOpenTx(long addHoldId) {
+        return doReleaseAddOnHold(addHoldId);
+    }
+
     /**
      * Dual-table expired LOCKED scan. Orphan → forceFree; PENDING_PAY →
      * ReleaseLock; add-on / paid → skip (fire comes in PR6/7).
@@ -502,15 +519,25 @@ public class SlotOccupyService {
 
     private ReleaseResult doReleaseAddOnHold(long addHoldId) {
         BookingOrderRef order = store.findOrderByAddOnHoldId(addHoldId);
-        if (order != null) {
-            store.lockOrderById(order.id());
+        if (order == null || order.addOnHoldId() == null) {
+            return new ReleaseResult(addHoldId, ReleaseResult.IDEMPOTENT, 0, 0, 0);
         }
-        ReleaseResult freed = freeLockedHold(addHoldId, ReleaseResult.FREED);
-        if (order != null) {
-            store.clearAddOnHold(order.id(), clock.now());
-            evictAvail(order.storeId(), order.serviceDate());
-        }
-        return freed;
+        store.lockOrderById(order.id());
+        int oldEnd = order.endSlotNo();
+        int bufferFrom = oldEnd - order.bufferSlots();
+        LocalDateTime now = clock.now();
+        int occ = store.deleteOccupancyForHoldFromSlot(addHoldId, oldEnd);
+        int therapist = store.freeHoldTherapistSlotsFrom(addHoldId, oldEnd, now);
+        int bed = store.freeHoldBedSlotsFrom(addHoldId, oldEnd, now);
+        store.restoreBufferSlots(order.id(), bufferFrom, oldEnd, order.holdId(), now);
+        store.reassignOccupancyHold(order.id(), bufferFrom, oldEnd, order.holdId());
+        store.clearAddOnHold(order.id(), now);
+        store.deleteUnpaidAddOnItems(order.id());
+        evictAvail(order.storeId(), order.serviceDate());
+        String outcome = (occ == 0 && therapist == 0 && bed == 0)
+                ? ReleaseResult.IDEMPOTENT
+                : ReleaseResult.FREED;
+        return new ReleaseResult(addHoldId, outcome, occ, therapist, bed);
     }
 
     private ConfirmPaidResult doConfirmPaidSlots(long orderId) {

@@ -58,7 +58,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     final Map<String, IdemState> idempotency = new ConcurrentHashMap<>();
     final Map<Long, BookingOrderInsert> orders = new ConcurrentHashMap<>();
     final Map<String, BookingOrderInsert> ordersByRequest = new ConcurrentHashMap<>();
-    final List<OrderItemInsert> orderItems = new ArrayList<>();
+    public final List<OrderItemInsert> orderItems = new ArrayList<>();
     final List<DelayedJobInsert> delayedJobs = new ArrayList<>();
     final Map<Long, MutableJob> jobs = new ConcurrentHashMap<>();
     final Map<Long, String> orderStatuses = new ConcurrentHashMap<>();
@@ -721,6 +721,122 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public int deleteOccupancyForHoldFromSlot(long holdId, int fromSlotNo) {
+        Work w = requireWork();
+        List<Map.Entry<String, OccupancyInsert>> removed = new ArrayList<>();
+        occupancies.entrySet().removeIf(e -> {
+            OccupancyInsert row = e.getValue();
+            if (row.holdId() != holdId || row.slotNo() < fromSlotNo) {
+                return false;
+            }
+            removed.add(e);
+            return true;
+        });
+        w.undos.add(() -> {
+            for (Map.Entry<String, OccupancyInsert> e : removed) {
+                occupancies.putIfAbsent(e.getKey(), e.getValue());
+            }
+        });
+        return removed.size();
+    }
+
+    @Override
+    public int freeHoldTherapistSlotsFrom(long holdId, int fromSlotNo, LocalDateTime now) {
+        return freeHoldFrom(therapistSlots, holdId, fromSlotNo);
+    }
+
+    @Override
+    public int freeHoldBedSlotsFrom(long holdId, int fromSlotNo, LocalDateTime now) {
+        return freeHoldFrom(bedSlots, holdId, fromSlotNo);
+    }
+
+    private int freeHoldFrom(Map<String, MutableSlot> slots, long holdId, int fromSlotNo) {
+        Work w = requireWork();
+        int n = 0;
+        for (MutableSlot slot : slots.values()) {
+            if (slot.holdId != null && slot.holdId == holdId && slot.slotNo >= fromSlotNo) {
+                Snapshot snap = slot.snapshot();
+                slot.status = SlotStatus.FREE;
+                slot.orderId = null;
+                slot.holdId = null;
+                slot.lockExpireAt = null;
+                w.undos.add(() -> slot.restore(snap));
+                n++;
+            }
+        }
+        return n;
+    }
+
+    @Override
+    public int restoreBufferSlots(
+            long orderId, int fromSlotNo, int toExclusive, long mainHoldId, LocalDateTime now) {
+        return restoreBuffer(therapistSlots, orderId, fromSlotNo, toExclusive, mainHoldId)
+                + restoreBuffer(bedSlots, orderId, fromSlotNo, toExclusive, mainHoldId);
+    }
+
+    private int restoreBuffer(
+            Map<String, MutableSlot> slots, long orderId, int fromSlotNo, int toExclusive, long mainHoldId) {
+        Work w = requireWork();
+        int n = 0;
+        for (MutableSlot slot : slots.values()) {
+            if (slot.orderId != null && slot.orderId == orderId
+                    && slot.slotNo >= fromSlotNo && slot.slotNo < toExclusive) {
+                Snapshot snap = slot.snapshot();
+                slot.status = SlotStatus.BUFFER;
+                slot.holdId = mainHoldId;
+                slot.lockExpireAt = null;
+                w.undos.add(() -> slot.restore(snap));
+                n++;
+            }
+        }
+        return n;
+    }
+
+    @Override
+    public int reassignOccupancyHold(long orderId, int fromSlotNo, int toExclusive, long mainHoldId) {
+        Work w = requireWork();
+        int n = 0;
+        List<Runnable> undo = new ArrayList<>();
+        for (Map.Entry<String, OccupancyInsert> e : occupancies.entrySet()) {
+            OccupancyInsert row = e.getValue();
+            if (row.orderId() != orderId || row.slotNo() < fromSlotNo || row.slotNo() >= toExclusive) {
+                continue;
+            }
+            OccupancyInsert prev = row;
+            OccupancyInsert next = new OccupancyInsert(
+                    row.id(), row.resourceType(), row.resourceId(), row.slotDate(), row.slotNo(),
+                    row.orderId(), mainHoldId, row.createdAt());
+            e.setValue(next);
+            undo.add(() -> occupancies.put(e.getKey(), prev));
+            n++;
+        }
+        w.undos.add(() -> {
+            for (int i = undo.size() - 1; i >= 0; i--) {
+                undo.get(i).run();
+            }
+        });
+        return n;
+    }
+
+    @Override
+    public synchronized int deleteUnpaidAddOnItems(long orderId) {
+        List<OrderItemInsert> removed = new ArrayList<>();
+        orderItems.removeIf(item -> {
+            if (item.orderId() == orderId && "ADD_ON".equals(item.itemType())) {
+                removed.add(item);
+                return true;
+            }
+            return false;
+        });
+        requireWork().undos.add(() -> {
+            synchronized (this) {
+                orderItems.addAll(removed);
+            }
+        });
+        return removed.size();
+    }
+
+    @Override
     public SlotHoldMeta findHoldSlotMeta(long holdId) {
         for (MutableSlot slot : therapistSlots.values()) {
             if (slot.holdId != null && slot.holdId == holdId) {
@@ -780,12 +896,40 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         orderStatuses.put(orderId, status);
     }
 
-    void setAddOnHoldId(long orderId, Long addOnHoldId) {
+    public void setAddOnHoldId(long orderId, Long addOnHoldId) {
         if (addOnHoldId == null) {
             addOnHolds.remove(orderId);
         } else {
             addOnHolds.put(orderId, addOnHoldId);
         }
+    }
+
+    /** Test helper: lock one extra tail slot as an unpaid add-on hold. */
+    public void plantAddOnTail(long orderId, long therapistId, long bedId, LocalDate date,
+                               int slotNo, long addHoldId, LocalDateTime now) {
+        setAddOnHoldId(orderId, addHoldId);
+        MutableSlot t = therapistSlots.get(tkey(therapistId, date, slotNo));
+        MutableSlot b = bedSlots.get(bkey(bedId, date, slotNo));
+        if (t != null) {
+            t.status = SlotStatus.LOCKED;
+            t.orderId = orderId;
+            t.holdId = addHoldId;
+            t.lockExpireAt = now.plusMinutes(15);
+        }
+        if (b != null) {
+            b.status = SlotStatus.LOCKED;
+            b.orderId = orderId;
+            b.holdId = addHoldId;
+            b.lockExpireAt = now.plusMinutes(15);
+        }
+        occupancies.put(okey(ResourceType.THERAPIST, therapistId, date, slotNo),
+                new OccupancyInsert(addHoldId + 1, ResourceType.THERAPIST, therapistId, date, slotNo,
+                        orderId, addHoldId, now));
+        occupancies.put(okey(ResourceType.BED, bedId, date, slotNo),
+                new OccupancyInsert(addHoldId + 2, ResourceType.BED, bedId, date, slotNo,
+                        orderId, addHoldId, now));
+        orderItems.add(new OrderItemInsert(
+                addHoldId + 3, orderId, "ADD_ON", 0L, "加钟", 15, 0, 1, 0, 0, slotNo, slotNo + 1, now));
     }
 
     MutableJob job(long id) {
@@ -819,7 +963,8 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
                 orderStatuses.getOrDefault(row.id(), row.status()),
                 row.lockExpireAt(), row.payableFen(),
                 row.startSlotNo(), row.endSlotNo(), row.bufferSlots(),
-                addOnHolds.get(row.id()), row.storeId(), row.serviceDate());
+                addOnHolds.get(row.id()), row.storeId(), row.serviceDate(),
+                row.customerId(), row.therapistId());
     }
 
     private MutableSlot slotFor(OccupancyInsert row) {
@@ -919,7 +1064,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         final int slotNo;
         public volatile String status;
         volatile Long orderId;
-        volatile Long holdId;
+        public volatile Long holdId;
         volatile LocalDateTime lockExpireAt;
 
         MutableSlot(long resourceId, long storeId, LocalDate date, int slotNo, String status) {

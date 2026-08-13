@@ -29,7 +29,13 @@
   3. `fire(PAY_SUCCESS)` 后再 `fire(PAY_TIMEOUT)`。
   4. 扫描 `SlotOccupyService` 释放路径源码。
 - **预期**：超时/取消先 CAS 成 `CLOSED` 再 `ReleaseLock` 清 LOCKED；单独 `ReleaseLock` 订单仍 `PENDING_PAY`；已支付后再超时 `40904` 且 occupancy 保留；`Release*` / `confirmPaidSlots` 不引用 `OrderStateMachine`、不 `.fire(`。
-- **实际结果**：PASS。`OrderStateMachineLawATest` 7/7。
+- **实际结果**：PASS。`OrderStateMachineLawATest` 7/7。`fire` 走 `*InOpenTx`，不再套第二层 `TransactionTemplate`。
+
+## TC-6-03b §3.2 guards + 审计 + ReleaseAddOnHold
+
+- **步骤**：`OrderStateMachineGuardTest`：取消窗口、金额不符、店域、`MARK_NO_SHOW` 过早、他师 START；`ReleaseAddOnHold` 种尾格。
+- **预期**：守卫失败 `40904` 且 `audit_log` `ILLEGAL_TRANSITION`；读 `cancel-free-minutes=120`；加钟释放恢复 BUFFER、尾格 FREE、删未支付 ADD_ON 行。
+- **实际结果**：PASS。
 
 ## TC-6-04 `POST /api/v1/c/bookings` 需 C 端 JWT
 
@@ -54,4 +60,4 @@
 
 - **步骤**：同 `mvn -f server/pom.xml test`。
 - **预期**：Surefire 全绿；`dev` 启动无 MySQL/Redis。
-- **实际结果**：PASS。`Tests run: 180, Failures: 0, Errors: 0, Skipped: 0`。
+- **实际结果**：PASS。`Tests run: 187, Failures: 0, Errors: 0, Skipped: 0`。

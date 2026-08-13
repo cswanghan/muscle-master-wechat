@@ -100,12 +100,23 @@ class OrderStateMachineLawATest {
         assertThat(src).doesNotContain("import com.jisuodashi.order");
         assertThat(src).doesNotContain("OrderStateMachine");
         assertThat(src).doesNotContain("orderStateMachine");
+        Path machine = Path.of("src/main/java/com/jisuodashi/order/OrderStateMachine.java");
+        if (!Files.isRegularFile(machine)) {
+            machine = Path.of("server/src/main/java/com/jisuodashi/order/OrderStateMachine.java");
+        }
+        String fireSrc = Files.readString(machine);
+        assertThat(fireSrc).contains("confirmPaidSlotsInOpenTx");
+        assertThat(fireSrc).contains("releaseLockInOpenTx");
+        assertThat(fireSrc).doesNotContain("occupy.releaseLock(");
+        assertThat(fireSrc).doesNotContain("occupy.confirmPaidSlots(");
         assertThat(extractMethod(src, "private ReleaseResult doReleaseLock")).doesNotContain(".fire(");
         assertThat(extractMethod(src, "private ReleaseResult doForceFreeByHold")).doesNotContain(".fire(");
         assertThat(extractMethod(src, "private ReleaseResult freeLockedHold")).doesNotContain(".fire(");
         assertThat(extractMethod(src, "private ReleaseResult doReleaseUnconsumed")).doesNotContain(".fire(");
         assertThat(extractMethod(src, "private ReleaseResult doReleaseAddOnHold")).doesNotContain(".fire(");
         assertThat(extractMethod(src, "private ConfirmPaidResult doConfirmPaidSlots")).doesNotContain(".fire(");
+        assertThat(extractMethod(src, "public ReleaseResult releaseLockInOpenTx")).doesNotContain(".fire(");
+        assertThat(extractMethod(src, "public ConfirmPaidResult confirmPaidSlotsInOpenTx")).doesNotContain(".fire(");
     }
 
     private static String extractMethod(String src, String signature) {

@@ -17,10 +17,10 @@ public final class OccupyFixtures {
     public static final long T1 = DemoFixtures.T1;
     static final long T2 = DemoFixtures.T2;
     static final long T3 = DemoFixtures.T3;
-    static final long BED1 = DemoFixtures.BED1;
+    public static final long BED1 = DemoFixtures.BED1;
     static final long BED2 = DemoFixtures.BED2;
     static final long P60 = 3_100_000_000_000_000_501L;
-    static final long CUSTOMER = 8_100_000_000_000_000_001L;
+    public static final long CUSTOMER = 8_100_000_000_000_000_001L;
     static final LocalDate TODAY = DemoFixtures.TODAY;
     static final int OPEN_SLOT = 40;
     static final int CLOSE_SLOT = 88;

@@ -91,7 +91,8 @@ public interface InventoryOccupyMapper {
             SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
-                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
+                   customer_id AS customerId, therapist_id AS therapistId
               FROM booking_order
              WHERE request_id = #{requestId}
             """)
@@ -328,7 +329,8 @@ public interface InventoryOccupyMapper {
             SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
-                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
+                   customer_id AS customerId, therapist_id AS therapistId
               FROM booking_order
              WHERE hold_id = #{holdId}
              LIMIT 1
@@ -339,7 +341,8 @@ public interface InventoryOccupyMapper {
             SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
-                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
+                   customer_id AS customerId, therapist_id AS therapistId
               FROM booking_order
              WHERE add_on_hold_id = #{holdId}
              LIMIT 1
@@ -350,7 +353,8 @@ public interface InventoryOccupyMapper {
             SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
-                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
+                   customer_id AS customerId, therapist_id AS therapistId
               FROM booking_order
              WHERE hold_id = #{holdId}
              LIMIT 1
@@ -362,7 +366,8 @@ public interface InventoryOccupyMapper {
             SELECT id, order_no AS orderNo, hold_id AS holdId, bed_id AS bedId, room_id AS roomId,
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
-                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate
+                   add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
+                   customer_id AS customerId, therapist_id AS therapistId
               FROM booking_order
              WHERE id = #{id}
              FOR UPDATE
@@ -580,4 +585,75 @@ public interface InventoryOccupyMapper {
              WHERE id = #{orderId}
             """)
     int clearAddOnHold(@Param("orderId") long orderId, @Param("now") LocalDateTime now);
+
+    @Delete("""
+            DELETE FROM slot_occupancy
+             WHERE hold_id = #{holdId} AND slot_no >= #{fromSlotNo}
+            """)
+    int deleteOccupancyForHoldFromSlot(@Param("holdId") long holdId, @Param("fromSlotNo") int fromSlotNo);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE hold_id = #{holdId} AND slot_no >= #{fromSlotNo}
+            """)
+    int freeHoldTherapistSlotsFrom(
+            @Param("holdId") long holdId,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET status = 'FREE', order_id = NULL, hold_id = NULL, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE hold_id = #{holdId} AND slot_no >= #{fromSlotNo}
+            """)
+    int freeHoldBedSlotsFrom(
+            @Param("holdId") long holdId,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = 'BUFFER', hold_id = #{mainHoldId}, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE order_id = #{orderId} AND slot_no >= #{fromSlotNo} AND slot_no < #{toExclusive}
+            """)
+    int restoreTherapistBufferSlots(
+            @Param("orderId") long orderId,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("toExclusive") int toExclusive,
+            @Param("mainHoldId") long mainHoldId,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE bed_slot
+               SET status = 'BUFFER', hold_id = #{mainHoldId}, lock_expire_at = NULL,
+                   updated_at = #{now}
+             WHERE order_id = #{orderId} AND slot_no >= #{fromSlotNo} AND slot_no < #{toExclusive}
+            """)
+    int restoreBedBufferSlots(
+            @Param("orderId") long orderId,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("toExclusive") int toExclusive,
+            @Param("mainHoldId") long mainHoldId,
+            @Param("now") LocalDateTime now);
+
+    @Update("""
+            UPDATE slot_occupancy
+               SET hold_id = #{mainHoldId}
+             WHERE order_id = #{orderId} AND slot_no >= #{fromSlotNo} AND slot_no < #{toExclusive}
+            """)
+    int reassignOccupancyHold(
+            @Param("orderId") long orderId,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("toExclusive") int toExclusive,
+            @Param("mainHoldId") long mainHoldId);
+
+    @Delete("""
+            DELETE FROM order_item
+             WHERE order_id = #{orderId} AND item_type = 'ADD_ON'
+            """)
+    int deleteUnpaidAddOnItems(@Param("orderId") long orderId);
 }

@@ -108,6 +108,18 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     int clearAddOnHold(long orderId, LocalDateTime now);
 
+    int deleteOccupancyForHoldFromSlot(long holdId, int fromSlotNo);
+
+    int freeHoldTherapistSlotsFrom(long holdId, int fromSlotNo, LocalDateTime now);
+
+    int freeHoldBedSlotsFrom(long holdId, int fromSlotNo, LocalDateTime now);
+
+    int restoreBufferSlots(long orderId, int fromSlotNo, int toExclusive, long mainHoldId, LocalDateTime now);
+
+    int reassignOccupancyHold(long orderId, int fromSlotNo, int toExclusive, long mainHoldId);
+
+    int deleteUnpaidAddOnItems(long orderId);
+
     SlotHoldMeta findHoldSlotMeta(long holdId);
 
     record ProjectRef(long id, String name, int durationMinutes, int bufferMinutes, long priceFen) {
@@ -164,7 +176,9 @@ public interface SlotOccupyStore extends DelayedJobStore {
             int bufferSlots,
             Long addOnHoldId,
             long storeId,
-            LocalDate serviceDate
+            LocalDate serviceDate,
+            long customerId,
+            long therapistId
     ) {
     }
 

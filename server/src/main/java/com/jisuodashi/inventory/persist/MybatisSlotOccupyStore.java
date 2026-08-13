@@ -262,6 +262,38 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public int deleteOccupancyForHoldFromSlot(long holdId, int fromSlotNo) {
+        return mapper.deleteOccupancyForHoldFromSlot(holdId, fromSlotNo);
+    }
+
+    @Override
+    public int freeHoldTherapistSlotsFrom(long holdId, int fromSlotNo, LocalDateTime now) {
+        return mapper.freeHoldTherapistSlotsFrom(holdId, fromSlotNo, now);
+    }
+
+    @Override
+    public int freeHoldBedSlotsFrom(long holdId, int fromSlotNo, LocalDateTime now) {
+        return mapper.freeHoldBedSlotsFrom(holdId, fromSlotNo, now);
+    }
+
+    @Override
+    public int restoreBufferSlots(
+            long orderId, int fromSlotNo, int toExclusive, long mainHoldId, LocalDateTime now) {
+        return mapper.restoreTherapistBufferSlots(orderId, fromSlotNo, toExclusive, mainHoldId, now)
+                + mapper.restoreBedBufferSlots(orderId, fromSlotNo, toExclusive, mainHoldId, now);
+    }
+
+    @Override
+    public int reassignOccupancyHold(long orderId, int fromSlotNo, int toExclusive, long mainHoldId) {
+        return mapper.reassignOccupancyHold(orderId, fromSlotNo, toExclusive, mainHoldId);
+    }
+
+    @Override
+    public int deleteUnpaidAddOnItems(long orderId) {
+        return mapper.deleteUnpaidAddOnItems(orderId);
+    }
+
+    @Override
     public SlotHoldMeta findHoldSlotMeta(long holdId) {
         SlotHoldMeta meta = mapper.findTherapistHoldMeta(holdId);
         return meta != null ? meta : mapper.findBedHoldMeta(holdId);
