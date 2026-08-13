@@ -48,6 +48,8 @@ app:
     captcha:
       enabled: false
     cancel-free-minutes: 120
+    lock:
+      enabled: true
   internal:
     force-release:
       enabled: false

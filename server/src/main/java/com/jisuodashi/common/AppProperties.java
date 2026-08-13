@@ -285,11 +285,17 @@ public class AppProperties {
 
     public static class Booking {
         private final Captcha captcha = new Captcha();
+        /** Design §坏锁回滚: emergency stop-lock. Default on. */
+        private final Lock lock = new Lock();
         /** C-end free cancel window before start (D18). */
         private int cancelFreeMinutes = 120;
 
         public Captcha getCaptcha() {
             return captcha;
+        }
+
+        public Lock getLock() {
+            return lock;
         }
 
         public int getCancelFreeMinutes() {
@@ -302,6 +308,18 @@ public class AppProperties {
 
         public static class Captcha {
             private boolean enabled = false;
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+        }
+
+        public static class Lock {
+            private boolean enabled = true;
 
             public boolean isEnabled() {
                 return enabled;

@@ -80,6 +80,8 @@ app:
     captcha:
       enabled: ${BOOKING_CAPTCHA_ENABLED:false}
     cancel-free-minutes: 120
+    lock:
+      enabled: ${BOOKING_LOCK_ENABLED:true}
   internal:
     force-release:
       enabled: ${APP_INTERNAL_FORCE_RELEASE:false}
