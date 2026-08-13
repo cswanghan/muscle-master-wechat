@@ -7,9 +7,13 @@ public interface TherapistDayLock {
 
     int TTL_SECONDS = 5;
 
-    boolean tryAcquire(long therapistId, LocalDate date);
+    /**
+     * @return owner token if acquired, otherwise {@code null}
+     */
+    String tryAcquire(long therapistId, LocalDate date);
 
-    void release(long therapistId, LocalDate date);
+    /** Compare-and-delete: only the token holder may release. */
+    void release(long therapistId, LocalDate date, String token);
 
     static String key(long therapistId, LocalDate date) {
         return "lock:slot:" + therapistId + ":" + date;

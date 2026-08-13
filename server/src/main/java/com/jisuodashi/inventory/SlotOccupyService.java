@@ -3,6 +3,7 @@ package com.jisuodashi.inventory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.jisuodashi.catalog.Pricing;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
@@ -22,6 +23,8 @@ import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -31,14 +34,20 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 /**
  * Dual-resource occupy. lockNew is the only first-booking write path.
  * Order: Redis therapist-day → BEGIN → idempotency FOR UPDATE → snowflake
- * orderId/holdId → sorted FREE FOR UPDATE → occupancy INSERT → booking_order same TX.
+ * orderId/holdId → FREE preselect then FOR UPDATE by id → occupancy INSERT
+ * → booking_order same TX.
+ * <p>
+ * Lock order is therapist then beds: therapist-day Redis already serializes the
+ * same therapist; beds are walked by sort_no, id. Unpaid dest is LOCKED.
  */
 @Service
 public class SlotOccupyService {
@@ -107,13 +116,14 @@ public class SlotOccupyService {
         if (cmd.requestId() == null || cmd.requestId().isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }
-        if (!dayLock.tryAcquire(cmd.therapistId(), cmd.date())) {
+        String token = dayLock.tryAcquire(cmd.therapistId(), cmd.date());
+        if (token == null) {
             throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
         }
         try {
             return retryDeadlock(() -> inTx(() -> doLockNew(cmd)));
         } finally {
-            dayLock.release(cmd.therapistId(), cmd.date());
+            dayLock.release(cmd.therapistId(), cmd.date(), token);
             evictAvail(cmd.storeId(), cmd.date());
         }
     }
@@ -138,9 +148,12 @@ public class SlotOccupyService {
 
             OccupySpec spec = OccupySpec.of(project.durationMinutes(), project.bufferMinutes());
             List<Integer> slotNos = spec.slotNos(cmd.startSlotNo());
-            int bufferFrom = spec.bufferFrom(cmd.startSlotNo());
             LocalDateTime now = clock.now();
             LocalDateTime expireAt = now.plusMinutes(LOCK_MINUTES);
+            long payableFen = Pricing.priceFen(
+                    store.loadSlotPriceOverride(cmd.therapistId(), cmd.date(), cmd.startSlotNo()),
+                    store.loadStoreProjectPrice(cmd.storeId(), cmd.projectId()),
+                    project.priceFen());
 
             long orderId = ids.getAsLong();
             long holdId = ids.getAsLong();
@@ -151,13 +164,17 @@ public class SlotOccupyService {
                 throw new ApiException(ErrorCodes.SLOT_UNAVAILABLE, "技师时段不可用");
             }
             int tlocked = store.casLockTherapistSlots(
-                    cmd.therapistId(), cmd.date(), slotNos, bufferFrom, orderId, holdId, expireAt, now);
+                    cmd.therapistId(), cmd.date(), slotNos, orderId, holdId, expireAt, now);
             if (tlocked != spec.slotCount()) {
                 throw new ApiException(ErrorCodes.SLOT_UNAVAILABLE, "技师时段不可用");
             }
-            insertOccupancy(ResourceType.THERAPIST, cmd.therapistId(), cmd.date(), slotNos, orderId, holdId, now);
+            try {
+                insertOccupancy(ResourceType.THERAPIST, cmd.therapistId(), cmd.date(), slotNos, orderId, holdId, now);
+            } catch (DuplicateOccupancyException ex) {
+                throw new ApiException(ErrorCodes.SLOT_UNAVAILABLE, "技师时段不可用");
+            }
 
-            BedRef chosen = pickFreeBed(cmd.storeId(), cmd.date(), slotNos, spec, bufferFrom, orderId, holdId, expireAt, now);
+            BedRef chosen = pickFreeBed(cmd.storeId(), cmd.date(), slotNos, spec, orderId, holdId, expireAt, now);
             if (chosen == null) {
                 throw new ApiException(ErrorCodes.NO_FREE_BED, "无空闲床位");
             }
@@ -168,11 +185,11 @@ public class SlotOccupyService {
                     cmd.customerId(), cmd.storeId(), cmd.therapistId(), therapist.homeStoreId(),
                     chosen.id(), chosen.roomId(), ORDER_PENDING_PAY, cmd.source(),
                     cmd.date(), cmd.startSlotNo(), spec.endSlotNo(cmd.startSlotNo()), spec.bufferSlots(),
-                    project.priceFen(), project.priceFen(), expireAt, now));
+                    payableFen, payableFen, expireAt, now));
             store.insertOrderItem(new OrderItemInsert(
                     ids.getAsLong(), orderId, ITEM_PROJECT, project.id(), project.name(),
                     project.durationMinutes(), project.bufferMinutes(), 1,
-                    project.priceFen(), project.priceFen(),
+                    payableFen, payableFen,
                     cmd.startSlotNo(), spec.endSlotNo(cmd.startSlotNo()), now));
             store.insertDelayedJob(new DelayedJobInsert(
                     ids.getAsLong(), JOB_RELEASE_LOCK, "hold:" + holdId,
@@ -182,7 +199,7 @@ public class SlotOccupyService {
             LockNewResult result = new LockNewResult(
                     orderId, orderNo, holdId, chosen.id(), chosen.roomId(),
                     ORDER_PENDING_PAY, expireAt.atZone(AppClock.SHANGHAI).toOffsetDateTime().toString(),
-                    project.priceFen(), cmd.startSlotNo(), spec.endSlotNo(cmd.startSlotNo()),
+                    payableFen, cmd.startSlotNo(), spec.endSlotNo(cmd.startSlotNo()),
                     spec.bufferSlots(), false);
             finishIdempotent(SCOPE_BOOKING, cmd.requestId(), idem.version, result);
             store.commitWork();
@@ -198,7 +215,6 @@ public class SlotOccupyService {
             LocalDate date,
             List<Integer> slotNos,
             OccupySpec spec,
-            int bufferFrom,
             long orderId,
             long holdId,
             LocalDateTime expireAt,
@@ -213,7 +229,7 @@ public class SlotOccupyService {
                 continue;
             }
             int locked = store.casLockBedSlots(
-                    bed.id(), date, slotNos, bufferFrom, orderId, holdId, expireAt, now);
+                    bed.id(), date, slotNos, orderId, holdId, expireAt, now);
             if (locked != spec.slotCount()) {
                 continue;
             }
@@ -327,9 +343,22 @@ public class SlotOccupyService {
         if (redis == null) {
             return;
         }
-        var keys = redis.keys("cache:avail:" + storeId + ":" + date + ":*");
-        if (keys != null && !keys.isEmpty()) {
-            redis.delete(keys);
+        try {
+            ScanOptions opts = ScanOptions.scanOptions()
+                    .match("cache:avail:" + storeId + ":" + date + ":*")
+                    .count(64)
+                    .build();
+            Set<String> keys = new HashSet<>();
+            try (Cursor<String> cursor = redis.scan(opts)) {
+                while (cursor.hasNext()) {
+                    keys.add(cursor.next());
+                }
+            }
+            if (!keys.isEmpty()) {
+                redis.delete(keys);
+            }
+        } catch (RuntimeException ignored) {
+            // Availability cache is best-effort (PR3d).
         }
     }
 

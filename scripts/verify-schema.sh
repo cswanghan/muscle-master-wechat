@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Apply V1–V3 against a throwaway MySQL schema and assert unique keys / seed rows.
+# Apply V1–V4 against a throwaway MySQL schema and assert unique keys / seed rows.
 #
 # DESTRUCTIVE: DROP DATABASE IF EXISTS + CREATE DATABASE on MYSQL_VERIFY_DATABASE
 # (default muscle_master_verify). Safe to re-run. Does NOT touch compose's
@@ -48,10 +48,11 @@ CREATE DATABASE \`${VERIFY_DB}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_c
 GRANT ALL PRIVILEGES ON \`${VERIFY_DB}\`.* TO '${USER}'@'%';
 FLUSH PRIVILEGES;"
 
-echo "== applying $MIG/V1__init.sql V2__rbac_seed.sql V3__demo_store.sql → $VERIFY_DB"
+echo "== applying $MIG/V1–V4 → $VERIFY_DB"
 mysql_cli < "$MIG/V1__init.sql"
 mysql_cli < "$MIG/V2__rbac_seed.sql"
 mysql_cli < "$MIG/V3__demo_store.sql"
+mysql_cli < "$MIG/V4__locknew_free_indexes.sql"
 
 fail=0
 assert_uk() {
@@ -88,6 +89,17 @@ assert_uk customer uk_customer_openid
 assert_uk_cols therapist_slot uk_therapist_slot "therapist_id,slot_date,slot_no"
 assert_uk_cols bed_slot uk_bed_slot "bed_id,slot_date,slot_no"
 assert_uk_cols slot_occupancy uk_occ "resource_type,resource_id,slot_date,slot_no"
+
+idx_ts="$(mysql_cli -N -e "SELECT COUNT(*) FROM information_schema.statistics
+  WHERE table_schema='$VERIFY_DB' AND table_name='therapist_slot' AND index_name='idx_ts_free'")"
+idx_bs="$(mysql_cli -N -e "SELECT COUNT(*) FROM information_schema.statistics
+  WHERE table_schema='$VERIFY_DB' AND table_name='bed_slot' AND index_name='idx_bs_free'")"
+if [[ "$idx_ts" == "0" || "$idx_bs" == "0" ]]; then
+  echo "FAIL missing idx_ts_free/idx_bs_free"
+  fail=1
+else
+  echo "OK   idx_ts_free / idx_bs_free"
+fi
 
 nullable="$(mysql_cli -N -e "SELECT IS_NULLABLE FROM information_schema.columns
   WHERE table_schema='$VERIFY_DB' AND table_name='customer' AND column_name='wx_openid'")"

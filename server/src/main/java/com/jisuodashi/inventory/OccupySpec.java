@@ -5,7 +5,8 @@ import java.util.List;
 
 /**
  * P0 occupy window: {@code N = ceil((duration+buffer)/15)}, {@code B = 1}.
- * Last slot is BUFFER; the rest are LOCKED until pay.
+ * Unpaid lockNew writes all N slots LOCKED. confirmPaid promotes
+ * {@code slot_no >= bufferFrom} to BUFFER and the rest to BOOKED.
  */
 public record OccupySpec(int slotCount, int bufferSlots, int durationMinutes, int bufferMinutes) {
 
@@ -43,7 +44,8 @@ public record OccupySpec(int slotCount, int bufferSlots, int durationMinutes, in
         return slotNo >= bufferFrom(startSlotNo);
     }
 
+    /** Unpaid dest is always LOCKED. {@link #isBuffer} is pay-time classification. */
     public String destStatus(int startSlotNo, int slotNo) {
-        return isBuffer(startSlotNo, slotNo) ? SlotStatus.BUFFER : SlotStatus.LOCKED;
+        return SlotStatus.LOCKED;
     }
 }

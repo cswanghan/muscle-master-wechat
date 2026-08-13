@@ -6,6 +6,7 @@ import com.jisuodashi.inventory.SlotOccupyStore.IdemRow;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -107,30 +108,63 @@ public interface InventoryOccupyMapper {
             @Param("now") LocalDateTime now);
 
     @Select("""
-            SELECT slot_no AS slotNo, status
-              FROM therapist_slot
-             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate}
-               AND slot_no IN (${slotNos}) AND status = 'FREE'
-             ORDER BY slot_no
-             FOR UPDATE
+            SELECT price_fen
+              FROM store_project
+             WHERE store_id = #{storeId} AND project_id = #{projectId} AND status = 1
             """)
-    List<SlotRow> lockFreeTherapistSlots(
+    Long loadStoreProjectPrice(@Param("storeId") long storeId, @Param("projectId") long projectId);
+
+    @Select("""
+            SELECT price_override_fen
+              FROM therapist_slot
+             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate} AND slot_no = #{slotNo}
+            """)
+    Long loadSlotPriceOverride(
+            @Param("therapistId") long therapistId,
+            @Param("slotDate") LocalDate slotDate,
+            @Param("slotNo") int slotNo);
+
+    @Select("""
+            SELECT id
+              FROM therapist_slot FORCE INDEX (idx_ts_free)
+             WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate}
+               AND status = 'FREE' AND slot_no IN (${slotNos})
+             ORDER BY slot_no
+            """)
+    List<Long> findFreeTherapistSlotIds(
             @Param("therapistId") long therapistId,
             @Param("slotDate") LocalDate slotDate,
             @Param("slotNos") String slotNos);
 
     @Select("""
-            SELECT slot_no AS slotNo, status
-              FROM bed_slot
+            SELECT id
+              FROM bed_slot FORCE INDEX (idx_bs_free)
              WHERE bed_id = #{bedId} AND slot_date = #{slotDate}
-               AND slot_no IN (${slotNos}) AND status = 'FREE'
+               AND status = 'FREE' AND slot_no IN (${slotNos})
              ORDER BY slot_no
-             FOR UPDATE
             """)
-    List<SlotRow> lockFreeBedSlots(
+    List<Long> findFreeBedSlotIds(
             @Param("bedId") long bedId,
             @Param("slotDate") LocalDate slotDate,
             @Param("slotNos") String slotNos);
+
+    @Select("""
+            SELECT slot_no AS slotNo, status
+              FROM therapist_slot
+             WHERE id IN (${ids}) AND status = 'FREE'
+             ORDER BY slot_no
+             FOR UPDATE
+            """)
+    List<SlotRow> lockTherapistSlotsByIds(@Param("ids") String ids);
+
+    @Select("""
+            SELECT slot_no AS slotNo, status
+              FROM bed_slot
+             WHERE id IN (${ids}) AND status = 'FREE'
+             ORDER BY slot_no
+             FOR UPDATE
+            """)
+    List<SlotRow> lockBedSlotsByIds(@Param("ids") String ids);
 
     @Select("""
             SELECT EXISTS(
@@ -147,7 +181,7 @@ public interface InventoryOccupyMapper {
 
     @Update("""
             UPDATE therapist_slot
-               SET status = CASE WHEN slot_no >= #{bufferFrom} THEN 'BUFFER' ELSE 'LOCKED' END,
+               SET status = 'LOCKED',
                    order_id = #{orderId}, hold_id = #{holdId}, lock_expire_at = #{expireAt},
                    updated_at = #{now}
              WHERE therapist_id = #{therapistId} AND slot_date = #{slotDate}
@@ -157,7 +191,6 @@ public interface InventoryOccupyMapper {
             @Param("therapistId") long therapistId,
             @Param("slotDate") LocalDate slotDate,
             @Param("slotNos") String slotNos,
-            @Param("bufferFrom") int bufferFrom,
             @Param("orderId") long orderId,
             @Param("holdId") long holdId,
             @Param("expireAt") LocalDateTime expireAt,
@@ -165,7 +198,7 @@ public interface InventoryOccupyMapper {
 
     @Update("""
             UPDATE bed_slot
-               SET status = CASE WHEN slot_no >= #{bufferFrom} THEN 'BUFFER' ELSE 'LOCKED' END,
+               SET status = 'LOCKED',
                    order_id = #{orderId}, hold_id = #{holdId}, lock_expire_at = #{expireAt},
                    updated_at = #{now}
              WHERE bed_id = #{bedId} AND slot_date = #{slotDate}
@@ -175,7 +208,6 @@ public interface InventoryOccupyMapper {
             @Param("bedId") long bedId,
             @Param("slotDate") LocalDate slotDate,
             @Param("slotNos") String slotNos,
-            @Param("bufferFrom") int bufferFrom,
             @Param("orderId") long orderId,
             @Param("holdId") long holdId,
             @Param("expireAt") LocalDateTime expireAt,
@@ -196,6 +228,12 @@ public interface InventoryOccupyMapper {
             @Param("orderId") long orderId,
             @Param("holdId") long holdId,
             @Param("createdAt") LocalDateTime createdAt);
+
+    @Delete("""
+            DELETE FROM slot_occupancy
+             WHERE hold_id = #{holdId} AND resource_type = 'BED' AND resource_id = #{bedId}
+            """)
+    int deleteBedOccupancy(@Param("bedId") long bedId, @Param("holdId") long holdId);
 
     @Update("""
             UPDATE bed_slot

@@ -1,12 +1,13 @@
 package com.jisuodashi.inventory;
 
 import java.time.LocalDate;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Fallback when Redis is off (dev / tests). Same NX + 5s TTL semantics. */
+/** Fallback when Redis is off (dev / tests). Same NX + 5s TTL + token release. */
 public final class InMemoryTherapistDayLock implements TherapistDayLock {
 
-    private final ConcurrentHashMap<String, Long> locks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Lease> locks = new ConcurrentHashMap<>();
     private final java.util.function.LongSupplier nowMs;
 
     public InMemoryTherapistDayLock() {
@@ -18,22 +19,32 @@ public final class InMemoryTherapistDayLock implements TherapistDayLock {
     }
 
     @Override
-    public boolean tryAcquire(long therapistId, LocalDate date) {
+    public String tryAcquire(long therapistId, LocalDate date) {
         String key = TherapistDayLock.key(therapistId, date);
         long now = nowMs.getAsLong();
-        long expireAt = now + TTL_SECONDS * 1000L;
-        Long existing = locks.putIfAbsent(key, expireAt);
+        Lease mine = new Lease(UUID.randomUUID().toString(), now + TTL_SECONDS * 1000L);
+        Lease existing = locks.putIfAbsent(key, mine);
         if (existing == null) {
-            return true;
+            return mine.token;
         }
-        if (existing > now) {
-            return false;
+        if (existing.expireAt > now) {
+            return null;
         }
-        return locks.replace(key, existing, expireAt);
+        return locks.replace(key, existing, mine) ? mine.token : null;
     }
 
     @Override
-    public void release(long therapistId, LocalDate date) {
-        locks.remove(TherapistDayLock.key(therapistId, date));
+    public void release(long therapistId, LocalDate date, String token) {
+        if (token == null) {
+            return;
+        }
+        String key = TherapistDayLock.key(therapistId, date);
+        Lease have = locks.get(key);
+        if (have != null && token.equals(have.token)) {
+            locks.remove(key, have);
+        }
+    }
+
+    private record Lease(String token, long expireAt) {
     }
 }

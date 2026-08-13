@@ -80,13 +80,31 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public Long loadStoreProjectPrice(long storeId, long projectId) {
+        return mapper.loadStoreProjectPrice(storeId, projectId);
+    }
+
+    @Override
+    public Long loadSlotPriceOverride(long therapistId, LocalDate date, int startSlotNo) {
+        return mapper.loadSlotPriceOverride(therapistId, date, startSlotNo);
+    }
+
+    @Override
     public List<SlotRow> lockFreeTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos) {
-        return mapper.lockFreeTherapistSlots(therapistId, date, csv(slotNos));
+        List<Long> ids = mapper.findFreeTherapistSlotIds(therapistId, date, csv(slotNos));
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return mapper.lockTherapistSlotsByIds(csvLongs(ids));
     }
 
     @Override
     public List<SlotRow> lockFreeBedSlots(long bedId, LocalDate date, List<Integer> slotNos) {
-        return mapper.lockFreeBedSlots(bedId, date, csv(slotNos));
+        List<Long> ids = mapper.findFreeBedSlotIds(bedId, date, csv(slotNos));
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return mapper.lockBedSlotsByIds(csvLongs(ids));
     }
 
     @Override
@@ -96,17 +114,16 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
 
     @Override
     public int casLockTherapistSlots(
-            long therapistId, LocalDate date, List<Integer> slotNos, int bufferFrom,
+            long therapistId, LocalDate date, List<Integer> slotNos,
             long orderId, long holdId, LocalDateTime expireAt, LocalDateTime now) {
-        return mapper.casLockTherapistSlots(
-                therapistId, date, csv(slotNos), bufferFrom, orderId, holdId, expireAt, now);
+        return mapper.casLockTherapistSlots(therapistId, date, csv(slotNos), orderId, holdId, expireAt, now);
     }
 
     @Override
     public int casLockBedSlots(
-            long bedId, LocalDate date, List<Integer> slotNos, int bufferFrom,
+            long bedId, LocalDate date, List<Integer> slotNos,
             long orderId, long holdId, LocalDateTime expireAt, LocalDateTime now) {
-        return mapper.casLockBedSlots(bedId, date, csv(slotNos), bufferFrom, orderId, holdId, expireAt, now);
+        return mapper.casLockBedSlots(bedId, date, csv(slotNos), orderId, holdId, expireAt, now);
     }
 
     @Override
@@ -123,6 +140,7 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
 
     @Override
     public void revertBedHold(long bedId, long holdId, LocalDateTime now) {
+        mapper.deleteBedOccupancy(bedId, holdId);
         mapper.revertBedHold(bedId, holdId, now);
     }
 
@@ -156,5 +174,12 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
             throw new IllegalArgumentException("slotNos required");
         }
         return slotNos.stream().sorted().map(String::valueOf).collect(Collectors.joining(","));
+    }
+
+    static String csvLongs(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("ids required");
+        }
+        return ids.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
 }

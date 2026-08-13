@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class SlotOccupyServiceTest {
 
     @Test
-    void lockNewWritesLastBufferOthersLockedAndInsertsOccupancyAndJob() {
+    void lockNewWritesAllLockedAndInsertsOccupancyAndJob() {
         InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
         List<Long> issued = new ArrayList<>();
         AtomicLong seq = new AtomicLong(100);
@@ -46,15 +46,16 @@ class SlotOccupyServiceTest {
         assertThat(result.orderNo()).startsWith("JS20260814");
         assertThat(result.lockExpireAt()).contains("19:15");
 
-        for (int slot = 78; slot <= 81; slot++) {
+        for (int slot = 78; slot <= 82; slot++) {
             MutableSlot row = store.therapistSlot(T1, TODAY, slot);
             assertThat(row.status).isEqualTo(SlotStatus.LOCKED);
             assertThat(row.orderId).isEqualTo(result.orderId());
             assertThat(row.holdId).isEqualTo(result.holdId());
         }
-        assertThat(store.therapistSlot(T1, TODAY, 82).status).isEqualTo(SlotStatus.BUFFER);
-        assertThat(store.bedSlot(BED1, TODAY, 82).status).isEqualTo(SlotStatus.BUFFER);
+        assertThat(store.bedSlot(BED1, TODAY, 82).status).isEqualTo(SlotStatus.LOCKED);
+        assertThat(OccupySpec.of(60, 15).isBuffer(78, 82)).isTrue();
         assertThat(store.therapistSlot(T1, TODAY, 83).status).isEqualTo(SlotStatus.FREE);
+        assertThat(result.payableFen()).isEqualTo(19800);
 
         assertThat(store.occupancies).hasSize(10);
         assertThat(store.occupancies.values())
@@ -83,6 +84,10 @@ class SlotOccupyServiceTest {
         assertThat(store.bedSlot(BED2, TODAY, 78).status).isEqualTo(SlotStatus.LOCKED);
         assertThat(store.occupancies.keySet())
                 .noneMatch(k -> k.startsWith(ResourceType.BED + "|" + BED1 + "|"));
+        for (int slot = 78; slot <= 82; slot++) {
+            assertThat(store.slotPinAttempts)
+                    .doesNotContain(InMemorySlotOccupyStore.bkey(BED1, TODAY, slot));
+        }
     }
 
     @Test
@@ -118,12 +123,12 @@ class SlotOccupyServiceTest {
         InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
         TherapistDayLock alwaysBusy = new TherapistDayLock() {
             @Override
-            public boolean tryAcquire(long therapistId, java.time.LocalDate date) {
-                return false;
+            public String tryAcquire(long therapistId, java.time.LocalDate date) {
+                return null;
             }
 
             @Override
-            public void release(long therapistId, java.time.LocalDate date) {
+            public void release(long therapistId, java.time.LocalDate date, String token) {
             }
         };
         assertThatThrownBy(() -> OccupyFixtures.service(store, alwaysBusy)
@@ -132,6 +137,38 @@ class SlotOccupyServiceTest {
                 .extracting(ex -> ((ApiException) ex).getCode())
                 .isEqualTo(ErrorCodes.LOCK_CONFLICT);
         assertThat(store.occupancies).isEmpty();
+    }
+
+    @Test
+    void d13PricePrefersSlotOverrideThenStoreProject() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        store.seedStorePrice(OccupyFixtures.STORE, OccupyFixtures.P60, 18800);
+        LockNewResult storePrice = OccupyFixtures.service(store)
+                .lockNew(OccupyFixtures.cmd("req-store-price", T1, START_1930));
+        assertThat(storePrice.payableFen()).isEqualTo(18800);
+
+        InMemorySlotOccupyStore store2 = OccupyFixtures.demoStore();
+        store2.seedStorePrice(OccupyFixtures.STORE, OccupyFixtures.P60, 18800);
+        store2.seedSlotOverride(T1, TODAY, START_1930, 15000);
+        LockNewResult slotPrice = OccupyFixtures.service(store2)
+                .lockNew(OccupyFixtures.cmd("req-slot-price", T1, START_1930));
+        assertThat(slotPrice.payableFen()).isEqualTo(15000);
+    }
+
+    @Test
+    void midWindowOccupancyFailureDeletesBedOccupancyAndTriesNextBed() {
+        InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
+        store.failBedOccupancyAfter = 1;
+        LockNewResult result = OccupyFixtures.service(store).lockNew(OccupyFixtures.cmd("req-uk", T1, START_1930));
+        assertThat(result.bedId()).isEqualTo(BED2);
+        assertThat(store.occupancies.keySet())
+                .noneMatch(k -> k.startsWith(ResourceType.BED + "|" + BED1 + "|"));
+        for (int slot = 78; slot <= 82; slot++) {
+            assertThat(store.bedSlot(BED1, TODAY, slot).status).isEqualTo(SlotStatus.FREE);
+            assertThat(store.bedSlot(BED1, TODAY, slot).holdId).isNull();
+            assertThat(store.bedSlot(BED2, TODAY, slot).status).isEqualTo(SlotStatus.LOCKED);
+        }
+        assertThat(store.occupancies).hasSize(10);
     }
 
     @Test

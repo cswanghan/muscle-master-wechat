@@ -105,7 +105,7 @@ class LockNewReportTest {
                   <main>
                     <div class="meta">
                       <span class="pill">N = ceil((60+15)/15) = 5</span>
-                      <span class="pill">buffer_slots = 1 · last BUFFER / others LOCKED</span>
+                      <span class="pill">buffer_slots = 1 · unpaid all LOCKED (buffer at pay)</span>
                       <span class="pill">Redis therapist-day 5s (in-memory on dev)</span>
                       <span class="pill">hold_id + order_id before occupy · same TX</span>
                     </div>

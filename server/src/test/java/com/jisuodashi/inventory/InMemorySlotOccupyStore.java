@@ -18,7 +18,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -37,6 +39,17 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
     final Map<String, BookingOrderInsert> ordersByRequest = new ConcurrentHashMap<>();
     final List<OrderItemInsert> orderItems = new ArrayList<>();
     final List<DelayedJobInsert> delayedJobs = new ArrayList<>();
+    final Map<String, Long> storePrices = new ConcurrentHashMap<>();
+    final Map<String, Long> slotOverrides = new ConcurrentHashMap<>();
+    /** Keys we actually acquired a row lock on (must never include known-busy slots). */
+    final Set<String> slotPinAttempts = ConcurrentHashMap.newKeySet();
+    /**
+     * Test hook: after this many successful BED occupancy inserts, the next BED insert
+     * throws; revertBedHold disables the hook so the next bed can succeed.
+     */
+    volatile int failBedOccupancyAfter = -1;
+    private final AtomicInteger occupancyInserts = new AtomicInteger();
+    private final AtomicInteger bedOccupancyInserts = new AtomicInteger();
 
     private final ConcurrentHashMap<String, ReentrantLock> rowLocks = new ConcurrentHashMap<>();
     private final ThreadLocal<Work> work = new ThreadLocal<>();
@@ -83,6 +96,16 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
                 .filter(b -> b.storeId() == storeId)
                 .sorted(Comparator.comparingInt(BedRef::sortNo).thenComparingLong(BedRef::id))
                 .toList();
+    }
+
+    @Override
+    public Long loadStoreProjectPrice(long storeId, long projectId) {
+        return storePrices.get(storeId + "|" + projectId);
+    }
+
+    @Override
+    public Long loadSlotPriceOverride(long therapistId, LocalDate date, int startSlotNo) {
+        return slotOverrides.get(tkey(therapistId, date, startSlotNo));
     }
 
     @Override
@@ -185,6 +208,10 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
         List<SlotRow> locked = new ArrayList<>();
         for (int slotNo : ordered) {
             String key = therapist ? tkey(resourceId, date, slotNo) : bkey(resourceId, date, slotNo);
+            MutableSlot peek = slots.get(key);
+            if (peek == null || !SlotStatus.FREE.equals(peek.status)) {
+                continue;
+            }
             lockRow(key, w);
             MutableSlot slot = slots.get(key);
             if (slot != null && SlotStatus.FREE.equals(slot.status)) {
@@ -212,16 +239,16 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
 
     @Override
     public int casLockTherapistSlots(
-            long therapistId, LocalDate date, List<Integer> slotNos, int bufferFrom,
+            long therapistId, LocalDate date, List<Integer> slotNos,
             long orderId, long holdId, LocalDateTime expireAt, LocalDateTime now) {
-        return casLock(therapistSlots, true, therapistId, date, slotNos, bufferFrom, orderId, holdId, expireAt);
+        return casLock(therapistSlots, true, therapistId, date, slotNos, orderId, holdId, expireAt);
     }
 
     @Override
     public int casLockBedSlots(
-            long bedId, LocalDate date, List<Integer> slotNos, int bufferFrom,
+            long bedId, LocalDate date, List<Integer> slotNos,
             long orderId, long holdId, LocalDateTime expireAt, LocalDateTime now) {
-        return casLock(bedSlots, false, bedId, date, slotNos, bufferFrom, orderId, holdId, expireAt);
+        return casLock(bedSlots, false, bedId, date, slotNos, orderId, holdId, expireAt);
     }
 
     private int casLock(
@@ -230,7 +257,6 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
             long resourceId,
             LocalDate date,
             List<Integer> slotNos,
-            int bufferFrom,
             long orderId,
             long holdId,
             LocalDateTime expireAt
@@ -243,9 +269,8 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
             if (slot == null || !SlotStatus.FREE.equals(slot.status)) {
                 continue;
             }
-            String dest = slotNo >= bufferFrom ? SlotStatus.BUFFER : SlotStatus.LOCKED;
             Snapshot snap = slot.snapshot();
-            slot.status = dest;
+            slot.status = SlotStatus.LOCKED;
             slot.orderId = orderId;
             slot.holdId = holdId;
             slot.lockExpireAt = expireAt;
@@ -257,17 +282,44 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
 
     @Override
     public void insertOccupancy(OccupancyInsert row) {
+        if (ResourceType.BED.equals(row.resourceType())
+                && failBedOccupancyAfter >= 0
+                && bedOccupancyInserts.get() >= failBedOccupancyAfter) {
+            throw new DuplicateOccupancyException("injected occupancy fail after " + failBedOccupancyAfter);
+        }
         String key = okey(row.resourceType(), row.resourceId(), row.slotDate(), row.slotNo());
         OccupancyInsert prev = occupancies.putIfAbsent(key, row);
         if (prev != null) {
             throw new DuplicateOccupancyException("occupancy exists " + key);
         }
-        requireWork().undos.add(() -> occupancies.remove(key, row));
+        occupancyInserts.incrementAndGet();
+        if (ResourceType.BED.equals(row.resourceType())) {
+            bedOccupancyInserts.incrementAndGet();
+        }
+        requireWork().undos.add(() -> {
+            occupancies.remove(key, row);
+            occupancyInserts.decrementAndGet();
+            if (ResourceType.BED.equals(row.resourceType())) {
+                bedOccupancyInserts.decrementAndGet();
+            }
+        });
     }
 
     @Override
     public void revertBedHold(long bedId, long holdId, LocalDateTime now) {
         Work w = requireWork();
+        occupancies.entrySet().removeIf(e -> {
+            OccupancyInsert row = e.getValue();
+            if (ResourceType.BED.equals(row.resourceType())
+                    && row.resourceId() == bedId
+                    && row.holdId() == holdId) {
+                occupancyInserts.decrementAndGet();
+                bedOccupancyInserts.decrementAndGet();
+                return true;
+            }
+            return false;
+        });
+        failBedOccupancyAfter = -1;
         for (MutableSlot slot : bedSlots.values()) {
             if (slot.resourceId == bedId && slot.holdId != null && slot.holdId == holdId) {
                 Snapshot snap = slot.snapshot();
@@ -322,6 +374,14 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
         beds.put(bed.id(), bed);
     }
 
+    void seedStorePrice(long storeId, long projectId, long priceFen) {
+        storePrices.put(storeId + "|" + projectId, priceFen);
+    }
+
+    void seedSlotOverride(long therapistId, LocalDate date, int slotNo, long priceFen) {
+        slotOverrides.put(tkey(therapistId, date, slotNo), priceFen);
+    }
+
     void seedTherapistSlots(long therapistId, long storeId, LocalDate date, int fromInclusive, int toExclusive, String status) {
         for (int slot = fromInclusive; slot < toExclusive; slot++) {
             therapistSlots.put(tkey(therapistId, date, slot),
@@ -367,6 +427,9 @@ final class InMemorySlotOccupyStore implements SlotOccupyStore {
     private ReentrantLock lockRow(String key, Work w) {
         ReentrantLock lock = rowLocks.computeIfAbsent(key, k -> new ReentrantLock());
         if (!lock.isHeldByCurrentThread()) {
+            if (key.startsWith("T|") || key.startsWith("B|")) {
+                slotPinAttempts.add(key);
+            }
             lock.lock();
             w.locks.add(lock);
         }

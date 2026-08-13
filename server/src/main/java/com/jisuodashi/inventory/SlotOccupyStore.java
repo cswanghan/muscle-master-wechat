@@ -20,6 +20,10 @@ public interface SlotOccupyStore {
     /** Active beds of the store, ORDER BY sort_no, id. */
     List<BedRef> listBeds(long storeId);
 
+    Long loadStoreProjectPrice(long storeId, long projectId);
+
+    Long loadSlotPriceOverride(long therapistId, LocalDate date, int startSlotNo);
+
     boolean insertIdempotency(IdemInsert row);
 
     IdemRow lockIdempotency(String scope, String requestId);
@@ -36,22 +40,26 @@ public interface SlotOccupyStore {
      */
     int finishIdempotent(String scope, String requestId, int version, String responseBody, LocalDateTime now);
 
-    /** SELECT … FOR UPDATE WHERE status='FREE' ORDER BY slot_no. Does not pin busy rows. */
+    /**
+     * Preselect FREE ids (no lock), then {@code SELECT … FOR UPDATE} those ids
+     * {@code AND status='FREE'} so busy rows are never in the lock set.
+     */
     List<SlotRow> lockFreeTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos);
 
     List<SlotRow> lockFreeBedSlots(long bedId, LocalDate date, List<Integer> slotNos);
 
     boolean occupancyExists(String resourceType, long resourceId, LocalDate date, List<Integer> slotNos);
 
-    /** CAS: only FREE rows. dest = last BUFFER, others LOCKED. */
-    int casLockTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos, int bufferFrom,
+    /** CAS: only FREE → LOCKED. */
+    int casLockTherapistSlots(long therapistId, LocalDate date, List<Integer> slotNos,
                               long orderId, long holdId, LocalDateTime expireAt, LocalDateTime now);
 
-    int casLockBedSlots(long bedId, LocalDate date, List<Integer> slotNos, int bufferFrom,
+    int casLockBedSlots(long bedId, LocalDate date, List<Integer> slotNos,
                         long orderId, long holdId, LocalDateTime expireAt, LocalDateTime now);
 
     void insertOccupancy(OccupancyInsert row);
 
+    /** Delete this hold's bed occupancy then FREE those slot rows. */
     void revertBedHold(long bedId, long holdId, LocalDateTime now);
 
     void insertOrder(BookingOrderInsert row);
