@@ -19,6 +19,9 @@ public final class RbacDtos {
     public record StoreStatusRequest(int status) {
     }
 
+    public record StoreUpsertRequest(String code, String name, Integer status) {
+    }
+
     public record DeskNoteRequest(String storeId, String content) {
     }
 

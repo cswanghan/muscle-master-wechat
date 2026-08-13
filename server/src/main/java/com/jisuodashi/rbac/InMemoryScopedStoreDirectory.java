@@ -40,4 +40,26 @@ public class InMemoryScopedStoreDirectory implements ScopedStoreDirectory {
         }
         stores.replaceAll(s -> s.id() == id ? s.withStatus(status) : s);
     }
+
+    @Override
+    public void insert(ScopedStore store) {
+        stores.add(store);
+    }
+
+    @Override
+    public void update(ScopedStore store) {
+        stores.replaceAll(s -> s.id() == store.id() ? store : s);
+    }
+
+    @Override
+    public void softDelete(long id) {
+        stores.removeIf(s -> s.id() == id);
+    }
+
+    @Override
+    public void resetDemo() {
+        stores.clear();
+        stores.add(new ScopedStore(RbacDemoIds.STORE, "DEMO01", "肌松大师·演示旗舰店", 1));
+        stores.add(new ScopedStore(RbacDemoIds.STORE_EAST, "DEMO02", "肌松大师·演示二分店", 1));
+    }
 }

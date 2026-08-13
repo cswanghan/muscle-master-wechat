@@ -26,6 +26,25 @@ public interface CatalogRepository {
 
     List<CatalogModels.ScheduleTemplate> listTemplates();
 
+    Optional<CatalogModels.Therapist> findTherapist(long id);
+
+    Optional<CatalogModels.ScheduleTemplate> findTemplate(long id);
+
+    void upsertTherapist(CatalogModels.Therapist therapist);
+
+    void softDeleteTherapist(long id);
+
+    void upsertProject(CatalogModels.Project project);
+
+    void softDeleteProject(long id);
+
+    void upsertTemplate(CatalogModels.ScheduleTemplate template);
+
+    void deleteTemplate(long id);
+
+    default void resetDemo() {
+    }
+
     /** True when inventory has generated any slot for the date. */
     default boolean hasSlotsOn(LocalDate date) {
         return false;

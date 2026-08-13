@@ -4,7 +4,7 @@
 
 ```bash
 npm install
-npm run dev      # http://127.0.0.1:5173/health ，代理 GET /actuator/health → :8080
+npm run dev      # http://127.0.0.1:5173/health · /catalog · /orders ，代理 /api /actuator → :8080
 npm run build
 npm run preview  # http://127.0.0.1:4173/health
 ```

@@ -50,4 +50,33 @@ public class JdbcScopedStoreDirectory implements ScopedStoreDirectory {
     public void updateStatus(long id, int status) {
         jdbc.update(ScopedStoreQueries.UPDATE_STATUS, status, JdbcTimes.ts(Instant.now(clock)), id);
     }
+
+    @Override
+    public void insert(ScopedStore store) {
+        Instant now = Instant.now(clock);
+        jdbc.update(
+                ScopedStoreQueries.INSERT,
+                store.id(),
+                store.code(),
+                store.name(),
+                store.status(),
+                JdbcTimes.ts(now),
+                JdbcTimes.ts(now));
+    }
+
+    @Override
+    public void update(ScopedStore store) {
+        jdbc.update(
+                ScopedStoreQueries.UPDATE,
+                store.name(),
+                store.status(),
+                JdbcTimes.ts(Instant.now(clock)),
+                store.id());
+    }
+
+    @Override
+    public void softDelete(long id) {
+        Instant now = Instant.now(clock);
+        jdbc.update(ScopedStoreQueries.SOFT_DELETE, JdbcTimes.ts(now), JdbcTimes.ts(now), id);
+    }
 }
