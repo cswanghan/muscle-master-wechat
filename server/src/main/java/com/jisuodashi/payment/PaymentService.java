@@ -20,6 +20,7 @@ import com.jisuodashi.order.FireContext;
 import com.jisuodashi.order.OrderEvent;
 import com.jisuodashi.order.OrderStateMachine;
 import com.jisuodashi.order.OrderStatus;
+import com.jisuodashi.observability.PayOutcomeMetrics;
 import com.jisuodashi.rbac.PermissionCatalog;
 import com.jisuodashi.rbac.StoreScope;
 import com.jisuodashi.rbac.StoreScopeContext;
@@ -83,6 +84,26 @@ public class PaymentService {
     @Autowired(required = false)
     public void setFeatureFlags(FeatureFlags flags) {
         this.flags = flags;
+    }
+
+    private PayOutcomeMetrics payOutcome;
+
+    /** {@code pay.success.rate} 的采样口；单测直接 new 本类时可以不注入。 */
+    @Autowired(required = false)
+    public void setPayOutcome(PayOutcomeMetrics payOutcome) {
+        this.payOutcome = payOutcome;
+    }
+
+    private void notePaySuccess() {
+        if (payOutcome != null) {
+            payOutcome.success();
+        }
+    }
+
+    private void notePayFailure() {
+        if (payOutcome != null) {
+            payOutcome.failure();
+        }
     }
 
     @Autowired
@@ -175,6 +196,7 @@ public class PaymentService {
             return repay(customerId, orderId, requestId);
         } catch (RuntimeException ex) {
             log.warn("prepay after lockNew failed order={}", orderId, ex);
+            notePayFailure();
             return null;
         }
     }
@@ -291,6 +313,7 @@ public class PaymentService {
                 Payment.SUCCESS, null, "CASH", now, null, now, now, now);
         payments.insert(cash);
         machine.fire(orderId, OrderEvent.PAY_SUCCESS, FireContext.system().withPaymentMatched(true));
+        notePaySuccess();
         return cash;
     }
 
@@ -360,6 +383,7 @@ public class PaymentService {
         Payment p = payments.lockByPaymentNo(n.outTradeNo());
         if (p == null) {
             insertTask(TASK_UNKNOWN_PAYMENT, "unknown_pay:" + n.outTradeNo(), "未知支付回调");
+            notePayFailure();
             return PaymentDtos.WechatNotifyAck.success();
         }
         if (p.success()) {
@@ -368,11 +392,13 @@ public class PaymentService {
         if (n.amountFen() != p.amountFen()) {
             payments.update(p.failed(n.raw(), clock.now()));
             insertTask(TASK_AMOUNT_MISMATCH, "amt:" + p.paymentNo(), "支付金额不符");
+            notePayFailure();
             return PaymentDtos.WechatNotifyAck.success();
         }
         BookingOrderRef order = orders.lockOrderById(p.orderId());
         if (order == null) {
             insertTask(TASK_UNKNOWN_PAYMENT, "unknown_pay:" + n.outTradeNo(), "支付单无对应订单");
+            notePayFailure();
             return PaymentDtos.WechatNotifyAck.success();
         }
         LocalDateTime now = clock.now();
@@ -381,11 +407,13 @@ public class PaymentService {
             Payment paid = p.paid(n.transactionId(), n.raw(), now);
             payments.update(paid);
             enqueueClosedOrderRefund(paid, now);
+            notePaySuccess();
             return PaymentDtos.WechatNotifyAck.success();
         }
         if (status == OrderStatus.PENDING_PAY) {
             payments.update(p.paid(n.transactionId(), n.raw(), now));
             machine.fire(p.orderId(), OrderEvent.PAY_SUCCESS, FireContext.system().withPaymentMatched(true));
+            notePaySuccess();
             return PaymentDtos.WechatNotifyAck.success();
         }
         if (status == OrderStatus.IN_SERVICE && isCurrentAddOnPay(order, p)) {
@@ -396,15 +424,18 @@ public class PaymentService {
             payments.update(p.paid(n.transactionId(), n.raw(), now));
             occupy.confirmPaidAddOnInOpenTx(order.id());
             machine.fire(p.orderId(), OrderEvent.ADD_ON, FireContext.system().withAddOnPaid());
+            notePaySuccess();
             return PaymentDtos.WechatNotifyAck.success();
         }
         if (status == OrderStatus.IN_SERVICE && isStaleAddOnPay(order, p)) {
             Payment paid = p.paid(n.transactionId(), n.raw(), now);
             payments.update(paid);
             enqueueClosedOrderRefund(paid, now);
+            notePaySuccess();
             return PaymentDtos.WechatNotifyAck.success();
         }
         payments.update(p.paid(n.transactionId(), n.raw(), now));
+        notePaySuccess();
         return PaymentDtos.WechatNotifyAck.success();
     }
 
