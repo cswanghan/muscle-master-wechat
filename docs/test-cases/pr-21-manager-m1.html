@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR21 店长 M1 HTML preview</title>
+  <style>
+    body { margin:0; background:#d9e3dd; font-family:"PingFang SC", sans-serif; color:#14352c; }
+    header { background:#1E5C4A; color:#fff; padding:20px 28px; }
+    header h1 { margin:0; font-size:20px; }
+    header p { margin:6px 0 0; font-size:13px; opacity:.85; }
+    .wrap { display:flex; justify-content:center; padding:28px; }
+    .phone { width:375px; background:#f4f1ea; border-radius:28px; overflow:hidden;
+             box-shadow:0 12px 30px rgba(20,53,44,.18); padding-bottom:16px; }
+    .bar { display:flex; justify-content:space-between; align-items:center;
+           padding:16px 18px; background:#1E5C4A; color:#f4f1ea; }
+    .title { font-size:20px; font-weight:600; }
+    .sub, .rate-cap { font-size:15px; opacity:.85; }
+    .rate { text-align:right; }
+    .rate-num { font-size:28px; font-weight:700; line-height:1.1; }
+    .card { background:#fff; border-radius:14px; margin:12px; padding:12px; }
+    .h2 { font-size:17px; font-weight:600; color:#1E5C4A; margin-bottom:8px; }
+    .chart { display:flex; align-items:flex-end; gap:2px; overflow-x:auto; }
+    .col { flex:0 0 auto; min-width:26px; text-align:center; }
+    .track { height:110px; display:flex; align-items:flex-end;
+             background:#f1f6f4; border-radius:4px; overflow:hidden; }
+    .fill { width:100%; border-radius:4px 4px 0 0; }
+    .fill.full { background:#1E5C4A; }
+    .fill.busy { background:#4f9a80; }
+    .fill.idle { background:#a9cdbf; }
+    .col-text, .col-hour, .legend, .lg { font-size:15px; color:#4a5a54; }
+    .legend { margin-top:8px; }
+    .group-label { font-size:15px; font-weight:600; color:#1E5C4A; padding:8px 0 4px; }
+    .task { display:flex; flex-wrap:wrap; gap:4px 8px;
+            padding:8px 0; border-top:1px solid #e8f1ed; }
+    .task-main { flex:1 1 100%; min-width:0; }
+    .task-title, .task-meta { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .task-title { font-size:16px; font-weight:600; }
+    .task-meta { font-size:15px; color:#7d8b85; }
+    .acts { display:flex; gap:6px; width:100%; justify-content:flex-end; }
+    .btn { min-width:48px; height:48px; line-height:48px; padding:0 12px;
+           background:#1E5C4A; color:#f4f1ea; font-size:15px; border-radius:8px;
+           text-align:center; }
+    .btn.ghost { background:#e8f1ed; color:#1E5C4A; }
+    .tag { min-height:48px; line-height:48px; padding:0 12px; font-size:15px; color:#7d8b85; }
+    .ruler { margin:0 28px 24px; background:#fff; padding:12px 16px; border-radius:10px;
+             font-size:15px; }
+    .mark { display:inline-block; width:48px; height:48px; background:#1E5C4A; color:#fff;
+            text-align:center; line-height:48px; border-radius:8px; margin-right:8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>mini-staff 店长台 M1 HTML preview</h1>
+    <p>WeChat 开发者工具未接入时的页面验收。最小字号 15px，主操作 48px tap target。</p>
+  </header>
+  <div class="wrap">
+    <div class="phone">
+      <div class="bar">
+        <div>
+          <div class="title">店长台 · M1</div>
+          <div class="sub">演示店长 · 2026-08-14</div>
+        </div>
+        <div class="rate">
+          <div class="rate-num">3%</div>
+          <div class="rate-cap">全日满班率</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="h2">分时满班率</div>
+        <div class="chart">
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>10</div></div>
+<div class='col'><div class='col-text'>33%</div><div class='track'><div class='fill idle' style='height:33%'></div></div><div class='col-hour'>11</div></div>
+<div class='col'><div class='col-text'>8%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>12</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>13</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>14</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>15</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>16</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>17</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>18</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>19</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>20</div></div>
+<div class='col'><div class='col-text'>0%</div><div class='track'><div class='fill idle' style='height:12%'></div></div><div class='col-hour'>21</div></div>
+        </div>
+        <div class="legend">分母不含 REST（未排班 / 请假不进产能）</div>
+      </div>
+      <div class="card">
+        <div class="h2">待办 · 3</div>
+<div class='group-label'>请假审批 · 1</div>
+<div class='task'><div class='task-main'><div class='task-title'>请假审批 2026-08-16 技师 3100000000000000401</div><div class='task-meta'>LEAVE_APPROVE · leave:81753521241722880</div></div><div class='acts'><div class='btn'>通过</div><div class='btn ghost'>驳回</div></div></div>
+<div class='group-label'>退款审批 ≥¥500 · 1</div>
+<div class='task'><div class='task-main'><div class='task-title'>退款待审批 ≥¥500（审批=放款）</div><div class='task-meta'>REFUND_APPROVE · refund_approve:81753521476603904</div></div><div class='acts'><div class='btn'>通过</div><div class='btn ghost'>驳回</div></div></div>
+<div class='group-label'>异常单 · 1</div>
+<div class='task'><div class='task-main'><div class='task-title'>异常单待处理 JS2026081413026049</div><div class='task-meta'>ORDER_ABNORMAL · abnormal:81753521313026049</div></div><div class='acts'><div class='btn'>按完成</div><div class='btn ghost'>按取消</div><div class='btn ghost'>忽略</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="ruler">
+    <span class="mark">48</span>
+    通过 / 驳回 / 按完成 ≥ 48×48px · 正文 ≥ 15px · M1 只看满班率与待办，不做 BI
+  </div>
+</body>
+</html>

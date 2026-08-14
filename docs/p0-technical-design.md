@@ -2122,6 +2122,19 @@ JSON：`ts, level, requestId, storeId, orderId, actorId, action, latencyMs, code
 
 `slot.locked.stale` 与 `inventory.drift` **每 60s** 用 SQL 刮一次（禁止 15s 打热表）。满班率 API 按请求算，不进这个刮取。
 
+**落地位置**（`com.jisuodashi.observability`，只读、不进任何事务）：
+
+| 指标 | 采样点 |
+| --- | --- |
+| `pay.success.rate` | `PayOutcomeMetrics`，5×1min 桶；`PaymentService` 在 `doNotify` 落 SUCCESS / FAILED、现金收银、预下单失败处打点。无流量返回 `1.0`，避免夜间误报 |
+| `slot.locked.stale` / `store.order.silence` / `workflow.manual.open` | `BusinessMetrics`，三个 `ScrapedGauge` 走 60s 节流 |
+| `availability.cache.hit` / `job.release.lag.ms` | `BusinessMetrics`，内存读，不节流 |
+| `job.release.lag.ms` 的心跳 | `ReleaseScanHeartbeat`，构造即打一次 → "扫描没起来"和"扫描卡住"同样让 lag 涨 |
+| `slot.lock.fail` | `SlotOccupyService` 的四个占用入口（`lockNew` / `extendOwn` / `swapTherapist` / `reschedule`）统一拦 `ApiException` 映射 reason，不散在各 `throw` 点 |
+| `inventory.drift` / `slot.locked.stale_paid` | 保持原位（`InventoryDriftGauge` / `SlotOccupyService`） |
+
+计数器留在产生它的模块里，只有"要打 DB 才能算出来"的 gauge 才进 `observability` 包。
+
 ### 追踪
 
 P0：`X-Request-Id` 贯穿即可。不强制上 SkyWalking。
@@ -2371,4 +2384,26 @@ PR1 → PR2 → (PR3a→PR3b→PR3c→PR3d ∥ PR4 → PR5)
     → (PR13 ∥ PR14 ∥ PR15 ∥ PR16)
     → PR17 → PR18（可在 slice 绿后提前）
 ```
+
+## 收口（PR19–PR21）
+
+上面 18 个 PR 全部合并后，逐条对齐本文档与代码，补掉三处"文档写了、代码没落"的缺口。都不改既有接口契约。
+
+### PR19 — 请假审批闭环 + 异常单出度
+
+- **标题**：`feat: leave approval closed loop and abnormal order resolve`
+- **影响**：`ScheduleExceptionService`、`POST /f/human-tasks/{id}/resolve`、`V5__order_resolve_perm.sql`
+- **说明**：请假从"只落单"变成"审批后真扣格"（`FREE → REST`，撞上已售时段回 40906），走同一张 `human_task`（`biz_key = leave:{id}`）；`ABNORMAL` 此前是死状态，补 `RESOLVE_COMPLETE / RESOLVE_CANCEL / IGNORE` 出度。新增 `order:resolve` 只发给店长及以上——前台能中止，不能自己把异常单结掉。
+
+### PR20 — Observability 指标表补齐
+
+- **标题**：`feat(observability): fill the metrics table`
+- **影响**：新包 `com.jisuodashi.observability`、`SlotOccupyService` / `SlotScanJob` / `PaymentService` 采样点
+- **说明**：§Observability 的 9 个指标此前只落了 2 个。打热表的 gauge 统一走 `ScrapedGauge` 60s 节流（文档禁止 15s 打热表）；`slot.locked.stuck_30m` 并入文档命名的 `slot.locked.stale`。
+
+### PR21 — 店长 M1（满班率 + 待办）
+
+- **标题**：`feat(mini-staff): manager M1 board`
+- **影响**：`apps/mini-staff/pages/manager/*`
+- **说明**：后端三条链路（`/f/metrics/utilization`、`/f/human-tasks` 的 approve/deny/resolve）齐了但没有页面把它们拼成一屏。`HumanTaskView` 不带分组字段，**分组在客户端做**：`leave / refund / abnormal / queue`，未知任务类型兜底进「人工队列」（只读），新增类型不会从店长台上消失。分组 key 用语义英文不用数字编号；正文 ≥ 30rpx(15px)、主操作 96rpx(48px) 由报告测试静态扫 wxss/js/wxml 守住。
 

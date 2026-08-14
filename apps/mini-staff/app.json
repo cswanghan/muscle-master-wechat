@@ -3,6 +3,7 @@
     "pages/today/today",
     "pages/service/service",
     "pages/frontdesk/frontdesk",
+    "pages/manager/manager",
     "pages/index/index"
   ],
   "window": {

@@ -106,7 +106,7 @@
 <tr class='ok'><td>TWO</td><td>双 SUCCESS payment → 两张退款 / 两次微信</td><td>refunds=2 wechat=2</td><td>PASS</td></tr>
 <tr class='ok'><td>CASH</td><td>现金只记账不调微信</td><td>wxId=CASH wechat=0</td><td>PASS</td></tr>
 <tr class='ok'><td>APPROVE</td><td>≥50000 先 WAIT_APPROVAL，approve 后再调微信</td><td>wait=WAIT_APPROVAL after=SUCCESS wechat=2</td><td>PASS</td></tr>
-<tr class='ok'><td>IDEM</td><td>同一 requestId / refund_no 重放</td><td>refundNo=R81650268709588992 replay=true</td><td>PASS</td></tr>
+<tr class='ok'><td>IDEM</td><td>同一 requestId / refund_no 重放</td><td>refundNo=R81753506431635456 replay=true</td><td>PASS</td></tr>
 <tr class='ok'><td>PERM</td><td>IN_SERVICE 无 refund:after_start → 40904</td><td>40904=true</td><td>PASS</td></tr>
 <tr class='ok'><td>PENDING</td><td>PENDING_PAY 禁止走退款 API</td><td>status=PENDING_PAY → 40904</td><td>PASS</td></tr>
 <tr class='ok'><td>FAIL</td><td>微信退款失败 → workflow MANUAL + human_task</td><td>wf=MANUAL refund=FAILED</td><td>PASS</td></tr>

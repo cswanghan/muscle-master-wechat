@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>PR21 店长 M1</title>
+  <style>
+    :root { --ink:#14352c; --brand:#1E5C4A; --bg:#f4f7f5; --line:#d5e3dc; }
+    body { font-family: ui-sans-serif, "PingFang SC", sans-serif; margin:0;
+           background:var(--bg); color:var(--ink); }
+    header { background:var(--brand); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:22px; }
+    .badge { display:inline-block; background:#2fbf71; color:#062014;
+             font-weight:700; padding:4px 12px; border-radius:6px; margin-top:10px; }
+    .badge.fail { background:#e85d4c; color:#fff; }
+    main { padding:28px 40px 48px; }
+    table { width:100%; border-collapse:collapse; background:#fff; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+             font-size:13px; }
+    th { background:#e8f1ed; color:var(--brand); }
+    tr.ok td:last-child { color:#1E5C4A; font-weight:700; }
+    tr.bad td:last-child { color:#c0392b; font-weight:700; }
+    .flow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    .st { padding:8px 10px; border-radius:8px; font-size:12px; font-weight:700;
+          border:2px solid var(--brand); background:#e8f1ed; }
+    .st.act { background:#1E5C4A; color:#fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PR21 · 店长 M1（满班率 + 待办）</h1>
+    <p>GET /f/metrics/utilization · GET /f/human-tasks · approve / deny / resolve · 15px / 48px</p>
+    <span class="badge ">ALL PASS · 16 / 16</span>
+  </header>
+  <main>
+    <div class="flow">
+      <div class="st">LEAVE_APPROVE</div>
+      <div class="st">REFUND_APPROVE</div>
+      <div class="st">ORDER_ABNORMAL</div>
+      <div>→ 单一 human_task 队列 →</div>
+      <div class="st act">approve / deny / resolve</div>
+      <div class="st act">全日满班率 347‱ · 峰值 3333‱</div>
+    </div>
+    <table>
+      <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
+      <tbody>
+<tr class='ok'><td>AUTH</td><td>GET /f/metrics/utilization 无 JWT → 40101</td><td>40101</td><td>PASS</td></tr>
+<tr class='ok'><td>AUTH</td><td>技师 token 无 order:list → 403</td><td>403 FORBIDDEN code=40301</td><td>PASS</td></tr>
+<tr class='ok'><td>M1</td><td>全日满班率默认取今天，byHour 覆盖营业小时</td><td>date=2026-08-14 hours=12 rate=0</td><td>PASS</td></tr>
+<tr class='ok'><td>M1</td><td>落单后满班率上升（分母不含 REST）</td><td>0 → 347</td><td>PASS</td></tr>
+<tr class='ok'><td>M1</td><td>分时满班率有峰值，可定位忙闲</td><td>peak=3333 fullDay=347</td><td>PASS</td></tr>
+<tr class='ok'><td>QUEUE</td><td>OPEN 队列同时含请假 / 退款 / 异常单</td><td>leave=1 refund=1 abnormal=1 queue=0</td><td>PASS</td></tr>
+<tr class='ok'><td>QUEUE</td><td>未知类型兜底进人工队列，不丢单</td><td>bizKey=leave:81753521241722880</td><td>PASS</td></tr>
+<tr class='ok'><td>RBAC</td><td>前台无 schedule:approve → 40301</td><td>40301</td><td>PASS</td></tr>
+<tr class='ok'><td>M1</td><td>通过请假 → FREE 翻 REST，任务关闭</td><td>status=APPROVED restSlots=8</td><td>PASS</td></tr>
+<tr class='ok'><td>M1</td><td>异常单按完成结单 → COMPLETED + DONE</td><td>order=COMPLETED task=DONE</td><td>PASS</td></tr>
+<tr class='ok'><td>M1</td><td>≥¥500 退款审批通过 → 微信退款真调用</td><td>wf=SUCCESS refundCalls=2</td><td>PASS</td></tr>
+<tr class='ok'><td>QUEUE</td><td>处理完队列清空，店长台回到 0 待办</td><td>open=0 refundOrder=81753521396912129</td><td>PASS</td></tr>
+<tr class='ok'><td>A11Y</td><td>正文最小字号 ≥ 30rpx(15px)</td><td>min=30rpx</td><td>PASS</td></tr>
+<tr class='ok'><td>A11Y</td><td>主操作 ≥ 96rpx(48px) tap target</td><td>btn 96rpx / tag 96rpx</td><td>PASS</td></tr>
+<tr class='ok'><td>A11Y</td><td>分组 key 语义化，无数字编号</td><td>leave / refund / abnormal / queue</td><td>PASS</td></tr>
+<tr class='ok'><td>A11Y</td><td>wxml 按 key/label 渲染，不按下标取组</td><td>wx:for groups → item.key</td><td>PASS</td></tr>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

@@ -102,8 +102,8 @@
       <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
       <tbody>
 <tr class='ok'><td>CASH</td><td>散客现金 lockNew → PAY_SUCCESS → 同事务 CHECK_IN</td><td>status=CHECKED_IN mask=186****1111</td><td>PASS</td></tr>
-<tr class='ok'><td>MERGE</td><td>同一手机 CustomerMerge 复用散客行</td><td>customer=81608418128826368 orders=9100000000000000002/9100000000000000017</td><td>PASS</td></tr>
-<tr class='ok'><td>WECHAT</td><td>Native 收款码 + GET /f/payments 轮询至 SUCCESS 再核销</td><td>qr=weixin://wxpay/bizpayurl?pr=LIVE_P81608418137214977 poll=SUCCESS checkIn=CHECKED_IN</td><td>PASS</td></tr>
+<tr class='ok'><td>MERGE</td><td>同一手机 CustomerMerge 复用散客行</td><td>customer=81753523322097664 orders=9100000000000000002/9100000000000000017</td><td>PASS</td></tr>
+<tr class='ok'><td>WECHAT</td><td>Native 收款码 + GET /f/payments 轮询至 SUCCESS 再核销</td><td>qr=weixin://wxpay/bizpayurl?pr=LIVE_P81753523326291969 poll=SUCCESS checkIn=CHECKED_IN</td><td>PASS</td></tr>
 <tr class='ok'><td>LOOKUP</td><td>按手机 / 单号查找后 fire(CHECK_IN)</td><td>orderNo=JS2026081400000002 room=一号房 bed=1号床</td><td>PASS</td></tr>
       </tbody>
     </table>

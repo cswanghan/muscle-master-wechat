@@ -3,6 +3,7 @@
   <view class="title">{{title}}</view>
   <view class="hint">技师 / 前台 / 店长 共用此工程 · 前台核销 / 散客收款码</view>
   <navigator url="/pages/frontdesk/frontdesk" class="go">进入前台 iPad</navigator>
+  <navigator url="/pages/manager/manager" class="go">进入店长台 M1</navigator>
   <view class="roles">
     <text wx:for="{{roles}}" wx:key="*this" class="role">{{item}}</text>
   </view>
