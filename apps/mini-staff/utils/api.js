@@ -30,8 +30,18 @@ function loginTherapist() {
   })
 }
 
+/** 店长台（M1）：满班率 + 待办都要 /f/** 的门店数据域。 */
+function loginManager() {
+  return request({
+    url: '/api/v1/staff/auth/wechat',
+    method: 'POST',
+    data: { code: 'dev-staff-manager' },
+  })
+}
+
 module.exports = {
   apiBase,
   request,
   loginTherapist,
+  loginManager,
 }

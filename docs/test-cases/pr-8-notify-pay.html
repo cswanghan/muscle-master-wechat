@@ -80,7 +80,7 @@
 <tr class='ok'><td>NOTIFY</td><td>金额不符 → FAILED + human_task + APIv3 SUCCESS</td><td>pay=FAILED order=PENDING_PAY tasks=1</td><td>PASS</td></tr>
 <tr class='ok'><td>REFUND</td><td>CLOSED+已扣款 → 入退款队列且不 PAY_SUCCESS</td><td>order=CLOSED occ=0 refund=PENDING wf=REFUND</td><td>PASS</td></tr>
 <tr class='ok'><td>D25</td><td>先支付再跑原 RELEASE_LOCK → 订单 BOOKED、job DONE</td><td>order=BOOKED job=DONE fire=40904 occ=10</td><td>PASS</td></tr>
-<tr class='ok'><td>REPAY</td><td>1:1 prepay 未过期复用</td><td>paymentNo=P81589277120532480 reused=true</td><td>PASS</td></tr>
+<tr class='ok'><td>REPAY</td><td>1:1 prepay 未过期复用</td><td>paymentNo=P81753506381303808 reused=true</td><td>PASS</td></tr>
       </tbody>
     </table>
   </main>

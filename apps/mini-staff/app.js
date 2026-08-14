@@ -7,5 +7,7 @@ App({
     apiBase,
     token: '',
     staffName: '',
+    managerToken: '',
+    managerName: '',
   },
 })

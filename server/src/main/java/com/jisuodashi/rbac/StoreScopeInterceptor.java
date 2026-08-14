@@ -2,8 +2,6 @@ package com.jisuodashi.rbac;
 
 import com.jisuodashi.auth.AuthContext;
 import com.jisuodashi.auth.JwtPrincipal;
-import com.jisuodashi.auth.StaffUser;
-import com.jisuodashi.auth.StaffUserRepository;
 import com.jisuodashi.auth.TokenType;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.ErrorCodes;
@@ -13,17 +11,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import java.util.Collection;
 
 @Component
 public class StoreScopeInterceptor implements HandlerInterceptor {
 
     private final StoreScopeResolver resolver;
-    private final StaffUserRepository staffUsers;
+    private final PermissionChecker permissions;
 
-    public StoreScopeInterceptor(StoreScopeResolver resolver, StaffUserRepository staffUsers) {
+    public StoreScopeInterceptor(StoreScopeResolver resolver, PermissionChecker permissions) {
         this.resolver = resolver;
-        this.staffUsers = staffUsers;
+        this.permissions = permissions;
     }
 
     @Override
@@ -83,18 +80,7 @@ public class StoreScopeInterceptor implements HandlerInterceptor {
     }
 
     private void assertPermitted(JwtPrincipal principal, String required) {
-        if (principal.staffId() == null) {
-            throw new ApiException(ErrorCodes.FORBIDDEN, "无功能权限");
-        }
-        StaffUser staff = staffUsers.findById(principal.staffId()).orElse(null);
-        if (staff == null) {
-            throw new ApiException(ErrorCodes.FORBIDDEN, "无功能权限");
-        }
-        Collection<String> held = staff.getPermissionCodes();
-        if (held == null || held.isEmpty()) {
-            held = PermissionCatalog.forRoles(staff.getRoleCodes());
-        }
-        if (!PermissionCatalog.allows(held, required)) {
+        if (!permissions.holds(principal, required)) {
             throw new ApiException(ErrorCodes.FORBIDDEN, "无功能权限");
         }
     }

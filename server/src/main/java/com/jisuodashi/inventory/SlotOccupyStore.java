@@ -107,6 +107,16 @@ public interface SlotOccupyStore extends DelayedJobStore {
     /** occupancy exists XOR status in LOCKED/BOOKED/BUFFER. */
     int countInventoryDrift();
 
+    /** {@code store.order.silence} 刮取：门店在 {@code [since, now)} 内的新单数。 */
+    int countOrdersCreatedSince(long storeId, LocalDateTime since);
+
+    /** Leave approval guard (§2.3): busy slots in the half-open range {@code [from, toExclusive)}. */
+    int countBusyTherapistSlots(long therapistId, LocalDate date, int fromSlotNo, int toSlotNoExclusive);
+
+    /** Leave approval effect (§2.3): {@code FREE → REST} in {@code [from, toExclusive)}. No occupancy write. */
+    int restFreeTherapistSlots(
+            long therapistId, LocalDate date, int fromSlotNo, int toSlotNoExclusive, LocalDateTime now);
+
     int confirmPaidTherapistSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now);
 
     int confirmPaidBedSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now);

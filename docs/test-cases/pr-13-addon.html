@@ -95,7 +95,7 @@
       <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
       <tbody>
 <tr class='ok'><td>CASH</td><td>IN_SERVICE 现金 extendOwn 后 fire(ADD_ON)，原 BUFFER 变 BOOKED</td><td>status=IN_SERVICE amt=9900 end=71</td><td>PASS</td></tr>
-<tr class='ok'><td>WECHAT</td><td>extendOwn LOCKED + Native 轮询；notify 后 fire(ADD_ON) 不 fire(PAY_SUCCESS)</td><td>qr=weixin://wxpay/bizpayurl?pr=LIVE_P81650281149894656 poll=SUCCESS end=55</td><td>PASS</td></tr>
+<tr class='ok'><td>WECHAT</td><td>extendOwn LOCKED + Native 轮询；notify 后 fire(ADD_ON) 不 fire(PAY_SUCCESS)</td><td>qr=weixin://wxpay/bizpayurl?pr=LIVE_P81753523766693890 poll=SUCCESS end=55</td><td>PASS</td></tr>
 <tr class='ok'><td>40907</td><td>后续格占用 → 40907，不部分占格、不建 workflow</td><td>code=40907 occ=10</td><td>PASS</td></tr>
 <tr class='ok'><td>TIMEOUT</td><td>ADD_ON_PAY_TIMEOUT → ReleaseAddOnHold 恢复 BUFFER，订单仍 IN_SERVICE</td><td>hold=null</td><td>PASS</td></tr>
       </tbody>

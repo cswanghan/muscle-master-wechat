@@ -323,6 +323,18 @@ public class InMemoryPaymentStore implements PaymentStore {
     }
 
     @Override
+    public HumanTask lockHumanTaskByBizKey(String bizKey) {
+        if (bizKey == null) {
+            return null;
+        }
+        HumanTask found = tasks.stream()
+                .filter(t -> bizKey.equals(t.getBizKey()))
+                .findFirst()
+                .orElse(null);
+        return found == null ? null : lockHumanTaskById(found.getId());
+    }
+
+    @Override
     public void updateHumanTask(HumanTask task) {
         Work w = requireWork();
         HumanTask prev = findHumanTaskById(task.getId());

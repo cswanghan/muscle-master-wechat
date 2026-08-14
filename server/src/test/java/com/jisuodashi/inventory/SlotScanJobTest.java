@@ -157,7 +157,7 @@ class SlotScanJobTest {
     }
 
     @Test
-    void scanIncrementsStalePaidMetricAndStuckGauge() {
+    void scanIncrementsStalePaidMetric() {
         InMemorySlotOccupyStore store = OccupyFixtures.demoStore();
         SimpleMeterRegistry meters = new SimpleMeterRegistry();
         SlotOccupyService service = new SlotOccupyService(
@@ -174,8 +174,8 @@ class SlotScanJobTest {
         SlotScanResult scan = scanJob(store, service).run();
         assertThat(scan.stalePaid()).isEqualTo(1);
         assertThat(meters.counter("slot.locked.stale_paid").count()).isEqualTo(1.0);
+        // slot.locked.stale 现在由 BusinessMetrics 以 60s 节流刮取，这里只校验刮取源。
         assertThat(store.countLockedExpiredBefore(TODAY.atTime(18, 50))).isEqualTo(10);
-        assertThat(meters.get("slot.locked.stuck_30m").gauge().value()).isEqualTo(10.0);
     }
 
     private static SlotScanJob scanJob(InMemorySlotOccupyStore store, SlotOccupyService service) {

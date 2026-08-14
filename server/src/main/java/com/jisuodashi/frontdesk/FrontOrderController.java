@@ -67,6 +67,16 @@ public class FrontOrderController {
         return ApiResponse.ok(desk.reschedule(id, request));
     }
 
+    /** §3 中止服务：{@code IN_SERVICE → ABNORMAL}，同时开一张异常单待办。 */
+    @PostMapping("/{id}/abort")
+    @StoreScoped
+    @RequirePerm("frontdesk:order:*")
+    public ApiResponse<FrontDeskDtos.AbortResponse> abort(
+            @PathVariable("id") String id,
+            @Valid @RequestBody(required = false) FrontDeskDtos.AbortRequest request) {
+        return ApiResponse.ok(desk.abortOrder(id, request));
+    }
+
     @PostMapping("/{id}/refund")
     @StoreScoped
     @RequirePerm("refund:create")

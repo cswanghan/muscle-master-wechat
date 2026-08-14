@@ -46,12 +46,12 @@
       <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
       <tbody>
 <tr class='ok'><td>AUTH</td><td>GET /t/today 无 JWT → 40101</td><td>40101</td><td>PASS</td></tr>
-<tr class='ok'><td>T1</td><td>下一单卡片 who/when/bed/project/new guest</td><td>{orderId=81604895186096129, status=CHECKED_IN, start=19:30, end=20:30, projectName=全身推拿放松, roomName=一号房, bedName=1号床, customerName=王先生, isNewCustomer=true, minutesToStart=901}</td><td>PASS</td></tr>
+<tr class='ok'><td>T1</td><td>下一单卡片 who/when/bed/project/new guest</td><td>{orderId=81753539675688961, status=CHECKED_IN, start=19:30, end=20:30, projectName=全身推拿放松, roomName=一号房, bedName=1号床, customerName=王先生, isNewCustomer=true, minutesToStart=310}</td><td>PASS</td></tr>
 <tr class='ok'><td>T2</td><td>POST /t/orders/{id}/start → IN_SERVICE</td><td>IN_SERVICE</td><td>PASS</td></tr>
 <tr class='ok'><td>T2</td><td>他师 start → 40904</td><td>40904</td><td>PASS</td></tr>
 <tr class='ok'><td>NOTE</td><td>服务技师空记录 GET 200 []</td><td>items=[]</td><td>PASS</td></tr>
 <tr class='ok'><td>NOTE</td><td>D27 无同意 40301；POST 只增；GET 仅本人</td><td>deny=40301 items=1 t2=40401</td><td>PASS</td></tr>
-<tr class='ok'><td>T1</td><td>GET /t/me/today 别名 + GET /t/orders/{id} 绑定本单</td><td>opened=81604895186096129 record=true</td><td>PASS</td></tr>
+<tr class='ok'><td>T1</td><td>GET /t/me/today 别名 + GET /t/orders/{id} 绑定本单</td><td>opened=81753539675688961 record=true</td><td>PASS</td></tr>
 <tr class='ok'><td>T2</td><td>POST /t/orders/{id}/complete → COMPLETED</td><td>COMPLETED</td><td>PASS</td></tr>
       </tbody>
     </table>

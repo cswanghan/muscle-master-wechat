@@ -9,6 +9,7 @@ import com.jisuodashi.inventory.SlotScanResult;
 import com.jisuodashi.order.FireContext;
 import com.jisuodashi.order.OrderEvent;
 import com.jisuodashi.order.OrderStateMachine;
+import com.jisuodashi.observability.ReleaseScanHeartbeat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ public class SlotScanJob {
 
     private final SlotOccupyService occupy;
     private final OrderStateMachine machine;
+    private ReleaseScanHeartbeat heartbeat;
 
     public SlotScanJob(SlotOccupyService occupy) {
         this(occupy, null);
@@ -38,6 +40,12 @@ public class SlotScanJob {
         this.machine = machine;
     }
 
+    /** {@code job.release.lag.ms} 的心跳源；单测直接 new 本类时可以不注入。 */
+    @Autowired(required = false)
+    public void setHeartbeat(ReleaseScanHeartbeat heartbeat) {
+        this.heartbeat = heartbeat;
+    }
+
     public SlotScanResult run() {
         SlotScanResult result = machine == null ? occupy.scanExpiredLocks() : scanAndFire();
         if (result.holdsSeen() > 0) {
@@ -45,6 +53,9 @@ public class SlotScanJob {
                     "SlotScanJob holds={} orphans={} pending={} stalePaid={} addonSkipped={}",
                     result.holdsSeen(), result.orphansFreed(), result.pendingReleased(),
                     result.stalePaid(), result.addonSkipped());
+        }
+        if (heartbeat != null) {
+            heartbeat.mark();
         }
         return result;
     }
