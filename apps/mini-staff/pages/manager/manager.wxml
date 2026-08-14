@@ -1,61 +1,57 @@
 <view class="page">
-  <view class="bar">
-    <view>
-      <view class="title">店长台 · M1</view>
-      <view class="sub">{{staffName}} · {{date}}</view>
+  <view class="hero">
+    <view class="hero-top">
+      <view class="title">经营概览</view>
     </view>
-    <view class="rate">
-      <view class="rate-num">{{rateText}}</view>
-      <view class="rate-cap">全日满班率</view>
+    <view class="pills">
+      <view class="pill">{{staffName}} · 本店</view>
+      <view class="pill ghost">今日 · 实时</view>
     </view>
+    <view class="rate-row">
+      <view>
+        <view class="rate-cap">今日满班率</view>
+        <view class="rate-num">{{rateText}}</view>
+      </view>
+      <view class="rev">
+        <view class="rate-cap">今日营收</view>
+        <view class="rev-num">{{revenueText}}</view>
+      </view>
+    </view>
+    <view class="track">
+      <view class="fill" style="width:{{rateWidth}}%"></view>
+    </view>
+    <view class="remain">{{remainText}}</view>
   </view>
 
   <view wx:if="{{error}}" class="err">{{error}}</view>
   <view wx:if="{{notice}}" class="ok">{{notice}}</view>
 
   <view class="card">
-    <view class="h2">分时满班率</view>
-    <view wx:if="{{hours.length === 0}}" class="empty">今日无排班</view>
-    <view wx:else class="chart">
-      <view wx:for="{{hours}}" wx:key="hour" class="col">
-        <view class="col-text">{{item.text}}</view>
-        <view class="track">
-          <view class="fill {{item.tone}}" style="height:{{item.height}}%"></view>
-        </view>
-        <view class="col-hour">{{item.label}}</view>
-      </view>
+    <view class="sec-row">
+      <view class="h2">待我审批</view>
+      <view wx:if="{{openCount}}" class="badge">{{openCount}}</view>
     </view>
-    <view class="legend">
-      <text class="dot full"></text><text class="lg">≥85%</text>
-      <text class="dot busy"></text><text class="lg">50–85%</text>
-      <text class="dot idle"></text><text class="lg">&lt;50%</text>
-      <text class="lg">分母不含 REST（未排班/请假不进产能）</text>
-    </view>
-  </view>
-
-  <view class="card">
-    <view class="h2">待办 · {{openCount}}</view>
     <view wx:if="{{groups.length === 0}}" class="empty">队列已清空</view>
     <view wx:for="{{groups}}" wx:key="key" class="group">
-      <view class="group-label">{{item.label}} · {{item.items.length}}</view>
       <view wx:for="{{item.items}}" wx:for-item="task" wx:key="id" class="task">
-        <view class="task-main">
+        <view class="task-top">
           <view class="task-title">{{task.title}}</view>
-          <view class="task-meta">{{task.taskType}} · {{task.bizKey}}</view>
+          <view wx:if="{{item.key === 'leave'}}" class="warn-tag">待处理</view>
+          <view wx:else class="task-time">{{task.bizKey}}</view>
         </view>
+        <view class="task-meta">{{item.label}} · {{task.taskType}}</view>
         <view wx:if="{{item.action === 'approve'}}" class="acts">
           <view class="btn {{busyTaskId === task.id ? 'off' : ''}}"
-                data-id="{{task.id}}" bindtap="onApprove">通过</view>
+                data-id="{{task.id}}" bindtap="onApprove">同意</view>
           <view class="btn ghost {{busyTaskId === task.id ? 'off' : ''}}"
                 data-id="{{task.id}}" bindtap="onDeny">驳回</view>
+          <view class="btn ghost" data-id="{{task.id}}" bindtap="onDetail">详情</view>
         </view>
         <view wx:elif="{{item.action === 'resolve'}}" class="acts">
           <view class="btn {{busyTaskId === task.id ? 'off' : ''}}"
-                data-id="{{task.id}}" data-action="RESOLVE_COMPLETE" bindtap="onResolve">按完成</view>
+                data-id="{{task.id}}" data-action="RESOLVE_COMPLETE" bindtap="onResolve">去处理</view>
           <view class="btn ghost {{busyTaskId === task.id ? 'off' : ''}}"
-                data-id="{{task.id}}" data-action="RESOLVE_CANCEL" bindtap="onResolve">按取消</view>
-          <view class="btn ghost {{busyTaskId === task.id ? 'off' : ''}}"
-                data-id="{{task.id}}" data-action="IGNORE" bindtap="onResolve">忽略</view>
+                data-id="{{task.id}}" data-action="IGNORE" bindtap="onResolve">驳回</view>
         </view>
         <view wx:else class="acts">
           <view class="tag">线下处理</view>
@@ -64,5 +60,37 @@
     </view>
   </view>
 
-  <view class="ruler">正文 ≥ 15px · 主操作 ≥ 48×48px</view>
+  <view class="card">
+    <view class="sec-row">
+      <view class="h2">门店实时</view>
+      <view class="more">按满班率排 ›</view>
+    </view>
+    <view wx:if="{{stores.length === 0}}" class="empty">暂无门店数据</view>
+    <view wx:for="{{stores}}" wx:key="name" class="store">
+      <view class="store-name">{{item.name}}</view>
+      <view class="store-bar">
+        <view class="store-fill {{item.tone}}" style="width:{{item.width}}%"></view>
+      </view>
+      <view class="store-rate">{{item.text}}</view>
+    </view>
+  </view>
+
+  <view class="dock">
+    <view class="dock-item on">
+      <view class="dock-ico"></view>
+      <view>概览</view>
+    </view>
+    <view class="dock-item" bindtap="scrollTasks">
+      <view class="dock-ico"></view>
+      <view>审批</view>
+    </view>
+    <view class="dock-item" bindtap="soon">
+      <view class="dock-ico"></view>
+      <view>排班</view>
+    </view>
+    <view class="dock-item" bindtap="goMine">
+      <view class="dock-ico me"></view>
+      <view>我的</view>
+    </view>
+  </view>
 </view>

@@ -1,4 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "服务中"
+  "navigationBarTitleText": "服务进行中",
+  "navigationBarBackgroundColor": "#143F34",
+  "navigationBarTextStyle": "white"
 }

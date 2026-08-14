@@ -1,5 +1,12 @@
 <view class="page cal-page" id="c3-calendar">
-  <view class="meta">{{storeName}} · {{projectName}} · {{durationMinutes}}+{{bufferMinutes}} 分</view>
+  <view class="card th-card" wx:if="{{therapists[0]}}">
+    <view class="avatar"></view>
+    <view>
+      <view class="th-name">{{therapists[0].name}} <text class="chip">{{therapists[0].levelLabel}}</text></view>
+      <view class="copper">{{therapists[0].rating}} 分</view>
+    </view>
+  </view>
+  <view class="meta">{{storeName}} · {{projectName}}</view>
 
   <scroll-view class="dates" scroll-x>
     <view
@@ -9,7 +16,7 @@
       data-iso="{{item.iso}}"
       bindtap="pickDate"
     >
-      <view class="date-w">周{{item.week}}</view>
+      <view class="date-w">{{item.iso===date?'今天':'周'+item.week}}</view>
       <view class="date-d">{{item.day}}</view>
     </view>
   </scroll-view>

@@ -44,7 +44,11 @@ Page({
     error: '',
     notice: '',
     rateText: '—',
+    rateWidth: 0,
+    remainText: '',
+    revenueText: '—',
     hours: [],
+    stores: [],
     groups: [],
     openCount: 0,
     busyTaskId: '',
@@ -97,7 +101,24 @@ Page({
           tone: shape.tone,
         }
       })
-      this.setData({ date: data.date, rateText: rateText(data.rateX10000), hours })
+      const pct = data.rateX10000 == null ? 0 : data.rateX10000 / 100
+      const after19 = (data.byHour || []).filter((h) => h.hour >= 19)
+      const idleAfter19 = after19.filter((h) => (h.rateX10000 || 0) < 5000).length
+      const remainSlots = Math.max(0, Math.round((100 - pct) * 4))
+      const storeTone = pct >= 85 ? 'full' : pct >= 70 ? 'ok' : pct >= 50 ? 'idle' : 'alert'
+      this.setData({
+        date: data.date,
+        rateText: rateText(data.rateX10000),
+        rateWidth: Math.max(4, Math.min(100, Math.round(pct))),
+        remainText: `剩余约 ${remainSlots} 个可售 slot，19:00 后低谷 ${idleAfter19} 小时`,
+        hours,
+        stores: [{
+          name: '本店',
+          text: rateText(data.rateX10000),
+          width: Math.max(8, Math.min(100, Math.round(pct))),
+          tone: storeTone,
+        }],
+      })
     })
   },
 
@@ -134,6 +155,30 @@ Page({
 
   onDeny(e) {
     this.act(e, '/deny', { requestId: 'm1-dn-' + Date.now(), reason: '店长驳回' }, '已驳回')
+  },
+
+  onDetail(e) {
+    const id = e.currentTarget.dataset.id
+    const all = []
+    this.data.groups.forEach((g) => g.items.forEach((t) => all.push(t)))
+    const task = all.find((t) => t.id === id)
+    wx.showModal({
+      title: task ? task.title : '详情',
+      content: task ? `${task.taskType}\n${task.bizKey || ''}` : '',
+      showCancel: false,
+    })
+  },
+
+  soon() {
+    wx.showToast({ title: 'P0 未开通', icon: 'none' })
+  },
+
+  goMine() {
+    wx.navigateTo({ url: '/pages/index/index' })
+  },
+
+  scrollTasks() {
+    wx.pageScrollTo({ scrollTop: 280, duration: 240 })
   },
 
   onResolve(e) {

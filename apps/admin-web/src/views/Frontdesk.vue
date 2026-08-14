@@ -128,6 +128,8 @@ const utilization = ref<{
   byHour: { hour: number; rateX10000: number | null }[]
 } | null>(null)
 
+const action = ref<'addon' | 'swap' | 'reschedule' | 'refund'>('addon')
+
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => addOn.value?.codeUrl || walkIn.value?.codeUrl || '')
 const qrMarkup = computed(() => (qrText.value ? qrSvg(qrText.value) : ''))
@@ -136,7 +138,41 @@ function formatRate(rate: number | null | undefined) {
   if (rate == null) {
     return '—'
   }
-  return (rate / 100).toFixed(2) + '%'
+  return (rate / 100).toFixed(1) + '%'
+}
+
+function slotToTime(slot: number) {
+  const h = Math.floor(slot / 4)
+  const m = (slot % 4) * 15
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+function statusLabel(raw: string) {
+  const map: Record<string, string> = {
+    PENDING_PAY: '待支付',
+    BOOKED: '已预约',
+    CHECKED_IN: '已到店',
+    IN_SERVICE: '服务中',
+    COMPLETED: '已完成',
+    ABNORMAL: '异常',
+    CANCELLED: '已取消',
+    CLOSED: '已关闭',
+  }
+  return map[raw] ?? raw
+}
+
+function statusClass(raw: string) {
+  if (raw === 'IN_SERVICE' || raw === 'CHECKED_IN') return 'ink'
+  if (raw === 'PENDING_PAY') return 'warn'
+  if (raw === 'ABNORMAL') return 'alert'
+  return ''
+}
+
+function bindOrder(id: string) {
+  addOnOrderId.value = id
+  swapOrderId.value = id
+  rescheduleOrderId.value = id
+  refundOrderId.value = id
 }
 
 function authHeaders(): HeadersInit {
@@ -184,6 +220,10 @@ async function lookup() {
     const res = await fetch(`/api/v1/f/orders/lookup?keyword=${q}`, { headers: authHeaders() })
     const data = await readEnvelope<{ items: LookupItem[] }>(res)
     lookupItems.value = data.items
+    const first = data.items[0]
+    if (first) {
+      bindOrder(first.orderId)
+    }
   } catch (e) {
     lookupItems.value = []
     error.value = e instanceof Error ? e.message : String(e)
@@ -206,6 +246,7 @@ async function checkIn(orderId: string, verify?: string, kw?: string) {
       }),
     })
     checkInResult.value = await readEnvelope<CheckInData>(res)
+    bindOrder(checkInResult.value.orderId)
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
@@ -415,15 +456,16 @@ onUnmounted(stopPoll)
   <div id="frontdesk-page" class="desk">
     <header class="desk-bar">
       <div>
+        <p class="page-kicker">IPAD · 旗舰店</p>
         <h1>门店前台</h1>
-        <p>iPad 横屏 1024 · 核销 / 现金 / 微信收款码 / 加钟</p>
+        <p>到店核销 · 散客收银 · 服务中改单</p>
       </div>
-      <div id="desk-utilization" class="util" v-if="utilization">
-        满班率 {{ formatRate(utilization.rateX10000) }}
-        <small>{{ utilization.date }} · {{ utilization.byHour.length }} 时段</small>
+      <div id="desk-utilization" class="util">
+        <strong>{{ formatRate(utilization?.rateX10000) }}</strong>
+        <small>今日满班率{{ utilization ? ` · ${utilization.date}` : '' }}</small>
       </div>
-      <el-button id="desk-login-btn" type="primary" :loading="loginLoading" @click="devLogin">
-        {{ loggedIn ? staffName : '登录前台 demo.front' }}
+      <el-button id="desk-login-btn" type="primary" size="large" :loading="loginLoading" @click="devLogin">
+        {{ loggedIn ? staffName : '登录前台' }}
       </el-button>
     </header>
 
@@ -440,7 +482,7 @@ onUnmounted(stopPoll)
     <div class="desk-grid">
       <section class="desk-card" id="checkin-panel">
         <h2>到店核销</h2>
-        <p class="hint">单号 JS… 或 11 位手机 · POST /f/orders/{id}/check-in</p>
+        <p class="hint">扫单号或报手机，确认房间后核销</p>
         <div class="row">
           <el-input
             id="checkin-keyword"
@@ -454,8 +496,8 @@ onUnmounted(stopPoll)
         <article v-for="item in lookupItems" :key="item.orderId" class="hit">
           <div>
             <strong>{{ item.orderNo }}</strong>
-            <span>{{ item.customerMask }} · {{ item.roomName }} {{ item.bedName }}</span>
-            <em>{{ item.status }}</em>
+            <span>{{ item.customerMask }} · {{ item.roomName }} {{ item.bedName }} · {{ slotToTime(item.startSlotNo) }}</span>
+            <em class="status-pill" :class="statusClass(item.status)">{{ statusLabel(item.status) }}</em>
           </div>
           <el-button
             type="primary"
@@ -467,20 +509,20 @@ onUnmounted(stopPoll)
           </el-button>
         </article>
         <div v-if="checkInResult" id="checkin-result" class="result">
-          {{ checkInResult.status }} · {{ checkInResult.roomName }} {{ checkInResult.bedName }} ·
-          {{ checkInResult.customerMask }}
+          {{ statusLabel(checkInResult.status) }} · {{ checkInResult.roomName }}
+          {{ checkInResult.bedName }} · {{ checkInResult.customerMask }}
         </div>
       </section>
 
       <section class="desk-card" id="walkin-panel">
         <h2>散客开单</h2>
-        <p class="hint">手机必填 · CustomerMerge · CASH 当场 / WECHAT Native 轮询</p>
+        <p class="hint">到店无预约 · 现金或出示收款码</p>
         <div class="form">
           <label>手机</label>
           <el-input id="walkin-phone" v-model="phone" size="large" maxlength="11" />
           <label>称呼</label>
           <el-input v-model="customerName" size="large" />
-          <label>日期 / 起始格</label>
+          <label>日期 / 开始时间 {{ slotToTime(startSlotNo) }}</label>
           <div class="row">
             <el-input v-model="date" size="large" />
             <el-input-number v-model="startSlotNo" :min="40" :max="87" size="large" />
@@ -504,9 +546,19 @@ onUnmounted(stopPoll)
       </section>
     </div>
 
-    <section class="desk-card" id="addon-panel">
-      <h2>服务中加钟</h2>
-      <p class="hint">IN_SERVICE · durationMinutes 为 15 的倍数 · CASH 当场 / WECHAT 收款码轮询</p>
+    <section class="desk-card">
+      <h2>本单操作</h2>
+      <p class="hint">先核销或开单，再加钟、换师、改约、退款</p>
+      <div class="actions">
+        <button type="button" :class="{ on: action === 'addon' }" @click="action = 'addon'">加钟</button>
+        <button type="button" :class="{ on: action === 'swap' }" @click="action = 'swap'">换技师</button>
+        <button type="button" :class="{ on: action === 'reschedule' }" @click="action = 'reschedule'">改约</button>
+        <button type="button" :class="{ on: action === 'refund' }" @click="action = 'refund'">退款</button>
+      </div>
+
+    <section class="desk-card" id="addon-panel" v-show="action === 'addon'">
+      <h2>加钟</h2>
+      <p class="hint">服务进行中可加 15 / 30 / 45 分钟</p>
       <div class="form">
         <label>订单</label>
         <el-input
@@ -543,9 +595,9 @@ onUnmounted(stopPoll)
       </div>
     </section>
 
-    <section class="desk-card" id="swap-panel">
+    <section class="desk-card" id="swap-panel" v-show="action === 'swap'">
       <h2>换技师</h2>
-      <p class="hint">只锁新技师剩余格 · 不重锁本单床 · POST /f/orders/{id}/swap-therapist</p>
+      <p class="hint">只换人，房间和床位不变</p>
       <div class="form">
         <label>订单 ID</label>
         <el-input id="swap-order-id" v-model="swapOrderId" size="large" placeholder="核销后填入或从查找带入" />
@@ -569,13 +621,13 @@ onUnmounted(stopPoll)
       </div>
     </section>
 
-    <section class="desk-card" id="reschedule-panel">
+    <section class="desk-card" id="reschedule-panel" v-show="action === 'reschedule'">
       <h2>改约</h2>
-      <p class="hint">仅 BOOKED · 同店同项目同价 · POST /f/orders/{id}/reschedule</p>
+      <p class="hint">仅未到店的已付预约可改，项目与价格不变</p>
       <div class="form">
         <label>订单 ID</label>
         <el-input id="reschedule-order-id" v-model="rescheduleOrderId" size="large" />
-        <label>新日期 / 开始格 / 技师</label>
+        <label>新日期 / 开始 {{ slotToTime(rescheduleStart) }} / 技师</label>
         <div class="row">
           <el-input id="reschedule-date" v-model="rescheduleDate" size="large" />
           <el-input-number id="reschedule-start" v-model="rescheduleStart" :min="0" size="large" />
@@ -590,9 +642,9 @@ onUnmounted(stopPoll)
       </div>
     </section>
 
-    <section class="desk-card" id="refund-panel">
+    <section class="desk-card" id="refund-panel" v-show="action === 'refund'">
       <h2>退款</h2>
-      <p class="hint">全额 = SUM(SUCCESS)−已退 · ≥50000 先审批 · POST /f/orders/{id}/refund</p>
+      <p class="hint">全额退回已收金额，满 ¥500 需店长审批</p>
       <div class="form">
         <label>订单 ID / 金额（分，锁定为剩余可退）</label>
         <div class="row">
@@ -604,13 +656,15 @@ onUnmounted(stopPoll)
         </el-button>
       </div>
       <div v-if="refundResult" id="refund-result" class="result">
-        {{ refundResult.status }} · {{ refundResult.workflowStatus }} · {{ refundResult.refunds?.length || 0 }} 张
+        {{ statusLabel(refundResult.status) }} · {{ refundResult.workflowStatus }} ·
+        {{ refundResult.refunds?.length || 0 }} 张
       </div>
+    </section>
     </section>
 
     <section v-if="walkIn || addOn" id="qr-panel" class="desk-card qr-card">
       <div>
-        <h2>收款结果</h2>
+        <h2>请顾客扫码付款</h2>
         <p v-if="walkIn">
           {{ walkIn.orderNo }} · {{ walkIn.payChannel }} · {{ walkIn.status }} ·
           ¥{{ (walkIn.payableFen / 100).toFixed(0) }}

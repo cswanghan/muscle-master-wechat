@@ -11,7 +11,7 @@ function etaText(minutes) {
     return ''
   }
   if (minutes > 0) {
-    return `${minutes} 分钟后开始`
+    return `${minutes} 分钟后`
   }
   if (minutes === 0) {
     return '现在开始'
@@ -19,16 +19,94 @@ function etaText(minutes) {
   return `已迟到 ${-minutes} 分钟`
 }
 
+function nowSlot() {
+  const d = new Date()
+  return d.getHours() * 4 + Math.floor(d.getMinutes() / 15)
+}
+
+function shortProject(name) {
+  if (!name) {
+    return '到店项目'
+  }
+  return String(name).replace(/调理/g, '').trim() || name
+}
+
+function groupTimeline(timeline, next) {
+  const rows = []
+  let i = 0
+  const current = nowSlot()
+  while (i < timeline.length) {
+    const cur = timeline[i]
+    let j = i + 1
+    while (
+      j < timeline.length
+      && timeline[j].state === cur.state
+      && String(timeline[j].orderId || '') === String(cur.orderId || '')
+    ) {
+      j += 1
+    }
+    const slots = j - i
+    const minutes = slots * 15
+    const isNext = next && cur.orderId && String(cur.orderId) === String(next.orderId)
+    const past = cur.slotNo + slots <= current
+    let kind = 'idle'
+    let title = '空档 ' + minutes + ' 分钟'
+    let status = ''
+    let action = ''
+    if (cur.state === 'BOOKED' || cur.state === 'LOCKED' || cur.state === 'BUFFER') {
+      kind = past && !isNext ? 'done' : isNext ? 'next' : 'booked'
+      title = isNext
+        ? `${next.customerName} · ${shortProject(next.projectName)}`
+        : (cur.state === 'LOCKED' ? '锁定中' : '已预约')
+      status = past && !isNext
+        ? '已完成'
+        : (cur.state === 'LOCKED' ? '锁定中' : (isNext ? '待服务' : '已预约'))
+    } else if (cur.state === 'REST') {
+      kind = 'rest'
+      title = '休息 / 请假'
+      status = '休息'
+    } else if (cur.state === 'FREE' && minutes >= 60 && !past) {
+      kind = 'gap'
+      title = '空档 ' + minutes + ' 分钟'
+      action = '填满它'
+    } else {
+      i = j
+      continue
+    }
+    rows.push({
+      key: `${cur.slotNo}-${cur.state}-${cur.orderId || ''}`,
+      time: slotLabel(cur.slotNo),
+      kind,
+      title,
+      status,
+      action,
+      orderId: cur.orderId || '',
+    })
+    i = j
+  }
+  return rows
+}
+
 Page({
   data: {
     staffName: '',
+    levelLabel: '技师',
+    storeLabel: '本店',
+    onDuty: true,
     loading: true,
     error: '',
     next: null,
     etaText: '',
-    chips: [],
+    rows: [],
+    doneCount: 0,
+    incomeText: '—',
+    rateText: '—',
+    dateLabel: '',
+    pendingCount: 0,
   },
   onShow() {
+    const d = new Date()
+    this.setData({ dateLabel: `${d.getMonth() + 1} 月 ${d.getDate()} 日` })
     this.ensureToken().then(() => this.loadToday()).catch((err) => {
       this.setData({ loading: false, error: err.message || '登录失败' })
     })
@@ -36,12 +114,12 @@ Page({
   ensureToken() {
     const app = getApp()
     if (app.globalData.token) {
-      this.setData({ staffName: app.globalData.staffName || '林晓' })
+      this.setData({ staffName: app.globalData.staffName || '技师' })
       return Promise.resolve(app.globalData.token)
     }
     return api.loginTherapist().then((data) => {
       app.globalData.token = data.token
-      app.globalData.staffName = data.name || '林晓'
+      app.globalData.staffName = data.name || '技师'
       this.setData({ staffName: app.globalData.staffName })
       return data.token
     })
@@ -52,25 +130,36 @@ Page({
     return api.request({ url: '/api/v1/t/today', token: app.globalData.token }).then((data) => {
       const next = data && data.next
       const timeline = (data && data.timeline) || []
-      const chips = timeline
-        .filter((slot) => slot.state !== 'FREE' || (next && String(slot.orderId) === String(next.orderId)))
-        .slice(0, 16)
-        .map((slot) => ({
-          slotNo: slot.slotNo,
-          label: slotLabel(slot.slotNo),
-          state: slot.state,
-          tone: slot.state === 'BOOKED' || slot.state === 'LOCKED' ? 'booked'
-            : slot.state === 'BUFFER' || slot.state === 'REST' ? 'busy' : '',
-        }))
+      const work = timeline.filter((s) => s.state !== 'REST')
+      const busy = work.filter((s) => s.state === 'BOOKED' || s.state === 'BUFFER' || s.state === 'LOCKED')
+      const rate = work.length ? Math.round((busy.length / work.length) * 100) : 0
+      const current = nowSlot()
+      const doneIds = {}
+      timeline.forEach((s) => {
+        if (s.orderId && s.slotNo < current && (s.state === 'BOOKED' || s.state === 'BUFFER')) {
+          if (!next || String(s.orderId) !== String(next.orderId)) {
+            doneIds[String(s.orderId)] = true
+          }
+        }
+      })
+      const pending = timeline.filter((s) => s.state === 'LOCKED').length > 0 ? 1 : 0
       this.setData({
         next,
         etaText: next ? etaText(next.minutesToStart) : '',
-        chips,
+        rows: groupTimeline(timeline, next),
+        doneCount: Object.keys(doneIds).length,
+        rateText: work.length ? `${rate}%` : '—',
+        pendingCount: pending,
         loading: false,
       })
     }).catch((err) => {
       this.setData({ loading: false, error: err.message || '加载失败' })
     })
+  },
+  toggleDuty() {
+    const next = !this.data.onDuty
+    this.setData({ onDuty: next })
+    wx.showToast({ title: next ? '已设为在岗' : '已设为离岗', icon: 'none' })
   },
   openService() {
     const next = this.data.next
@@ -80,5 +169,21 @@ Page({
     wx.navigateTo({
       url: `/pages/service/service?orderId=${next.orderId}`,
     })
+  },
+  openArchive() {
+    wx.showToast({ title: '档案在服务页查看', icon: 'none' })
+    this.openService()
+  },
+  fillGap() {
+    wx.showToast({ title: '空档营销 P0 未开通', icon: 'none' })
+  },
+  onPending() {
+    wx.showToast({ title: this.data.pendingCount ? '请刷新时间轴接单' : '暂无待接单', icon: 'none' })
+  },
+  soon() {
+    wx.showToast({ title: 'P0 未开通', icon: 'none' })
+  },
+  goMine() {
+    wx.navigateTo({ url: '/pages/index/index' })
   },
 })

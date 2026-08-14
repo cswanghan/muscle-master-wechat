@@ -1,157 +1,346 @@
 .page {
   min-height: 100vh;
-  background: #f4f1ea;
-  padding-bottom: 80rpx;
+  background: #f4f2ee;
+  padding-bottom: 140rpx;
   font-size: 30rpx;
 }
 
 .hero {
-  background: #1e5c4a;
-  color: #f4f1ea;
-  padding: 40rpx 32rpx 48rpx;
+  background: #143f34;
+  color: #f4f2ee;
+  padding: 28rpx 32rpx 36rpx;
 }
 
-.hero-kicker {
-  font-size: 30rpx;
-  opacity: 0.85;
+.hero-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
 }
 
-.hero-title {
-  margin-top: 12rpx;
-  font-size: 44rpx;
+.avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: #3d7a68;
+  flex-shrink: 0;
+}
+
+.hero-name {
+  font-size: 36rpx;
   font-weight: 700;
 }
 
 .hero-sub {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: #a8c0b6;
+}
+
+.duty {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  height: 64rpx;
+  padding: 0 20rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.28);
+  border-radius: 999rpx;
+  font-size: 26rpx;
+}
+
+.duty .dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #8b948f;
+}
+
+.duty.on .dot {
+  background: #f4f2ee;
+}
+
+.kpis {
+  display: flex;
+  margin-top: 32rpx;
+}
+
+.kpi {
+  flex: 1;
+}
+
+.kpi-cap {
+  font-size: 22rpx;
+  color: #a8c0b6;
+}
+
+.kpi-num {
   margin-top: 8rpx;
-  font-size: 30rpx;
-  opacity: 0.8;
+  font-size: 36rpx;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
 }
 
 .hint,
-.error,
-.empty-title,
-.section-title {
+.error {
   font-size: 30rpx;
-}
-
-.hint {
-  color: #6b7a74;
-  padding: 24rpx 32rpx;
+  padding: 16rpx 32rpx 0;
 }
 
 .error {
-  color: #b42318;
-  padding: 24rpx 32rpx;
+  color: #b3452f;
 }
 
-.card {
-  margin: -24rpx 24rpx 24rpx;
+.next-card,
+.card,
+.empty {
+  margin: 20rpx 24rpx 0;
   background: #fff;
   border-radius: 20rpx;
-  padding: 32rpx;
-  min-height: 96rpx;
-  box-shadow: 0 8rpx 24rpx rgba(20, 53, 44, 0.08);
+  padding: 28rpx;
 }
 
-.card-top {
+.next-card {
+  border: 3rpx solid #1e5c4a;
+}
+
+.next-cap {
+  display: flex;
+  justify-content: space-between;
+  font-size: 28rpx;
+  color: #17211d;
+  font-weight: 600;
+}
+
+.eta {
+  color: #c0803a;
+  font-weight: 700;
+}
+
+.who-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
+  margin-top: 16rpx;
 }
 
 .who {
   font-size: 40rpx;
   font-weight: 700;
+  color: #17211d;
+}
+
+.tag {
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  background: #e8f0ec;
   color: #1e5c4a;
 }
 
-.badge {
-  min-height: 48rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  background: #c45c26;
-  color: #fff;
-  font-size: 30rpx;
-}
-
-.when {
-  margin-top: 16rpx;
-  font-size: 36rpx;
+.proj {
+  margin-top: 12rpx;
+  font-size: 32rpx;
   font-weight: 600;
 }
 
-.meta {
-  margin-top: 8rpx;
-  font-size: 30rpx;
-  color: #3d4f48;
+.when-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 12rpx;
 }
 
-.eta {
-  margin-top: 20rpx;
-  font-size: 30rpx;
-  color: #1e5c4a;
+.when {
+  font-size: 32rpx;
+  font-weight: 700;
 }
 
-.tap {
+.room {
+  background: #1e5c4a;
+  color: #f4f2ee;
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.note {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: #6b7a74;
+  line-height: 1.5;
+}
+
+.next-acts {
+  display: flex;
+  gap: 16rpx;
   margin-top: 24rpx;
+}
+
+.btn {
   height: 96rpx;
   line-height: 96rpx;
   text-align: center;
-  background: #1e5c4a;
-  color: #f4f1ea;
   border-radius: 16rpx;
   font-size: 32rpx;
   font-weight: 600;
 }
 
-.empty {
-  margin: 32rpx 24rpx;
+.btn.start {
+  flex: 1;
+  background: #1e5c4a;
+  color: #f4f2ee;
+}
+
+.btn.ghost {
+  width: 160rpx;
   background: #fff;
-  border-radius: 20rpx;
-  padding: 40rpx 32rpx;
+  color: #1e5c4a;
+  border: 2rpx solid #d7e0db;
 }
 
 .empty-title {
   font-weight: 600;
   color: #1e5c4a;
+  font-size: 30rpx;
 }
 
-.section-title {
-  padding: 8rpx 32rpx 16rpx;
+.sec-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+
+.sec {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #17211d;
+}
+
+.tl {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 18rpx 0;
+  border-top: 1rpx solid #eef2ef;
+  font-size: 28rpx;
+}
+
+.tl-time {
+  width: 90rpx;
+  font-family: ui-monospace, Menlo, monospace;
+  color: #17211d;
   font-weight: 600;
+}
+
+.tl.gap .tl-time {
+  color: #c0803a;
+}
+
+.tl-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #c9cfcb;
+  flex-shrink: 0;
+}
+
+.tl.booked .tl-dot,
+.tl.next .tl-dot {
+  background: #1e5c4a;
+}
+
+.tl.gap .tl-dot {
+  background: #c0803a;
+}
+
+.tl-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.tl.gap .tl-body {
+  color: #c0803a;
+}
+
+.tl-st {
+  font-size: 24rpx;
   color: #1e5c4a;
 }
 
-.timeline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  padding: 0 24rpx;
+.tl.done .tl-st {
+  color: #8b948f;
 }
 
-.chip {
-  min-height: 96rpx;
-  min-width: 96rpx;
-  padding: 12rpx 16rpx;
-  border-radius: 12rpx;
-  background: #e8efe9;
+.fill-btn {
+  min-height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 18rpx;
+  border: 2rpx solid #c0803a;
+  color: #c0803a;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+}
+
+.accept {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.accept-ico {
+  width: 40rpx;
+  height: 40rpx;
+  border: 3rpx solid #8b948f;
+  border-radius: 50%;
+}
+
+.badge {
+  min-width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  text-align: center;
+  background: #b3452f;
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  padding: 0 10rpx;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 120rpx;
+  background: #faf8f3;
+  border-top: 1rpx solid #d7e6df;
+  display: flex;
+  z-index: 20;
+}
+
+.dock-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
+  color: #8b948f;
+  font-size: 22rpx;
 }
 
-.chip.booked {
-  background: #1e5c4a;
-  color: #f4f1ea;
+.dock-item.on {
+  color: #1e5c4a;
+  font-weight: 600;
 }
 
-.chip.busy {
-  background: #c45c26;
-  color: #fff;
-}
-
-.chip-t,
-.chip-s {
-  font-size: 30rpx;
+.dock-ico {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  border: 3rpx solid currentColor;
+  margin-bottom: 6rpx;
 }

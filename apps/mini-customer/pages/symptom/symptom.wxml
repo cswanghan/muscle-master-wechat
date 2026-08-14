@@ -1,45 +1,51 @@
 <view class="page" id="c2-symptom">
-  <view class="lead">选择部位或不适，收敛到项目 SKU</view>
-  <view wx:if="{{loading && !selectedId}}" class="hint">加载中…</view>
-  <view wx:if="{{error}}" class="error">{{error}}</view>
-
-  <view class="sec">部位</view>
-  <view class="chips">
-    <view
-      wx:for="{{parts}}"
-      wx:key="id"
-      class="chip {{selectedId===item.id?'on':''}}"
-      data-id="{{item.id}}"
-      data-name="{{item.name}}"
-      bindtap="pickSymptom"
-    >{{item.name}}</view>
+  <view class="card">
+    <view class="sec">按部位选</view>
+    <view class="parts">
+      <view
+        wx:for="{{parts}}"
+        wx:key="id"
+        class="part {{selectedId===item.id?'on':''}}"
+        data-id="{{item.id}}"
+        data-name="{{item.name}}"
+        bindtap="pickSymptom"
+      >{{item.name}}</view>
+    </view>
+    <view class="sec">按不适选</view>
+    <view class="chips">
+      <view
+        wx:for="{{discomforts}}"
+        wx:key="id"
+        class="chip {{selectedId===item.id?'on':''}}"
+        data-id="{{item.id}}"
+        data-name="{{item.name}}"
+        bindtap="pickSymptom"
+      >{{item.name}}</view>
+    </view>
   </view>
 
-  <view class="sec">不适</view>
-  <view class="chips">
-    <view
-      wx:for="{{discomforts}}"
-      wx:key="id"
-      class="chip {{selectedId===item.id?'on':''}}"
-      data-id="{{item.id}}"
-      data-name="{{item.name}}"
-      bindtap="pickSymptom"
-    >{{item.name}}</view>
-  </view>
-
-  <view wx:if="{{selectedId}}" class="sec">推荐项目 · {{selectedName}}</view>
-  <view wx:if="{{hint}}" id="empty-hint" class="empty">{{hint}}</view>
-  <view class="list">
+  <view wx:if="{{selectedId}}" class="card">
+    <view class="sec-row">
+      <view class="sec">{{selectedName}} · 推荐项目</view>
+      <view class="hint">{{projects.length}} 项</view>
+    </view>
+    <view wx:if="{{hint}}" id="empty-hint" class="empty">{{hint}}</view>
     <view
       wx:for="{{projects}}"
       wx:key="projectId"
-      class="card proj"
+      class="proj {{index===0?'on':''}}"
       data-item="{{item}}"
       bindtap="pickProject"
     >
-      <view class="proj-name">{{item.name}}</view>
-      <view class="hint">{{item.durationMinutes}}+{{item.bufferMinutes}} 分钟</view>
-      <view class="price">¥{{item.priceYuan}}</view>
+      <view class="proj-top">
+        <view class="proj-name">{{item.name}}</view>
+        <view class="price">¥{{item.priceYuan}}</view>
+      </view>
+      <view class="hint">{{item.durationMinutes}} 分钟</view>
+      <view class="jade">今晚可约</view>
+      <view class="btn sm">选技师</view>
     </view>
   </view>
+
+  <view class="note">选不准可先到店，由技师面诊后调整项目，差价按实际结算。</view>
 </view>

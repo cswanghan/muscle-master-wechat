@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getToken, request } from '../api'
 
 type OrderItem = {
@@ -20,25 +20,109 @@ type OrderPage = {
   view: string
 }
 
-const view = ref<'abnormal_first' | 'all'>('abnormal_first')
+type StoreItem = { storeId: string; name: string }
+type TherapistItem = { therapistId: string; name: string }
+
+const STATUS_CHIPS = [
+  { key: 'all', label: '全部', view: 'all' as const, status: '', id: 'order-view-all' },
+  { key: 'PENDING_PAY', label: '待支付', view: 'all' as const, status: 'PENDING_PAY' },
+  { key: 'BOOKED', label: '已预约', view: 'all' as const, status: 'BOOKED' },
+  { key: 'IN_SERVICE', label: '服务中', view: 'all' as const, status: 'IN_SERVICE' },
+  { key: 'NO_SHOW', label: '爽约', view: 'all' as const, status: 'NO_SHOW' },
+  { key: 'abnormal', label: '异常单', view: 'abnormal_first' as const, status: '', id: 'order-view-abnormal' },
+]
+
+const STATUS_LABEL: Record<string, string> = {
+  PENDING_PAY: '待支付',
+  BOOKED: '待到店',
+  CHECKED_IN: '已到店',
+  IN_SERVICE: '服务中',
+  COMPLETED: '已完成',
+  ABNORMAL: '异常单',
+  CANCELLED: '已取消',
+  CLOSED: '已关闭',
+  NO_SHOW: '爽约',
+}
+
+const view = ref<'abnormal_first' | 'all'>('all')
+const statusFilter = ref('')
+const chip = ref('all')
+const q = ref('')
 const orders = ref<OrderItem[]>([])
+const stores = ref<StoreItem[]>([])
+const therapists = ref<TherapistItem[]>([])
 const nextCursor = ref<string | null>(null)
 const loading = ref(false)
 const error = ref('')
+const counts = ref<Record<string, number>>({})
+
+const storeName = computed(() => {
+  const m: Record<string, string> = {}
+  stores.value.forEach((s) => {
+    m[s.storeId] = s.name
+  })
+  return m
+})
+const therapistName = computed(() => {
+  const m: Record<string, string> = {}
+  therapists.value.forEach((t) => {
+    m[t.therapistId] = t.name
+  })
+  return m
+})
+
+const shown = computed(() => {
+  const needle = q.value.trim()
+  if (!needle) return orders.value
+  return orders.value.filter((o) =>
+    (o.orderNo || '').includes(needle) || (o.orderId || '').includes(needle),
+  )
+})
 
 function fenYuan(fen: number) {
-  return (fen / 100).toFixed(0)
+  return (fen / 100).toFixed(2)
+}
+
+function shortNo(orderNo: string) {
+  if (!orderNo) return '—'
+  if (orderNo.length <= 12) return orderNo
+  return orderNo.slice(0, 3) + '…' + orderNo.slice(-6)
 }
 
 function rowClass({ row }: { row: OrderItem }) {
-  return row.highlight ? 'abnormal-row' : ''
+  return row.highlight || row.status === 'ABNORMAL' ? 'abnormal-row' : ''
 }
 
-function statusType(status: string) {
-  if (status === 'ABNORMAL') return 'danger'
-  if (status === 'PENDING_PAY') return 'warning'
-  if (status === 'COMPLETED') return 'success'
-  return 'info'
+function statusClass(status: string) {
+  if (status === 'ABNORMAL') return 'alert'
+  if (status === 'PENDING_PAY') return 'warn'
+  if (status === 'IN_SERVICE') return 'ink'
+  if (status === 'NO_SHOW' || status === 'CLOSED' || status === 'CANCELLED') return ''
+  return 'ok'
+}
+
+async function loadMeta() {
+  const [s, t] = await Promise.all([
+    request<{ items: StoreItem[] }>('/api/v1/a/stores').catch(() => ({ items: [] })),
+    request<{ items: TherapistItem[] }>('/api/v1/a/therapists').catch(() => ({ items: [] })),
+  ])
+  stores.value = s.items || []
+  therapists.value = t.items || []
+}
+
+async function loadCounts() {
+  try {
+    const all = await request<OrderPage>('/api/v1/a/orders?view=all&limit=100')
+    const items = all.items || []
+    const next: Record<string, number> = { all: items.length, abnormal: 0 }
+    items.forEach((o) => {
+      next[o.status] = (next[o.status] || 0) + 1
+      if (o.highlight || o.status === 'ABNORMAL') next.abnormal += 1
+    })
+    counts.value = next
+  } catch {
+    counts.value = {}
+  }
 }
 
 async function loadOrders(reset = true) {
@@ -50,6 +134,9 @@ async function loadOrders(reset = true) {
   error.value = ''
   try {
     const params = new URLSearchParams({ view: view.value, limit: '20' })
+    if (view.value === 'all' && statusFilter.value) {
+      params.set('status', statusFilter.value)
+    }
     if (!reset && nextCursor.value && view.value === 'all') {
       params.set('cursor', nextCursor.value)
     }
@@ -63,64 +150,117 @@ async function loadOrders(reset = true) {
   }
 }
 
-function switchView(next: 'abnormal_first' | 'all') {
-  view.value = next
+function switchChip(next: (typeof STATUS_CHIPS)[number]) {
+  chip.value = next.key
+  view.value = next.view
+  statusFilter.value = next.status
   nextCursor.value = null
   void loadOrders(true)
 }
 
-onMounted(() => loadOrders(true))
+onMounted(async () => {
+  await loadMeta()
+  await Promise.all([loadOrders(true), loadCounts()])
+})
 </script>
 
 <template>
-  <div id="orders-page" class="catalog">
-    <el-card class="health-card" shadow="never">
-      <template #header>
-        <div class="card-head">
-          <h1>订单中心</h1>
-          <el-button type="primary" :loading="loading" @click="loadOrders(true)">刷新</el-button>
-        </div>
-      </template>
-      <el-alert
-        v-if="error"
-        title="订单加载失败"
-        type="error"
-        :description="error"
-        show-icon
-        :closable="false"
-      />
-      <p class="label">GET /a/orders · view={{ view }} · 异常行高亮 · all 才有游标</p>
-      <div class="toolbar">
-        <el-radio-group :model-value="view" @change="(v: string) => switchView(v as 'abnormal_first' | 'all')">
-          <el-radio-button id="order-view-abnormal" value="abnormal_first">异常优先</el-radio-button>
-          <el-radio-button id="order-view-all" value="all">全部</el-radio-button>
-        </el-radio-group>
-        <el-tag v-if="view === 'abnormal_first'" type="danger" effect="plain">非游标 · highlight 恒 true</el-tag>
-        <el-tag v-else type="info" effect="plain">游标 created_at,id</el-tag>
+  <div id="orders-page" class="orders-page">
+    <header class="dash-head">
+      <h1>订单中心</h1>
+      <div class="dash-tools">
+        <el-input
+          v-model="q"
+          placeholder="手机号 / 订单号"
+          clearable
+          style="width: 200px"
+        />
+        <el-button type="primary" :loading="loading" @click="loadOrders(true)">刷新</el-button>
       </div>
-      <el-table
-        id="order-table"
-        :data="orders"
-        :row-class-name="rowClass"
-        row-key="orderId"
+    </header>
+    <el-alert
+      v-if="error"
+      title="订单加载失败"
+      type="error"
+      :description="error"
+      show-icon
+      :closable="false"
+      style="margin-bottom: 12px"
+    />
+    <div class="chip-row">
+      <button
+        v-for="c in STATUS_CHIPS"
+        :id="c.id"
+        :key="c.key"
+        class="filter-chip"
+        :class="{ on: chip === c.key, alert: c.key === 'abnormal' }"
+        type="button"
+        @click="switchChip(c)"
       >
-        <el-table-column prop="orderNo" label="单号" width="150" />
-        <el-table-column label="状态" width="130">
-          <template #default="{ row }">
-            <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
-            <el-tag v-if="row.highlight" type="danger" size="small" class="hl-tag">异常</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="serviceDate" label="服务日" width="120" />
-        <el-table-column prop="createdAt" label="创建" width="180" />
-        <el-table-column label="应付" width="90">
-          <template #default="{ row }">¥{{ fenYuan(row.payableFen) }}</template>
-        </el-table-column>
-        <el-table-column prop="storeId" label="门店" show-overflow-tooltip />
-      </el-table>
-      <div v-if="view === 'all' && nextCursor" class="toolbar">
-        <el-button id="order-more" @click="loadOrders(false)">下一页</el-button>
+        {{ c.label }}
+        <em v-if="counts[c.key] != null || counts[c.status]">
+          {{ counts[c.key] ?? counts[c.status] }}
+        </em>
+      </button>
+    </div>
+    <div class="panel table-wrap">
+      <table id="order-table" class="order-table">
+        <thead>
+          <tr>
+            <th>订单号 / 门店</th>
+            <th>客户</th>
+            <th>项目 · 技师</th>
+            <th>到店时间</th>
+            <th>实收</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in shown" :key="row.orderId" :class="rowClass({ row })">
+            <td>
+              <div class="mono">{{ shortNo(row.orderNo) }}</div>
+              <div class="sub">{{ storeName[row.storeId] || '门店' }}</div>
+            </td>
+            <td class="mute">—</td>
+            <td>
+              <div>到店项目</div>
+              <div class="sub">{{ therapistName[row.therapistId] || '技师' }}</div>
+              <div v-if="row.highlight" class="alert-line">已支付但需人工重排</div>
+            </td>
+            <td class="mono">{{ row.serviceDate }}</td>
+            <td class="mono">{{ fenYuan(row.payableFen) }}</td>
+            <td>
+              <span class="status-pill" :class="statusClass(row.status)">
+                {{ STATUS_LABEL[row.status] || row.status }}
+              </span>
+            </td>
+            <td>
+              <router-link class="link" to="/frontdesk">
+                {{ row.highlight || row.status === 'ABNORMAL' ? '干预' : '详情' }}
+              </router-link>
+            </td>
+          </tr>
+          <tr v-if="!shown.length && !loading">
+            <td colspan="7" class="label" style="padding: 24px">暂无订单</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pager">
+        <span class="label">游标分页，不支持跳页；导出走异步任务</span>
+        <div>
+          <el-button disabled>上一页</el-button>
+          <el-button
+            v-if="view === 'all' && nextCursor"
+            id="order-more"
+            type="primary"
+            plain
+            @click="loadOrders(false)"
+          >
+            下一页
+          </el-button>
+        </div>
       </div>
-    </el-card>
+    </div>
   </div>
 </template>

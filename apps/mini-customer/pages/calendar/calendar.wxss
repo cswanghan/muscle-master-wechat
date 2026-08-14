@@ -141,10 +141,41 @@
   justify-content: space-between;
 }
 
+.th-card {
+  display: flex;
+  gap: 20rpx;
+  align-items: center;
+  background: #fff;
+  padding: 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: repeating-linear-gradient(135deg, #efece6 0 10rpx, #f7f5f1 10rpx 20rpx);
+}
+
+.chip {
+  font-size: 20rpx;
+  background: #e8f0ec;
+  color: #1e5c4a;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+}
+
+.copper {
+  color: #c0803a;
+  font-size: 24rpx;
+}
+
 .bar-price {
   font-size: 40rpx;
   font-weight: 700;
-  color: #1e5c4a;
+  color: #c0803a;
+  font-family: ui-monospace, Menlo, monospace;
 }
 
 .bar-sub {

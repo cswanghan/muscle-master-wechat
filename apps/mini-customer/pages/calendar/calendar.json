@@ -1,4 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "选择时段"
+  "navigationBarTitleText": "选择时段",
+  "navigationBarBackgroundColor": "#F4F2EE",
+  "navigationBarTextStyle": "black"
 }

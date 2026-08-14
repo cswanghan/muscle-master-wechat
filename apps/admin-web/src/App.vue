@@ -35,18 +35,25 @@ function logout() {
 </script>
 
 <template>
-  <el-container class="layout">
-    <el-header class="header">
-      <span class="brand">肌松大师</span>
-      <span class="subtitle">管理后台</span>
-      <nav class="nav">
-        <router-link to="/health">健康</router-link>
-        <router-link to="/catalog">目录</router-link>
-        <router-link to="/orders">订单</router-link>
-        <router-link to="/frontdesk">前台</router-link>
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="side-mark">松</span>
+        <div>
+          <div class="side-name">肌松大师</div>
+          <div class="side-sub">运营管理后台</div>
+        </div>
+      </div>
+      <nav class="side-nav">
+        <router-link to="/">数据看板</router-link>
+        <router-link to="/schedule">排班中心</router-link>
+        <router-link to="/orders">订单中心</router-link>
+        <router-link to="/catalog">项目 SKU</router-link>
+        <router-link to="/frontdesk">前台收银</router-link>
+        <router-link to="/health">系统管理</router-link>
       </nav>
-      <div class="auth">
-        <span v-if="token" id="staff-name" class="staff-name">{{ name || '已登录' }}</span>
+      <div class="side-foot">
+        <div class="side-user">{{ name || '未登录' }}</div>
         <el-button
           v-if="!token"
           id="staff-login-btn"
@@ -59,8 +66,8 @@ function logout() {
         </el-button>
         <el-button v-else size="small" @click="logout">退出</el-button>
       </div>
-    </el-header>
-    <el-main class="main">
+    </aside>
+    <div class="workspace">
       <el-alert
         v-if="loginError"
         title="登录失败"
@@ -68,9 +75,9 @@ function logout() {
         :description="loginError"
         show-icon
         :closable="false"
-        style="margin-bottom: 12px"
+        style="margin: 16px 20px 0"
       />
       <router-view />
-    </el-main>
-  </el-container>
+    </div>
+  </div>
 </template>

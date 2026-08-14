@@ -1,4 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "症状路由"
+  "navigationBarTitleText": "哪里不舒服",
+  "navigationBarBackgroundColor": "#F4F2EE",
+  "navigationBarTextStyle": "black"
 }

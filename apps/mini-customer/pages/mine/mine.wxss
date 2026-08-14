@@ -1,37 +1,213 @@
-.hero {
+.mine-page {
+  padding: 24rpx 24rpx 160rpx;
+}
+
+.profile {
+  background: #1e5c4a;
+  color: #f4f2ee;
+  border-radius: 24rpx;
+  padding: 32rpx 28rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.profile-top {
   display: flex;
   align-items: center;
   gap: 20rpx;
   margin-bottom: 28rpx;
 }
 
-.mark {
-  width: 80rpx;
-  height: 80rpx;
+.avatar {
+  width: 96rpx;
+  height: 96rpx;
   border-radius: 50%;
-  background: #1e5c4a;
-  color: #f4f1ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
+  background: #3d7a68;
+  flex-shrink: 0;
 }
 
-.title {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #1e5c4a;
+.phone {
+  font-size: 36rpx;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.sub {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #c8d6d0;
+}
+
+.wallet {
+  display: flex;
+  align-items: flex-end;
+  gap: 24rpx;
+}
+
+.wallet-col {
+  flex: 1;
+}
+
+.wallet-cap {
+  font-size: 22rpx;
+  color: #a8c0b6;
+}
+
+.wallet-num {
+  margin-top: 6rpx;
+  font-size: 36rpx;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.recharge {
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 28rpx;
+  border: 2rpx solid #d7e6df;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  color: #f4f2ee;
+}
+
+.sr-only {
+  position: absolute;
+  left: -9999px;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+}
+
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+}
+
+.sec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
 }
 
 .sec {
-  margin: 28rpx 0 12rpx;
-  font-size: 26rpx;
-  font-weight: 600;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #17211d;
+}
+
+.more {
+  font-size: 24rpx;
+  color: #8b948f;
+}
+
+.next-box {
+  background: #f7f5f1;
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.next-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12rpx;
+}
+
+.next-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #17211d;
+  flex: 1;
+}
+
+.st {
+  font-size: 22rpx;
   color: #1e5c4a;
+  background: #e8f0ec;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+}
+
+.st.muted {
+  background: #f4f2ee;
+  color: #6b7a74;
+}
+
+.meta {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #6b7a74;
+}
+
+.acts {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 20rpx;
+}
+
+.btn.sm {
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+}
+
+.btn.ghost.sm {
+  background: #fff;
+  border: 2rpx solid #d7e0db;
+  color: #3d4f48;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid #eef2ef;
+  font-size: 30rpx;
+}
+
+.menu-row.last {
+  border-bottom: none;
+  padding-bottom: 8rpx;
+}
+
+.menu-ico {
+  width: 40rpx;
+  height: 40rpx;
+  border: 3rpx solid #1e5c4a;
+  border-radius: 8rpx;
+}
+
+.chev {
+  color: #c9cfcb;
+  font-size: 32rpx;
+}
+
+.menu-extra {
+  font-size: 24rpx;
+  color: #8b948f;
+}
+
+.badge {
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  background: #b3452f;
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  padding: 0 10rpx;
 }
 
 .order {
-  margin-bottom: 16rpx;
+  padding: 20rpx 0;
+  border-top: 1rpx solid #eef2ef;
 }
 
 .order-top {
@@ -40,43 +216,29 @@
   align-items: center;
 }
 
-.order-no {
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 24rpx;
-  color: #6b7a74;
-}
-
-.st {
-  font-size: 22rpx;
-  color: #a9752f;
-  background: #faf1e4;
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
-}
-
-.st.muted {
-  background: #e8f0ec;
-  color: #1e5c4a;
+.order-name {
+  font-size: 28rpx;
+  font-weight: 600;
 }
 
 .price {
-  margin-top: 8rpx;
+  margin-top: 6rpx;
   font-weight: 700;
-  color: #1e5c4a;
+  color: #c0803a;
+  font-family: ui-monospace, Menlo, monospace;
 }
 
 .empty {
-  padding: 28rpx;
-  text-align: center;
+  padding: 20rpx 0;
   color: #8b948f;
-  background: #fff;
-  border-radius: 16rpx;
-  border: 1rpx dashed #c9cfcb;
+  font-size: 26rpx;
 }
 
-.no-wallet {
-  margin-top: 36rpx;
-  text-align: center;
-  font-size: 22rpx;
-  color: #8b948f;
+.pad {
+  padding: 0 8rpx 12rpx;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
 }

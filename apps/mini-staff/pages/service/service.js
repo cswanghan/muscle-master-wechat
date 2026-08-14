@@ -13,6 +13,19 @@ function statusLabel(status) {
   })[status] || status || '未知'
 }
 
+const METHODS = [
+  { id: 'roll', name: '滚法', on: true },
+  { id: 'pinch', name: '拿捏', on: true },
+  { id: 'press', name: '点按', on: false },
+  { id: 'stretch', name: '拔伸', on: false },
+]
+
+const FORCES = [
+  { id: 'light', name: '轻', on: false },
+  { id: 'mid', name: '中', on: true },
+  { id: 'heavy', name: '重', on: false },
+]
+
 Page({
   data: {
     orderId: '',
@@ -20,13 +33,16 @@ Page({
     status: '',
     statusLabel: '',
     notes: [],
-    draft: '',
-    draftHint: '力度偏好、禁忌；提交后不可改',
+    chief: '',
+    caution: '',
+    methods: METHODS.map((m) => ({ ...m })),
+    forces: FORCES.map((f) => ({ ...f })),
     consented: false,
     timerText: '00:00',
     busy: false,
     error: '',
     startedAt: 0,
+    endAt: 0,
   },
   onLoad(query) {
     this.setData({ orderId: (query && query.orderId) || '' })
@@ -46,7 +62,7 @@ Page({
     }
     return api.loginTherapist().then((data) => {
       app.globalData.token = data.token
-      app.globalData.staffName = data.name || '林晓'
+      app.globalData.staffName = data.name || '技师'
       return data.token
     })
   },
@@ -65,13 +81,25 @@ Page({
         status,
         statusLabel: statusLabel(status),
       })
+      this.syncEnd(card)
       if (status === 'IN_SERVICE' && !this.data.startedAt) {
         this.beginTimer(Date.now())
+      } else if (status !== 'IN_SERVICE') {
+        this.paintRemain()
       }
       return this.loadNotes(token)
     }).catch((err) => {
       this.setData({ error: err.message || '加载失败' })
     })
+  },
+  syncEnd(card) {
+    if (!card || !card.end) {
+      return
+    }
+    const parts = String(card.end).split(':')
+    const end = new Date()
+    end.setHours(Number(parts[0] || 0), Number(parts[1] || 0), 0, 0)
+    this.setData({ endAt: end.getTime() })
   },
   loadNotes(token) {
     if (!this.data.orderId) {
@@ -82,42 +110,52 @@ Page({
       token,
     }).then((data) => {
       const items = (data && data.items) || []
-      const last = items.length ? items[items.length - 1].content : ''
       this.setData({
         notes: items,
         consented: !!(data && data.consented),
-        draftHint: last ? `参考上次：${last}` : '力度偏好、禁忌；提交后不可改',
       })
     }).catch(() => {
       this.setData({ notes: [] })
     })
-  },
-  giveConsent() {
-    this.act(`/api/v1/t/orders/${this.data.orderId}/consent`, null, () => {
-      this.setData({ consented: true })
-    }, {})
   },
   beginTimer(startedAt) {
     this.setData({ startedAt })
     if (this._tick) {
       clearInterval(this._tick)
     }
-    const tick = () => {
-      const sec = Math.max(0, Math.floor((Date.now() - this.data.startedAt) / 1000))
-      const mm = String(Math.floor(sec / 60)).padStart(2, '0')
-      const ss = String(sec % 60).padStart(2, '0')
-      this.setData({ timerText: `${mm}:${ss}` })
-    }
+    const tick = () => this.paintRemain()
     tick()
     this._tick = setInterval(tick, 1000)
   },
+  paintRemain() {
+    const endAt = this.data.endAt
+    let ms
+    if (endAt) {
+      ms = Math.max(0, endAt - Date.now())
+    } else if (this.data.startedAt) {
+      ms = Math.max(0, Date.now() - this.data.startedAt)
+    } else {
+      this.setData({ timerText: '60:00' })
+      return
+    }
+    const sec = Math.floor(ms / 1000)
+    const mm = String(Math.floor(sec / 60)).padStart(2, '0')
+    const ss = String(sec % 60).padStart(2, '0')
+    this.setData({ timerText: `${mm}:${ss}` })
+  },
   startService() {
+    if (this.data.busy || this.data.status === 'IN_SERVICE' || this.data.status === 'COMPLETED') {
+      return
+    }
     this.act(`/api/v1/t/orders/${this.data.orderId}/start`, rid('start'), (data) => {
       this.setData({ status: data.status, statusLabel: statusLabel(data.status) })
       this.beginTimer(Date.now())
     })
   },
   completeService() {
+    if (this.data.busy || this.data.status !== 'IN_SERVICE') {
+      return
+    }
     this.act(`/api/v1/t/orders/${this.data.orderId}/complete`, rid('complete'), (data) => {
       this.setData({ status: data.status, statusLabel: statusLabel(data.status) })
       if (this._tick) {
@@ -125,17 +163,62 @@ Page({
       }
     })
   },
-  onDraft(e) {
-    this.setData({ draft: e.detail.value })
+  askAddon() {
+    wx.showToast({ title: '请前台在收银页加钟', icon: 'none' })
   },
-  appendNote() {
-    const content = (this.data.draft || '').trim()
-    if (!content) {
+  onChief(e) {
+    this.setData({ chief: e.detail.value })
+  },
+  onCaution(e) {
+    this.setData({ caution: e.detail.value })
+  },
+  toggleMethod(e) {
+    const id = e.currentTarget.dataset.id
+    const methods = this.data.methods.map((m) => m.id === id ? { ...m, on: !m.on } : m)
+    this.setData({ methods })
+  },
+  pickForce(e) {
+    const id = e.currentTarget.dataset.id
+    const forces = this.data.forces.map((f) => ({ ...f, on: f.id === id }))
+    this.setData({ forces })
+  },
+  toggleConsent() {
+    if (this.data.consented) {
       return
     }
+    this.act(`/api/v1/t/orders/${this.data.orderId}/consent`, null, () => {
+      this.setData({ consented: true })
+    }, {})
+  },
+  composeNote() {
+    const methods = this.data.methods.filter((m) => m.on).map((m) => m.name).join('、') || '未选'
+    const force = (this.data.forces.find((f) => f.on) || {}).name || '中'
+    const chief = (this.data.chief || '').trim() || '未填写'
+    const caution = (this.data.caution || '').trim() || '无'
+    return `主诉：${chief}\n手法：${methods}\n力度：${force}\n禁忌与提醒：${caution}\n已口头告知：是`
+  },
+  submitAndClose() {
+    if (this.data.busy) {
+      return
+    }
+    if (!this.data.consented) {
+      wx.showToast({ title: '请先勾选口头告知', icon: 'none' })
+      return
+    }
+    const content = this.composeNote()
+    const finish = () => {
+      if (this.data.status === 'IN_SERVICE') {
+        this.completeService()
+      } else if (this.data.status !== 'COMPLETED') {
+        this.startService()
+      } else {
+        wx.showToast({ title: '已结单', icon: 'none' })
+      }
+    }
     this.act(`/api/v1/t/orders/${this.data.orderId}/notes`, null, () => {
-      this.setData({ draft: '' })
+      this.setData({ chief: '' })
       this.loadNotes(getApp().globalData.token)
+      finish()
     }, { content })
   },
   act(url, requestId, onOk, extra) {

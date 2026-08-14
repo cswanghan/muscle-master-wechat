@@ -40,12 +40,67 @@
   padding-top: 20rpx;
 }
 
-.price {
-  font-size: 40rpx;
+.price,
+.bar-price {
+  font-size: 44rpx;
   font-weight: 700;
+  color: #c0803a;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.sec {
+  font-weight: 700;
+  margin-bottom: 12rpx;
+}
+
+.pay {
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #e8f0ec;
   color: #1e5c4a;
 }
 
-.btn {
-  margin-bottom: 20rpx;
+.paybar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 32rpx 28rpx;
+  border-top: 1rpx solid #e7e3dc;
+}
+
+.paybar .btn {
+  width: 260rpx;
+  margin: 0;
+}
+
+.ghost {
+  text-align: center;
+  color: #8b948f;
+  margin-top: 16rpx;
+  margin-bottom: 160rpx;
+}
+
+.mono {
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.page {
+  padding-bottom: 180rpx;
 }

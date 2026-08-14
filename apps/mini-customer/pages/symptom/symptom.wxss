@@ -1,67 +1,115 @@
-.lead {
-  font-size: 26rpx;
-  color: #6b7a74;
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 28rpx;
   margin-bottom: 24rpx;
 }
 
 .sec {
-  margin: 28rpx 0 16rpx;
-  font-size: 24rpx;
-  color: #1e5c4a;
-  font-weight: 600;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #17211d;
+  margin-bottom: 16rpx;
+}
+
+.sec-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.parts {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+}
+
+.part {
+  flex: 1;
+  height: 140rpx;
+  border-radius: 20rpx;
+  background: #f4f2ee;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 16rpx;
+  font-size: 26rpx;
+}
+
+.part.on {
+  background: #1e5c4a;
+  color: #fff;
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: 12rpx;
 }
 
 .chip {
-  padding: 12rpx 28rpx;
-  border-radius: 999rpx;
-  background: #fff;
-  border: 1rpx solid #d7e6df;
-  color: #1a1c1b;
+  padding: 12rpx 22rpx;
+  border-radius: 12rpx;
+  background: #f4f2ee;
 }
 
 .chip.on {
-  background: #1e5c4a;
-  color: #f4f1ea;
-  border-color: #1e5c4a;
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
+  background: #e8f0ec;
+  color: #1e5c4a;
 }
 
 .proj {
+  border: 2rpx solid #e7e3dc;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.proj.on {
+  border-color: #1e5c4a;
+}
+
+.proj-top {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8rpx 16rpx;
+  justify-content: space-between;
 }
 
 .proj-name {
-  flex: 1;
   font-size: 30rpx;
-  font-weight: 600;
-  color: #1e5c4a;
+  font-weight: 700;
 }
 
 .price {
+  color: #c0803a;
   font-size: 32rpx;
   font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.jade {
   color: #1e5c4a;
+  font-size: 24rpx;
+  margin: 8rpx 0;
+}
+
+.btn.sm {
+  display: inline-block;
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  margin-top: 8rpx;
+}
+
+.note {
+  background: #faf1e4;
+  color: #a9752f;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  font-size: 24rpx;
 }
 
 .empty {
-  padding: 36rpx;
-  text-align: center;
   color: #8b948f;
-  background: #fff;
-  border: 2rpx dashed #c9cfcb;
-  border-radius: 16rpx;
+  text-align: center;
+  padding: 24rpx;
 }

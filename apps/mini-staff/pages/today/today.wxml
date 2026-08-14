@@ -1,23 +1,55 @@
 <view class="page">
   <view class="hero">
-    <view class="hero-kicker">T1 · 技师工作台</view>
-    <view class="hero-title">{{staffName || '今日下一单'}}</view>
-    <view class="hero-sub">三秒看懂谁 / 几点 / 哪张床</view>
+    <view class="hero-row">
+      <view class="avatar"></view>
+      <view class="grow">
+        <view class="hero-name">{{staffName || '技师'}}</view>
+        <view class="hero-sub">{{levelLabel}} · {{storeLabel}}</view>
+      </view>
+      <view class="duty {{onDuty ? 'on' : ''}}" bindtap="toggleDuty">
+        <text>{{onDuty ? '在岗' : '离岗'}}</text>
+        <view class="dot"></view>
+      </view>
+    </view>
+    <view class="kpis">
+      <view class="kpi">
+        <view class="kpi-cap">今日已完成</view>
+        <view class="kpi-num">{{doneCount}} 钟</view>
+      </view>
+      <view class="kpi">
+        <view class="kpi-cap">预估收入</view>
+        <view class="kpi-num">{{incomeText}}</view>
+      </view>
+      <view class="kpi">
+        <view class="kpi-cap">今日满班</view>
+        <view class="kpi-num">{{rateText}}</view>
+      </view>
+    </view>
   </view>
 
   <view wx:if="{{loading}}" class="hint">加载中…</view>
   <view wx:if="{{error}}" class="error">{{error}}</view>
 
-  <view wx:if="{{next}}" class="card" bindtap="openService">
-    <view class="card-top">
-      <text class="who">{{next.customerName}}</text>
-      <text wx:if="{{next.isNewCustomer}}" class="badge">新客</text>
+  <view wx:if="{{next}}" class="next-card">
+    <view class="next-cap">
+      <text>下一单</text>
+      <text class="eta">{{etaText}}</text>
     </view>
-    <view class="when">{{next.start}}–{{next.end}}</view>
-    <view class="meta">{{next.roomName}} · {{next.bedName}}</view>
-    <view class="meta">{{next.projectName}}</view>
-    <view class="eta">{{etaText}}</view>
-    <view class="tap">进入服务页</view>
+    <view class="who-row">
+      <text class="who">{{next.customerName}}</text>
+      <text wx:if="{{next.isNewCustomer}}" class="tag">第 1 次</text>
+      <text wx:else class="tag">熟客</text>
+    </view>
+    <view class="proj">{{next.projectName}}</view>
+    <view class="when-row">
+      <text class="when">{{next.start}}–{{next.end}}</text>
+      <text class="room">{{next.roomName}}</text>
+    </view>
+    <view class="note">到店先核对主诉与力度，提交记录后不可改。</view>
+    <view class="next-acts">
+      <view class="btn start" bindtap="openService">开始服务</view>
+      <view class="btn ghost" bindtap="openArchive">档案</view>
+    </view>
   </view>
 
   <view wx:elif="{{!loading && !error}}" class="empty">
@@ -25,11 +57,43 @@
     <view class="hint">今天没有待服务预约</view>
   </view>
 
-  <view class="section-title">今日时间轴</view>
-  <view class="timeline">
-    <view wx:for="{{chips}}" wx:key="slotNo" class="chip {{item.tone}}">
-      <text class="chip-t">{{item.label}}</text>
-      <text class="chip-s">{{item.state}}</text>
+  <view class="card">
+    <view class="sec-row">
+      <view class="sec">今日时间轴</view>
+      <view class="hint">{{dateLabel}}</view>
+    </view>
+    <view wx:if="{{rows.length === 0}}" class="hint">暂无排班</view>
+    <view wx:for="{{rows}}" wx:key="key" class="tl {{item.kind}}">
+      <view class="tl-time">{{item.time}}</view>
+      <view class="tl-dot"></view>
+      <view class="tl-body">{{item.title}}</view>
+      <view wx:if="{{item.action}}" class="fill-btn" bindtap="fillGap">{{item.action}}</view>
+      <view wx:else class="tl-st">{{item.status}}</view>
+    </view>
+  </view>
+
+  <view class="card accept" bindtap="onPending">
+    <view class="accept-ico"></view>
+    <view class="grow">新预约待接单</view>
+    <view wx:if="{{pendingCount}}" class="badge">{{pendingCount}}</view>
+  </view>
+
+  <view class="dock">
+    <view class="dock-item on">
+      <view class="dock-ico">○</view>
+      <view>工作台</view>
+    </view>
+    <view class="dock-item" bindtap="soon">
+      <view class="dock-ico">□</view>
+      <view>排班</view>
+    </view>
+    <view class="dock-item" bindtap="soon">
+      <view class="dock-ico">◇</view>
+      <view>业绩</view>
+    </view>
+    <view class="dock-item" bindtap="goMine">
+      <view class="dock-ico">我</view>
+      <view>我的</view>
     </view>
   </view>
 </view>

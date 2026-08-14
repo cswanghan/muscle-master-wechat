@@ -47,7 +47,7 @@ onMounted(loadHealth)
       :closable="false"
     />
     <div v-else class="status-row">
-      <span class="label">GET /actuator/health</span>
+      <span class="label">服务状态</span>
       <el-tag
         id="health-status"
         :type="payload?.status === 'UP' ? 'success' : 'danger'"

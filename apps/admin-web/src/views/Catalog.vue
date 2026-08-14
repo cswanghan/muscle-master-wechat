@@ -248,7 +248,7 @@ onMounted(loadAll)
     <el-card class="health-card" shadow="never">
       <template #header>
         <div class="card-head">
-          <h1>目录 CRUD</h1>
+          <h1>项目 SKU</h1>
           <el-button type="primary" :loading="loading" @click="loadAll">刷新</el-button>
         </div>
       </template>
@@ -260,7 +260,7 @@ onMounted(loadAll)
         show-icon
         :closable="false"
       />
-      <p class="label">@StoreScoped · /a/stores · /a/therapists · /a/projects · /a/schedule-templates</p>
+      <p class="label">维护本店技师、项目与排班模板</p>
       <el-tabs v-model="activeTab">
         <el-tab-pane label="门店" name="stores">
           <div class="toolbar">

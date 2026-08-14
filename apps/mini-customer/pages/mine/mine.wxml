@@ -1,49 +1,112 @@
-<view class="page" id="c6-mine">
-  <view class="hero card">
-    <view class="mark">我</view>
-    <view>
-      <view class="title">我的预约</view>
-      <view class="hint">{{logged ? ('已登录 · ' + customerId) : '未登录'}}</view>
+<view class="page mine-page" id="c6-mine">
+  <view class="profile">
+    <view class="profile-top">
+      <view class="avatar"></view>
+      <view class="grow">
+        <view class="phone">{{phoneMask}}</view>
+        <view class="sub">调理 {{visitCount}} 次 · 常约技师 {{favTherapist}}</view>
+      </view>
+    </view>
+    <view class="wallet">
+      <view class="wallet-col">
+        <view class="wallet-cap">储值余额</view>
+        <view class="wallet-num">¥0.00</view>
+      </view>
+      <view class="wallet-col">
+        <view class="wallet-cap">礼卡余额</view>
+        <view class="wallet-num">¥0.00</view>
+      </view>
+      <view class="recharge" bindtap="onRecharge">充值</view>
+    </view>
+  </view>
+  <view id="no-wallet" class="sr-only">P0 无资金总览 · 无储值 / 礼卡 / 券</view>
+
+  <view wx:if="{{loading}}" class="hint pad">加载中…</view>
+  <view wx:if="{{error}}" class="error pad">{{error}}</view>
+
+  <view class="card next-card">
+    <view class="sec-row">
+      <view class="sec">下一次调理</view>
+      <view class="more" bindtap="scrollOrders">全部订单 ›</view>
+    </view>
+    <view wx:if="{{next}}" class="next-box">
+      <view class="next-top">
+        <view class="next-name">{{next.projectLabel}}</view>
+        <view class="st">{{next.statusLabel}}</view>
+      </view>
+      <view class="meta">{{next.whenLabel}} · {{next.therapistName}} · {{next.storeLabel}}</view>
+      <view class="acts">
+        <view class="btn sm" data-item="{{next}}" bindtap="onCheckin">核销码</view>
+        <view class="btn ghost sm" data-item="{{next}}" bindtap="onReschedule">改约</view>
+        <view class="btn ghost sm" data-item="{{next}}" bindtap="onCancel">取消</view>
+      </view>
+    </view>
+    <view wx:else class="empty">暂无下次预约</view>
+  </view>
+
+  <view class="card menu">
+    <view class="menu-row" bindtap="scrollOrders">
+      <view class="menu-ico"></view>
+      <view class="grow">项目订单</view>
+      <view class="menu-extra">{{orders.length}}</view>
+      <view class="chev">›</view>
+    </view>
+    <view class="menu-row" bindtap="soon">
+      <view class="menu-ico"></view>
+      <view class="grow">好礼订单</view>
+      <view class="chev">›</view>
+    </view>
+    <view class="menu-row" bindtap="soon">
+      <view class="menu-ico"></view>
+      <view class="grow">我的券包</view>
+      <view class="badge">0</view>
+      <view class="chev">›</view>
+    </view>
+    <view class="menu-row" bindtap="soon">
+      <view class="menu-ico"></view>
+      <view class="grow">理疗档案</view>
+      <view class="menu-extra">{{visitCount}} 次记录</view>
+      <view class="chev">›</view>
+    </view>
+    <view class="menu-row" bindtap="soon">
+      <view class="menu-ico"></view>
+      <view class="grow">邀请有奖</view>
+      <view class="chev">›</view>
+    </view>
+    <view class="menu-row last" bindtap="onService">
+      <view class="menu-ico"></view>
+      <view class="grow">联系客服</view>
+      <view class="chev">›</view>
     </view>
   </view>
 
-  <view wx:if="{{loading}}" class="hint">加载中…</view>
-  <view wx:if="{{error}}" class="error">{{error}}</view>
-
-  <view class="sec">进行中预约</view>
-  <view wx:if="{{!loading && ongoing.length===0}}" class="empty">暂无进行中的预约</view>
-  <view
-    wx:for="{{ongoing}}"
-    wx:key="orderId"
-    class="card order"
-    data-item="{{item}}"
-    bindtap="openOrder"
-  >
-    <view class="order-top">
-      <view class="order-no">{{item.orderNo}}</view>
-      <view class="st">{{item.statusLabel}}</view>
+  <view id="order-list" class="card order-list">
+    <view class="sec">项目订单</view>
+    <view wx:if="{{!loading && orders.length===0}}" class="empty">暂无订单</view>
+    <view
+      wx:for="{{orders}}"
+      wx:key="orderId"
+      class="order"
+      data-item="{{item}}"
+      bindtap="openOrder"
+    >
+      <view class="order-top">
+        <view class="order-name">{{item.projectLabel}}</view>
+        <view class="st muted">{{item.statusLabel}}</view>
+      </view>
+      <view class="meta">{{item.whenLabel}} · {{item.therapistName}}</view>
+      <view class="price">¥{{item.priceYuan}}</view>
     </view>
-    <view>{{item.storeLabel}}</view>
-    <view class="hint">{{item.therapistLabel}} · {{item.date}} {{item.start}}</view>
-    <view class="price">¥{{item.priceYuan}}</view>
   </view>
-
-  <view class="sec">订单</view>
-  <view wx:if="{{!loading && orders.length===0}}" class="empty">暂无订单</view>
-  <view wx:for="{{orders}}" wx:key="orderId" class="card order">
-    <view class="order-top">
-      <view class="order-no">{{item.orderNo}}</view>
-      <view class="st muted">{{item.statusLabel}}</view>
-    </view>
-    <view class="hint">{{item.date}} {{item.start}} · ¥{{item.priceYuan}}</view>
-  </view>
-
-  <view class="no-wallet" id="no-wallet">P0 无资金总览 · 无储值 / 礼卡 / 券</view>
 
   <view class="dock">
     <view class="dock-item" bindtap="goHome">
-      <view class="dock-ico">约</view>
+      <view class="dock-ico">○</view>
       <view>预约</view>
+    </view>
+    <view class="dock-item" bindtap="soon">
+      <view class="dock-ico">◇</view>
+      <view>好礼</view>
     </view>
     <view class="dock-item on">
       <view class="dock-ico">我</view>

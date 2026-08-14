@@ -1,44 +1,72 @@
 <view class="page" id="c1-home">
-  <view class="hero">
-    <view class="mark">松</view>
-    <view class="title">肌松大师</view>
-    <view class="hint">选症状 · 选门店 · 选技师，同一套库存</view>
-  </view>
+  <view class="hero-title">疲劳酸痛，到肌松大师</view>
+  <view class="search" id="entry-symptom" bindtap="goSymptom">说说哪里不舒服，为你找师傅</view>
 
-  <view class="entries">
-    <view class="entry" id="entry-symptom" bindtap="goSymptom">
-      <view class="entry-ico">症</view>
-      <view class="entry-body">
-        <view class="entry-name">按症状预约</view>
-        <view class="entry-sub">肩颈 / 腰骶 / 酸胀</view>
-      </view>
+  <view class="sec-card">
+    <view class="sec-row">
+      <view class="sec-name">特惠预约</view>
+      <view class="sec-more">更多活动</view>
     </view>
-    <view class="entry" id="entry-store" bindtap="goStores">
-      <view class="entry-ico">店</view>
-      <view class="entry-body">
-        <view class="entry-name">按门店预约</view>
-        <view class="entry-sub">附近门店 · 营业时段</view>
+    <view wx:if="{{deal}}" class="deal" bindtap="goDeal">
+      <view class="thumb">技师照</view>
+      <view class="deal-body">
+        <view class="deal-name">{{deal.name}}</view>
+        <view class="price-row">
+          <text class="price">¥{{deal.priceYuan}}</text>
+          <text class="strike">¥{{deal.strikeYuan}}</text>
+        </view>
+        <view class="meta">{{deal.therapistName}} · 今天可约</view>
+        <view class="meta">{{nearStore}}</view>
+        <view class="tags">
+          <text class="tag copper">9.5折 · 仅此1档</text>
+        </view>
       </view>
-    </view>
-    <view class="entry" id="entry-therapist" bindtap="goTherapists">
-      <view class="entry-ico">师</view>
-      <view class="entry-body">
-        <view class="entry-name">按技师预约</view>
-        <view class="entry-sub">指定技师 · 看空档</view>
-      </view>
+      <view class="btn sm" id="entry-deal">立即抢约</view>
     </view>
   </view>
 
-  <view class="promo" id="promo-placeholder">
-    <view class="promo-tag">即将上线</view>
-    <view class="promo-title">特惠空档</view>
-    <view class="promo-sub">精确到技师 · 时段 · 折扣的卡片是 P2，此处仅占位</view>
+  <view class="sec-card">
+    <view class="sec-row">
+      <view class="sec-name">门店预约</view>
+      <view class="sec-more" id="entry-store" bindtap="goStores">更多门店</view>
+    </view>
+    <view wx:for="{{stores}}" wx:key="storeId" class="store" data-item="{{item}}" bindtap="goStore">
+      <view class="thumb">门店实拍</view>
+      <view class="grow">
+        <view class="deal-name">{{item.name}}</view>
+        <view class="meta">10:00-22:00 <text wx:if="{{index===0}}" class="near">就近</text></view>
+        <view class="jade">今晚可约</view>
+      </view>
+      <view class="btn ghost sm">预约</view>
+    </view>
+  </view>
+
+  <view class="sec-card">
+    <view class="sec-row">
+      <view class="sec-name">推拿师预约</view>
+      <view class="sec-more" id="entry-therapist" bindtap="goTherapists">按症找找</view>
+    </view>
+    <view wx:for="{{therapists}}" wx:key="therapistId" class="store" data-item="{{item}}" bindtap="goTherapist">
+      <view class="avatar"></view>
+      <view class="grow">
+        <view class="deal-name">{{item.name}} <text class="lvl">{{item.levelLabel}}</text></view>
+        <view class="meta copper">{{item.rating}}</view>
+        <view class="chips">
+          <text wx:for="{{item.tags}}" wx:for-item="tg" wx:key="*this" class="chip">{{tg}}</text>
+        </view>
+      </view>
+      <view class="btn ghost sm">预约</view>
+    </view>
   </view>
 
   <view class="dock">
     <view class="dock-item on">
-      <view class="dock-ico">约</view>
+      <view class="dock-ico">○</view>
       <view>预约</view>
+    </view>
+    <view class="dock-item">
+      <view class="dock-ico">◇</view>
+      <view>好礼</view>
     </view>
     <view class="dock-item" bindtap="goMine">
       <view class="dock-ico">我</view>
