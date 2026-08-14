@@ -26,7 +26,6 @@ import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
 import com.jisuodashi.staff.TreatmentNoteRepository;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -81,6 +80,10 @@ public class SlotOccupyService {
     public static final int LOCK_MINUTES = 15;
     public static final int IDEMPOTENT_TAKEOVER_SECONDS = 30;
     public static final int DEADLOCK_RETRIES = 3;
+    public static final String METRIC_LOCK_FAIL = "slot.lock.fail";
+    public static final String REASON_SLOT_NOT_FREE = "SLOT_NOT_FREE";
+    public static final String REASON_BED_EXHAUSTED = "BED_EXHAUSTED";
+    public static final String REASON_LOCK_CONFLICT = "LOCK_CONFLICT";
 
     private static final DateTimeFormatter ORDER_DAY = DateTimeFormatter.BASIC_ISO_DATE;
     private static final ObjectMapper JSON = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -93,6 +96,7 @@ public class SlotOccupyService {
     private final String instanceId;
     private final StringRedisTemplate redis;
     private final Counter stalePaid;
+    private final MeterRegistry meters;
     private final AvailabilityCache availCache;
     private FeatureFlags flags;
     private GrayStores gray;
@@ -161,17 +165,44 @@ public class SlotOccupyService {
         this.instanceId = instanceId;
         this.redis = redis;
         this.availCache = availCache;
+        this.meters = meters;
         if (meters == null) {
             this.stalePaid = null;
         } else {
             this.stalePaid = Counter.builder("slot.locked.stale_paid")
                     .description("Expired LOCKED holds skipped because the order is paid/in-service or add-on")
                     .register(meters);
-            Gauge.builder("slot.locked.stuck_30m", store,
-                            s -> s.countLockedExpiredBefore(clock.now().minusMinutes(STUCK_LOCK_MINUTES)))
-                    .description("LOCKED rows with lock_expire_at older than 30 minutes")
-                    .register(meters);
         }
+    }
+
+    /**
+     * {@code slot.lock.fail{reason}}：锁库存入口失败计数。所有内部 throw 点都收敛到这里，
+     * 免得每个 {@code throw} 旁边挂一行埋点。{@code slot.locked.stale} gauge 在
+     * {@code observability.BusinessMetrics}（60s 刮取）。
+     */
+    private <T> T meterLockFailures(java.util.function.Supplier<T> body) {
+        try {
+            return body.get();
+        } catch (ApiException ex) {
+            String reason = lockFailReason(ex.getCode());
+            if (reason != null && meters != null) {
+                meters.counter(METRIC_LOCK_FAIL, "reason", reason).increment();
+            }
+            throw ex;
+        }
+    }
+
+    private static String lockFailReason(int code) {
+        if (code == ErrorCodes.SLOT_UNAVAILABLE) {
+            return REASON_SLOT_NOT_FREE;
+        }
+        if (code == ErrorCodes.NO_FREE_BED) {
+            return REASON_BED_EXHAUSTED;
+        }
+        if (code == ErrorCodes.LOCK_CONFLICT) {
+            return REASON_LOCK_CONFLICT;
+        }
+        return null;
     }
 
     @Autowired(required = false)
@@ -185,6 +216,10 @@ public class SlotOccupyService {
     }
 
     public LockNewResult lockNew(LockNewCommand cmd) {
+        return meterLockFailures(() -> doLockNewEntry(cmd));
+    }
+
+    private LockNewResult doLockNewEntry(LockNewCommand cmd) {
         if (cmd.requestId() == null || cmd.requestId().isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }
@@ -336,6 +371,35 @@ public class SlotOccupyService {
 
     public void invalidateAvailability(long storeId, LocalDate date) {
         evictAvail(storeId, date);
+    }
+
+    /**
+     * Leave approval effect (§2.3). Counts busy slots in the half-open range first — any
+     * {@code LOCKED/BOOKED/BUFFER} row rejects with {@code 40906} — then flips {@code FREE → REST}.
+     * No occupancy row is written. Takes the same therapist-day lock as {@link #lockNew} so an
+     * approval cannot interleave with a booking on that therapist/day.
+     *
+     * @return number of slots flipped to REST
+     */
+    public int applyLeaveRest(
+            long therapistId, LocalDate date, int fromSlotNo, int toSlotNoExclusive, long storeId) {
+        String token = dayLock.tryAcquire(therapistId, date);
+        if (token == null) {
+            throw new ApiException(ErrorCodes.LOCK_CONFLICT, "锁冲突，请重试");
+        }
+        try {
+            return inStoreTx(() -> {
+                int busy = store.countBusyTherapistSlots(therapistId, date, fromSlotNo, toSlotNoExclusive);
+                if (busy > 0) {
+                    throw new ApiException(ErrorCodes.LEAVE_CONFLICT, "该时段有 " + busy + " 格已被占用");
+                }
+                return store.restFreeTherapistSlots(
+                        therapistId, date, fromSlotNo, toSlotNoExclusive, clock.now());
+            });
+        } finally {
+            dayLock.release(therapistId, date, token);
+            invalidateAvailability(storeId, date);
+        }
     }
 
     private LockNewResult doLockNew(LockNewCommand cmd) {
@@ -753,6 +817,11 @@ public class SlotOccupyService {
 
     public ExtendOwnResult extendOwn(
             long orderId, long projectId, int slotCount, boolean cash, String requestId) {
+        return meterLockFailures(() -> doExtendOwnEntry(orderId, projectId, slotCount, cash, requestId));
+    }
+
+    private ExtendOwnResult doExtendOwnEntry(
+            long orderId, long projectId, int slotCount, boolean cash, String requestId) {
         if (slotCount < 1) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "durationMinutes 必须是 15 的倍数且 ≥15");
         }
@@ -1072,6 +1141,11 @@ public class SlotOccupyService {
 
     /** Move remain therapist slots; do not touch the bed. */
     public SwapTherapistResult swapTherapist(String requestId, long orderId, long newTherapistId, String reason) {
+        return meterLockFailures(() -> doSwapTherapistEntry(requestId, orderId, newTherapistId, reason));
+    }
+
+    private SwapTherapistResult doSwapTherapistEntry(
+            String requestId, long orderId, long newTherapistId, String reason) {
         if (requestId == null || requestId.isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }
@@ -1279,6 +1353,10 @@ public class SlotOccupyService {
      * keep BOOKED/BUFFER dest and do not insert {@code RELEASE_LOCK}.
      */
     public RescheduleResult reschedule(RescheduleCommand cmd) {
+        return meterLockFailures(() -> doRescheduleEntry(cmd));
+    }
+
+    private RescheduleResult doRescheduleEntry(RescheduleCommand cmd) {
         if (cmd == null || cmd.requestId() == null || cmd.requestId().isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }

@@ -30,10 +30,14 @@ public class FrontHumanTaskController {
         return ApiResponse.ok(desk.listHumanTasks(status));
     }
 
+    /**
+     * Refund tasks answer {@link FrontDeskDtos.RefundResponse}; {@code LEAVE_APPROVE} tasks answer
+     * {@code ScheduleExceptionDtos.ExceptionView} and additionally require {@code schedule:approve}.
+     */
     @PostMapping("/{id}/approve")
     @StoreScoped
     @RequirePerm("refund:approve")
-    public ApiResponse<FrontDeskDtos.RefundResponse> approve(
+    public ApiResponse<Object> approve(
             @PathVariable("id") String id,
             @Valid @RequestBody(required = false) FrontDeskDtos.ApproveRequest request) {
         return ApiResponse.ok(desk.approveTask(id, request));
@@ -42,9 +46,19 @@ public class FrontHumanTaskController {
     @PostMapping("/{id}/deny")
     @StoreScoped
     @RequirePerm("refund:approve")
-    public ApiResponse<FrontDeskDtos.RefundResponse> deny(
+    public ApiResponse<Object> deny(
             @PathVariable("id") String id,
             @Valid @RequestBody(required = false) FrontDeskDtos.ApproveRequest request) {
         return ApiResponse.ok(desk.denyTask(id, request));
+    }
+
+    /** 异常单出度：{@code RESOLVE_COMPLETE} / {@code RESOLVE_CANCEL} / {@code IGNORE}（店长及以上）。 */
+    @PostMapping("/{id}/resolve")
+    @StoreScoped
+    @RequirePerm("order:resolve")
+    public ApiResponse<FrontDeskDtos.ResolveResponse> resolve(
+            @PathVariable("id") String id,
+            @Valid @RequestBody(required = false) FrontDeskDtos.ResolveRequest request) {
+        return ApiResponse.ok(desk.resolveTask(id, request));
     }
 }

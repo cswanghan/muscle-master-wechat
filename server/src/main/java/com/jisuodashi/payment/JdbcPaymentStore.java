@@ -185,7 +185,7 @@ public class JdbcPaymentStore implements PaymentStore {
                     task.getTaskType(),
                     task.getBizKey(),
                     task.getTitle(),
-                    null,
+                    task.getDetail(),
                     task.getStatus(),
                     null,
                     task.getStoreId(),
@@ -217,11 +217,18 @@ public class JdbcPaymentStore implements PaymentStore {
     public List<HumanTask> listHumanTasks() {
         return jdbc.query(
                 """
-                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, detail, status,
                        created_at, resolved_at, resolved_by
                   FROM human_task
                 """,
                 HUMAN_TASK);
+    }
+
+    @Override
+    public int countOpenHumanTasks() {
+        Integer n = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM human_task WHERE status = 'OPEN'", Integer.class);
+        return n == null ? 0 : n;
     }
 
     private static final RowMapper<Refund> REFUND = (rs, i) -> new Refund(
@@ -267,6 +274,7 @@ public class JdbcPaymentStore implements PaymentStore {
         t.setTaskType(rs.getString("task_type"));
         t.setBizKey(rs.getString("biz_key"));
         t.setTitle(rs.getString("title"));
+        t.setDetail(rs.getString("detail"));
         t.setStatus(rs.getString("status"));
         t.setCreatedAt(JdbcTimes.instant(rs.getTimestamp("created_at")));
         t.setResolvedAt(JdbcTimes.instant(rs.getTimestamp("resolved_at")));
@@ -334,7 +342,7 @@ public class JdbcPaymentStore implements PaymentStore {
     public HumanTask findHumanTaskById(long id) {
         List<HumanTask> rows = jdbc.query(
                 """
-                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, detail, status,
                        created_at, resolved_at, resolved_by
                   FROM human_task WHERE id=?
                 """,
@@ -346,11 +354,26 @@ public class JdbcPaymentStore implements PaymentStore {
     public HumanTask lockHumanTaskById(long id) {
         List<HumanTask> rows = jdbc.query(
                 """
-                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, status,
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, detail, status,
                        created_at, resolved_at, resolved_by
                   FROM human_task WHERE id=? FOR UPDATE
                 """,
                 HUMAN_TASK, id);
+        return rows.isEmpty() ? null : rows.getFirst();
+    }
+
+    @Override
+    public HumanTask lockHumanTaskByBizKey(String bizKey) {
+        if (bizKey == null) {
+            return null;
+        }
+        List<HumanTask> rows = jdbc.query(
+                """
+                SELECT id, workflow_instance_id, order_id, store_id, task_type, biz_key, title, detail, status,
+                       created_at, resolved_at, resolved_by
+                  FROM human_task WHERE biz_key=? FOR UPDATE
+                """,
+                HUMAN_TASK, bizKey);
         return rows.isEmpty() ? null : rows.getFirst();
     }
 

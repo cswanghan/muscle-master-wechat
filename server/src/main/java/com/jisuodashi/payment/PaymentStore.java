@@ -44,6 +44,13 @@ public interface PaymentStore {
 
     List<HumanTask> listHumanTasks();
 
+    /** {@code workflow.manual.open} 刮取：仍在 OPEN 的人工待办数。JDBC 侧应改写成 COUNT。 */
+    default int countOpenHumanTasks() {
+        return (int) listHumanTasks().stream()
+                .filter(t -> "OPEN".equals(t.getStatus()))
+                .count();
+    }
+
     default void expirePrepay(String paymentNo, LocalDateTime expireAt) {
     }
 
@@ -65,6 +72,9 @@ public interface PaymentStore {
     HumanTask findHumanTaskById(long id);
 
     HumanTask lockHumanTaskById(long id);
+
+    /** {@code uk_ht_biz} lookup, e.g. {@code leave:{exceptionId}}. */
+    HumanTask lockHumanTaskByBizKey(String bizKey);
 
     void updateHumanTask(HumanTask task);
 }

@@ -261,6 +261,23 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public int countOrdersCreatedSince(long storeId, LocalDateTime since) {
+        return mapper.countOrdersCreatedSince(storeId, since);
+    }
+
+    @Override
+    public int countBusyTherapistSlots(
+            long therapistId, LocalDate date, int fromSlotNo, int toSlotNoExclusive) {
+        return mapper.countBusyTherapistSlots(therapistId, date, fromSlotNo, toSlotNoExclusive);
+    }
+
+    @Override
+    public int restFreeTherapistSlots(
+            long therapistId, LocalDate date, int fromSlotNo, int toSlotNoExclusive, LocalDateTime now) {
+        return mapper.restFreeTherapistSlots(therapistId, date, fromSlotNo, toSlotNoExclusive, now);
+    }
+
+    @Override
     public int confirmPaidTherapistSlots(long orderId, long holdId, int serviceEndSlotNo, LocalDateTime now) {
         return mapper.confirmPaidTherapistSlots(orderId, holdId, serviceEndSlotNo, now);
     }

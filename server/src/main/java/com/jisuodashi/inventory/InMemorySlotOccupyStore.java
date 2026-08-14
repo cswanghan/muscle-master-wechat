@@ -616,12 +616,60 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public int countOrdersCreatedSince(long storeId, LocalDateTime since) {
+        return (int) orders.values().stream()
+                .filter(row -> row.storeId() == storeId)
+                .filter(row -> row.createdAt() != null && !row.createdAt().isBefore(since))
+                .count();
+    }
+
+    @Override
     public List<SlotRow> listTherapistSlotsByStore(long storeId, LocalDate date) {
         return therapistSlots.values().stream()
                 .filter(slot -> slot.storeId == storeId && date.equals(slot.date))
                 .sorted(Comparator.comparingInt(slot -> slot.slotNo))
                 .map(slot -> new SlotRow(slot.slotNo, slot.status))
                 .toList();
+    }
+
+    @Override
+    public int countBusyTherapistSlots(
+            long therapistId, LocalDate date, int fromSlotNo, int toSlotNoExclusive) {
+        int n = 0;
+        for (MutableSlot slot : therapistSlots.values()) {
+            if (inLeaveRange(slot, therapistId, date, fromSlotNo, toSlotNoExclusive)
+                    && (SlotStatus.LOCKED.equals(slot.status)
+                    || SlotStatus.BOOKED.equals(slot.status)
+                    || SlotStatus.BUFFER.equals(slot.status))) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    @Override
+    public int restFreeTherapistSlots(
+            long therapistId, LocalDate date, int fromSlotNo, int toSlotNoExclusive, LocalDateTime now) {
+        Work w = requireWork();
+        int n = 0;
+        for (MutableSlot slot : therapistSlots.values()) {
+            if (inLeaveRange(slot, therapistId, date, fromSlotNo, toSlotNoExclusive)
+                    && SlotStatus.FREE.equals(slot.status)) {
+                Snapshot snap = slot.snapshot();
+                slot.status = SlotStatus.REST;
+                w.undos.add(() -> slot.restore(snap));
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private static boolean inLeaveRange(
+            MutableSlot slot, long therapistId, LocalDate date, int fromSlotNo, int toSlotNoExclusive) {
+        return slot.resourceId == therapistId
+                && date.equals(slot.date)
+                && slot.slotNo >= fromSlotNo
+                && slot.slotNo < toSlotNoExclusive;
     }
 
     @Override

@@ -56,6 +56,7 @@ class SchemaContractTest {
     private static String v2;
     private static String v3;
     private static String v4;
+    private static String v5;
     private static final List<Check> CHECKS = new ArrayList<>();
 
     @BeforeAll
@@ -64,6 +65,7 @@ class SchemaContractTest {
         v2 = readMigration("V2__rbac_seed.sql");
         v3 = readMigration("V3__demo_store.sql");
         v4 = readMigration("V4__locknew_free_indexes.sql");
+        v5 = readMigration("V5__order_resolve_perm.sql");
     }
 
     @Test
@@ -154,6 +156,11 @@ class SchemaContractTest {
         }
         check("TC-2-05", "7 roles seeded",
                 ROLE_CODES.stream().allMatch(c -> v2.contains("'" + c + "'")));
+        check("TC-2-05", "V5 seeds order:resolve", v5.contains("'order:resolve'"));
+        check("TC-2-05", "order:resolve granted to 3 roles (super/region/store manager)",
+                countInsertRows(v5, "role_permission") == 3);
+        check("TC-2-05", "order:resolve not granted in V2 (front desk excluded)",
+                !v2.contains("'order:resolve'"));
     }
 
     private static void extraInvariants() {

@@ -64,6 +64,16 @@ public class HumanTask {
     private Long storeId;
     private Instant resolvedAt;
     private Long resolvedBy;
+    /** Raw JSON payload (human_task.detail). LEAVE_APPROVE carries {"exceptionId":N}. */
+    private String detail;
+
+    public String getDetail() {
+        return detail;
+    }
+
+    public void setDetail(String detail) {
+        this.detail = detail;
+    }
 
     public Long getWorkflowInstanceId() {
         return workflowInstanceId;

@@ -5,17 +5,20 @@ import com.jisuodashi.auth.AuthContext;
 import com.jisuodashi.auth.Customer;
 import com.jisuodashi.auth.CustomerMergeService;
 import com.jisuodashi.auth.CustomerRepository;
+import com.jisuodashi.auth.HumanTask;
 import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.FeatureFlags;
 import com.jisuodashi.common.PhoneCrypto;
+import com.jisuodashi.common.SnowflakeIdGenerator;
 import com.jisuodashi.inventory.ExtendOwnResult;
 import com.jisuodashi.inventory.LockNewCommand;
 import com.jisuodashi.inventory.LockNewResult;
 import com.jisuodashi.inventory.RescheduleCommand;
 import com.jisuodashi.inventory.RescheduleResult;
+import com.jisuodashi.inventory.ScheduleExceptionService;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore;
 import com.jisuodashi.inventory.SwapTherapistResult;
@@ -28,10 +31,14 @@ import com.jisuodashi.order.OrderStatus;
 import com.jisuodashi.payment.Payment;
 import com.jisuodashi.payment.PaymentDtos;
 import com.jisuodashi.payment.PaymentService;
+import com.jisuodashi.rbac.PermissionChecker;
 import com.jisuodashi.rbac.StoreScope;
 import com.jisuodashi.rbac.StoreScopeContext;
+import com.jisuodashi.workflow.HumanTaskQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +46,13 @@ import java.util.Locale;
 
 @Service
 public class FrontDeskService {
+
+    /** {@code human_task.task_type} opened by ABORT and closed by {@code /resolve}. */
+    public static final String TASK_ORDER_ABNORMAL = "ORDER_ABNORMAL";
+    public static final String ABNORMAL_BIZ_PREFIX = "abnormal:";
+    public static final String ACTION_RESOLVE_COMPLETE = "RESOLVE_COMPLETE";
+    public static final String ACTION_RESOLVE_CANCEL = "RESOLVE_CANCEL";
+    public static final String ACTION_IGNORE = "IGNORE";
 
     private final SlotOccupyService occupy;
     private final SlotOccupyStore orders;
@@ -50,6 +64,11 @@ public class FrontDeskService {
     private final AppClock clock;
     private final CatalogRepository catalog;
     private FeatureFlags flags;
+    private ScheduleExceptionService leaves;
+    private HumanTaskQueue tasks;
+    private PermissionChecker permissions;
+    private SnowflakeIdGenerator ids;
+    private TransactionTemplate tx;
 
     public FrontDeskService(
             SlotOccupyService occupy,
@@ -76,6 +95,24 @@ public class FrontDeskService {
     @Autowired(required = false)
     public void setFeatureFlags(FeatureFlags flags) {
         this.flags = flags;
+    }
+
+    /**
+     * Leave approval reaches the desk queue through the same {@code human_task} rows (§2.3),
+     * and ABORT/resolve write to that queue too.
+     */
+    @Autowired(required = false)
+    public void setHumanTaskSupport(
+            ScheduleExceptionService leaves,
+            HumanTaskQueue tasks,
+            PermissionChecker permissions,
+            SnowflakeIdGenerator ids,
+            PlatformTransactionManager txManager) {
+        this.leaves = leaves;
+        this.tasks = tasks;
+        this.permissions = permissions;
+        this.ids = ids;
+        this.tx = txManager == null ? null : new TransactionTemplate(txManager);
     }
 
     public FrontDeskDtos.CheckInResponse checkIn(String orderIdRaw, FrontDeskDtos.CheckInRequest req) {
@@ -506,18 +543,196 @@ public class FrontDeskService {
         return toRefund(outcome);
     }
 
-    public FrontDeskDtos.RefundResponse approveTask(String taskIdRaw, FrontDeskDtos.ApproveRequest req) {
+    /**
+     * Dispatches on {@code task_type} (§待办): {@code LEAVE_APPROVE} → the one
+     * {@link ScheduleExceptionService#approve} implementation, otherwise the refund workflow.
+     *
+     * @return {@link FrontDeskDtos.RefundResponse} or {@code ScheduleExceptionDtos.ExceptionView}
+     */
+    public Object approveTask(String taskIdRaw, FrontDeskDtos.ApproveRequest req) {
         AuthContext.requireStaff();
         long taskId = parseId(taskIdRaw, "taskId");
         String requestId = req == null ? null : req.requestId();
+        HumanTask leave = leaveTask(taskId);
+        if (leave != null) {
+            return leaves.approveTask(leave);
+        }
         return toRefund(payments.approve(taskId, requestId));
     }
 
-    public FrontDeskDtos.RefundResponse denyTask(String taskIdRaw, FrontDeskDtos.ApproveRequest req) {
+    public Object denyTask(String taskIdRaw, FrontDeskDtos.ApproveRequest req) {
         AuthContext.requireStaff();
         long taskId = parseId(taskIdRaw, "taskId");
         String requestId = req == null ? null : req.requestId();
+        HumanTask leave = leaveTask(taskId);
+        if (leave != null) {
+            return leaves.rejectTask(leave);
+        }
         return toRefund(payments.deny(taskId, requestId));
+    }
+
+    /**
+     * {@code null} unless the row is a leave approval. The endpoint annotation carries
+     * {@code refund:approve}; a leave decision additionally needs {@code schedule:approve}.
+     */
+    private HumanTask leaveTask(long taskId) {
+        if (leaves == null || tasks == null) {
+            return null;
+        }
+        HumanTask task = tasks.findById(taskId);
+        if (task == null || !ScheduleExceptionService.TASK_LEAVE_APPROVE.equals(task.getTaskType())) {
+            return null;
+        }
+        if (permissions != null) {
+            permissions.require("schedule:approve");
+        }
+        return task;
+    }
+
+    /**
+     * §3 {@code IN_SERVICE → ABNORMAL}. Releases the slots at and after {@code nowSlot} and opens
+     * the {@code ORDER_ABNORMAL} task the manager later resolves. Idempotent per order.
+     */
+    public FrontDeskDtos.AbortResponse abortOrder(String orderIdRaw, FrontDeskDtos.AbortRequest req) {
+        AuthContext.requireStaff();
+        long orderId = parseId(orderIdRaw, "orderId");
+        BookingOrderRef order = requireScopedOrder(orders.findOrderById(orderId));
+        String bizKey = ABNORMAL_BIZ_PREFIX + orderId;
+        String reason = req == null ? null : req.reason();
+        return inTasksTx(() -> {
+            if (OrderStatus.ABNORMAL.name().equals(order.status())) {
+                HumanTask open = tasks == null ? null : tasks.lockByBizKey(bizKey);
+                return new FrontDeskDtos.AbortResponse(
+                        String.valueOf(orderId), order.status(),
+                        open == null ? null : String.valueOf(open.getId()), true);
+            }
+            FireResult fired = machine.fire(orderId, OrderEvent.ABORT, deskContext());
+            HumanTask task = abnormalTask(order, bizKey, reason);
+            if (task != null) {
+                tasks.insert(task);
+            }
+            return new FrontDeskDtos.AbortResponse(
+                    String.valueOf(orderId), fired.to().name(),
+                    task == null ? null : String.valueOf(task.getId()), false);
+        });
+    }
+
+    /**
+     * §待办 异常单出度：{@code RESOLVE_COMPLETE} / {@code RESOLVE_CANCEL} 推订单，
+     * {@code IGNORE} 只关任务不动订单。Replay 返回当前状态而不是 40904。
+     */
+    public FrontDeskDtos.ResolveResponse resolveTask(String taskIdRaw, FrontDeskDtos.ResolveRequest req) {
+        AuthContext.requireStaff();
+        long taskId = parseId(taskIdRaw, "taskId");
+        String action = req == null || req.action() == null ? null : req.action().trim().toUpperCase(Locale.ROOT);
+        if (!ACTION_RESOLVE_COMPLETE.equals(action)
+                && !ACTION_RESOLVE_CANCEL.equals(action)
+                && !ACTION_IGNORE.equals(action)) {
+            throw new ApiException(
+                    ErrorCodes.BAD_REQUEST, "action 仅支持 RESOLVE_COMPLETE / RESOLVE_CANCEL / IGNORE");
+        }
+        if (tasks == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "任务不存在");
+        }
+        HumanTask task = tasks.findById(taskId);
+        if (task == null) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "任务不存在");
+        }
+        assertTaskInScope(task);
+        BookingOrderRef order = task.getOrderId() == null ? null : orders.findOrderById(task.getOrderId());
+        if (!HumanTaskQueue.STATUS_OPEN.equals(task.getStatus())) {
+            return new FrontDeskDtos.ResolveResponse(
+                    String.valueOf(task.getId()), task.getStatus(), action,
+                    order == null ? null : String.valueOf(order.id()),
+                    order == null ? null : order.status(), true);
+        }
+        if (!ACTION_IGNORE.equals(action) && order == null) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "该任务不带订单，只能 IGNORE");
+        }
+        return inTasksTx(() -> {
+            String orderStatus = order == null ? null : order.status();
+            if (!ACTION_IGNORE.equals(action)) {
+                OrderEvent event = ACTION_RESOLVE_COMPLETE.equals(action)
+                        ? OrderEvent.RESOLVE_COMPLETE
+                        : OrderEvent.RESOLVE_CANCEL;
+                orderStatus = machine.fire(order.id(), event, deskContext().withStoreManager()).to().name();
+            }
+            String taskStatus = ACTION_IGNORE.equals(action)
+                    ? HumanTaskQueue.STATUS_IGNORED
+                    : HumanTaskQueue.STATUS_DONE;
+            closeTask(taskId, taskStatus);
+            return new FrontDeskDtos.ResolveResponse(
+                    String.valueOf(taskId), taskStatus, action,
+                    order == null ? null : String.valueOf(order.id()), orderStatus, false);
+        });
+    }
+
+    private HumanTask abnormalTask(BookingOrderRef order, String bizKey, String reason) {
+        if (tasks == null || ids == null) {
+            return null;
+        }
+        HumanTask task = new HumanTask();
+        task.setId(ids.nextId());
+        task.setTaskType(TASK_ORDER_ABNORMAL);
+        task.setBizKey(bizKey);
+        task.setTitle("异常单待处理 " + order.orderNo());
+        task.setDetail(reason == null || reason.isBlank() ? null : "{\"reason\":\"" + escape(reason) + "\"}");
+        task.setStatus(HumanTaskQueue.STATUS_OPEN);
+        task.setOrderId(order.id());
+        task.setStoreId(order.storeId());
+        task.setCreatedAt(clock.instant());
+        return task;
+    }
+
+    private void closeTask(long taskId, String status) {
+        HumanTask locked = tasks.lockById(taskId);
+        if (locked == null || !HumanTaskQueue.STATUS_OPEN.equals(locked.getStatus())) {
+            return;
+        }
+        JwtPrincipal principal = AuthContext.get();
+        locked.setStatus(status);
+        locked.setResolvedBy(principal == null ? null : principal.staffId());
+        locked.setResolvedAt(clock.instant());
+        tasks.update(locked);
+    }
+
+    private void assertTaskInScope(HumanTask task) {
+        StoreScope scope = StoreScopeContext.get();
+        if (scope == null || scope.all()) {
+            return;
+        }
+        Long storeId = task.getStoreId();
+        if (storeId == null && task.getOrderId() != null) {
+            BookingOrderRef order = orders.findOrderById(task.getOrderId());
+            storeId = order == null ? null : order.storeId();
+        }
+        if (storeId == null) {
+            throw new ApiException(ErrorCodes.DATA_SCOPE, "超出数据域");
+        }
+        scope.assertContains(storeId);
+    }
+
+    /** The task write joins the state-machine transaction; dev stores need the explicit unit. */
+    private <T> T inTasksTx(java.util.function.Supplier<T> work) {
+        if (tasks == null) {
+            return work.get();
+        }
+        java.util.function.Supplier<T> unit = () -> {
+            tasks.beginWork();
+            try {
+                T result = work.get();
+                tasks.commitWork();
+                return result;
+            } catch (RuntimeException ex) {
+                tasks.rollbackWork();
+                throw ex;
+            }
+        };
+        return tx == null ? unit.get() : tx.execute(status -> unit.get());
+    }
+
+    private static String escape(String raw) {
+        return raw.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     public FrontDeskDtos.HumanTaskListResponse listHumanTasks(String status) {

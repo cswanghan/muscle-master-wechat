@@ -1170,6 +1170,33 @@ public interface InventoryOccupyMapper {
     List<SlotRow> listTherapistSlotsByStore(@Param("storeId") long storeId, @Param("date") LocalDate date);
 
     @Select("""
+            SELECT COUNT(*)
+              FROM therapist_slot
+             WHERE therapist_id = #{therapistId} AND slot_date = #{date}
+               AND slot_no >= #{fromSlotNo} AND slot_no < #{toSlotNo}
+               AND status IN ('LOCKED','BOOKED','BUFFER')
+            """)
+    int countBusyTherapistSlots(
+            @Param("therapistId") long therapistId,
+            @Param("date") LocalDate date,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("toSlotNo") int toSlotNoExclusive);
+
+    @Update("""
+            UPDATE therapist_slot
+               SET status = 'REST', updated_at = #{now}
+             WHERE therapist_id = #{therapistId} AND slot_date = #{date}
+               AND slot_no >= #{fromSlotNo} AND slot_no < #{toSlotNo}
+               AND status = 'FREE'
+            """)
+    int restFreeTherapistSlots(
+            @Param("therapistId") long therapistId,
+            @Param("date") LocalDate date,
+            @Param("fromSlotNo") int fromSlotNo,
+            @Param("toSlotNo") int toSlotNoExclusive,
+            @Param("now") LocalDateTime now);
+
+    @Select("""
             SELECT
               (SELECT COUNT(*) FROM therapist_slot ts
                 LEFT JOIN slot_occupancy o
@@ -1200,4 +1227,10 @@ public interface InventoryOccupyMapper {
                             AND bs.slot_no = o.slot_no)))
             """)
     int countInventoryDrift();
+
+    @Select("""
+            SELECT COUNT(*) FROM booking_order
+             WHERE store_id = #{storeId} AND created_at >= #{since}
+            """)
+    int countOrdersCreatedSince(@Param("storeId") long storeId, @Param("since") LocalDateTime since);
 }

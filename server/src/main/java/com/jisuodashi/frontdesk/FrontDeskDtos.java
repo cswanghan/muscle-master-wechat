@@ -178,6 +178,27 @@ public final class FrontDeskDtos {
     public record ApproveRequest(String requestId) {
     }
 
+    /** §3 中止：{@code IN_SERVICE → ABNORMAL}，释放 {@code nowSlot} 之后未消费的格子。 */
+    public record AbortRequest(String requestId, String reason) {
+    }
+
+    public record AbortResponse(String orderId, String status, String taskId, boolean replay) {
+    }
+
+    /** {@code action}: {@code RESOLVE_COMPLETE} / {@code RESOLVE_CANCEL} / {@code IGNORE}。 */
+    public record ResolveRequest(String requestId, String action, String note) {
+    }
+
+    public record ResolveResponse(
+            String taskId,
+            String taskStatus,
+            String action,
+            String orderId,
+            String orderStatus,
+            boolean replay
+    ) {
+    }
+
     public record HumanTaskView(
             String id,
             String taskType,
