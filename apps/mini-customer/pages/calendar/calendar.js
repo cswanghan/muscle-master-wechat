@@ -1,6 +1,7 @@
 const { request } = require('../../utils/api.js')
-const { fenYuan, rating, levelLabel, slotToTime } = require('../../utils/format.js')
+const { fenYuan, slotToTime } = require('../../utils/format.js')
 const { demoDate } = require('../../config.js')
+const mock = require('../../utils/mock.js')
 
 function addDays(iso, n) {
   const [y, m, d] = iso.split('-').map(Number)
@@ -50,9 +51,8 @@ function paintTherapist(t, selected) {
     }
   })
   return {
-    ...t,
-    rating: rating(t.ratingX100),
-    levelLabel: levelLabel(t.level),
+    ...mock.decorateTherapist(t),
+    starts: t.starts || [],
     slots,
   }
 }
@@ -84,10 +84,10 @@ Page({
       dates.push({ iso, day: iso.slice(8), week: weekday(iso), label, left: '—', on: i === 0 })
     }
     this.setData({
-      storeId: query.storeId || '',
-      storeName: query.storeName ? decodeURIComponent(query.storeName) : '',
-      projectId: query.projectId || '',
-      projectName: query.projectName ? decodeURIComponent(query.projectName) : '',
+      storeId: query.storeId || mock.STORE_ID,
+      storeName: query.storeName ? decodeURIComponent(query.storeName) : mock.stores[0].name,
+      projectId: query.projectId || mock.projects[0].projectId,
+      projectName: query.projectName ? decodeURIComponent(query.projectName) : mock.projects[0].name,
       therapistId: query.therapistId || '',
       therapistName: query.therapistName ? decodeURIComponent(query.therapistName) : '',
       priceFen: Number(query.priceFen || 0),
@@ -116,26 +116,31 @@ Page({
   },
   loadAvailability() {
     const { storeId, date, projectId, therapistId } = this.data
-    if (!storeId || !projectId) {
-      this.setData({ error: '缺少门店或项目', loading: false })
-      return
-    }
     this.setData({ loading: true, error: '' })
-    let path = `/api/v1/c/availability?storeId=${storeId}&date=${date}&projectId=${projectId}&includeBusy=1`
+    const apply = (data) => {
+      const selected = this.data.selected
+      let therapists = ((data && data.therapists) || []).map((t) => paintTherapist(t, selected))
+      const bookable = therapists.some((t) => (t.slots || []).some((s) => s.bookable))
+      if (!therapists.length || !bookable) {
+        therapists = mock.mockAvailability({
+          therapistId,
+          priceFen: this.data.priceFen || 19800,
+        }).therapists.map((t) => paintTherapist(t, selected))
+      }
+      const left = therapists.reduce((n, t) => n + (t.slots || []).filter((s) => s.bookable).length, 0)
+      const dates = this.data.dates.map((d) => (d.iso === this.data.date ? { ...d, left } : d))
+      this.setData({ therapists, dates, loading: false, error: '' })
+    }
+    let path = `/api/v1/c/availability?storeId=${storeId || mock.STORE_ID}&date=${date}&projectId=${projectId || mock.projects[0].projectId}&includeBusy=1`
     if (therapistId) {
       path += `&therapistId=${therapistId}`
     }
     request({ path })
-      .then((data) => {
-        const selected = this.data.selected
-        const therapists = ((data && data.therapists) || []).map((t) => paintTherapist(t, selected))
-        const left = therapists.reduce((n, t) => n + ((t.starts && t.starts.length) || (t.slots || []).filter((s) => s.bookable).length), 0)
-        const dates = this.data.dates.map((d) => (d.iso === this.data.date ? { ...d, left } : d))
-        this.setData({ therapists, dates, loading: false })
-      })
-      .catch((err) => {
-        this.setData({ error: err.message || '加载失败', loading: false })
-      })
+      .then(apply)
+      .catch(() => apply(mock.mockAvailability({
+        therapistId,
+        priceFen: this.data.priceFen || 19800,
+      })))
   },
   pickSlot(e) {
     const { tid, tname, slot, start, price, bookable } = e.currentTarget.dataset

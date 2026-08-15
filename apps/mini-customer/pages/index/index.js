@@ -1,5 +1,6 @@
 const { request } = require('../../utils/api.js')
-const { fenYuan, rating, levelLabel } = require('../../utils/format.js')
+const { fenYuan } = require('../../utils/format.js')
+const mock = require('../../utils/mock.js')
 
 Page({
   data: {
@@ -18,14 +19,12 @@ Page({
       request({ path: '/api/v1/c/therapists' }).catch(() => ({ items: [] })),
       request({ path: '/api/v1/c/projects' }).catch(() => ({ items: [] })),
     ]).then(([stores, therapists, projects]) => {
-      const storeItems = (stores.items || []).slice(0, 2)
-      const thItems = (therapists.items || []).slice(0, 2).map((t) => ({
-        ...t,
-        rating: rating(t.ratingX100),
-        levelLabel: levelLabel(t.level),
-        tags: (t.symptomNames || t.tags || ['头颈肩痛', '睡眠调理']).slice(0, 2),
-      }))
-      const p = (projects.items || [])[0]
+      const storeItems = mock.first((stores.items || []).slice(0, 2), mock.stores)
+      const thItems = mock.first(
+        (therapists.items || []).slice(0, 3).map((t) => mock.decorateTherapist(t)),
+        mock.therapists,
+      )
+      const p = (projects.items || [])[0] || mock.projects[0]
       const deal = p
         ? {
             name: (p.name || '对症调理') + ' ' + (p.durationMinutes || 60) + ' 分钟',
@@ -45,8 +44,24 @@ Page({
         nearStore: storeItems[0] ? `${storeItems[0].name}` : '',
         error: storeItems.length || deal ? '' : '列表为空，点下方入口仍可进入',
       })
-    }).catch((err) => {
-      this.setData({ error: (err && err.message) || '网络连不上本机接口，请确认同一 Wi-Fi 且已关代理' })
+    }).catch(() => {
+      const p = mock.projects[0]
+      this.setData({
+        stores: mock.stores,
+        therapists: mock.therapists,
+        deal: {
+          name: p.name + ' ' + p.durationMinutes + ' 分钟',
+          priceYuan: fenYuan(Math.round(p.priceFen * 0.95)),
+          strikeYuan: fenYuan(p.priceFen),
+          therapistName: mock.therapists[0].name,
+          projectId: p.projectId,
+          priceFen: p.priceFen,
+          durationMinutes: p.durationMinutes,
+          bufferMinutes: p.bufferMinutes,
+        },
+        nearStore: mock.stores[0].name,
+        error: '',
+      })
     })
   },
   goSymptom() {
@@ -94,8 +109,22 @@ Page({
       this.goTherapists()
       return
     }
-    wx.navigateTo({
-      url: `/pages/therapists/therapists?therapistId=${t.therapistId}`,
-    })
+    const d = this.data.deal
+    const s = this.data.stores[0] || mock.stores[0]
+    const q = [
+      `therapistId=${t.therapistId}`,
+      `storeId=${s.storeId}`,
+      `storeName=${encodeURIComponent(s.name)}`,
+    ]
+    if (d) {
+      q.push(
+        `projectId=${d.projectId}`,
+        `projectName=${encodeURIComponent(d.name)}`,
+        `priceFen=${d.priceFen}`,
+        `durationMinutes=${d.durationMinutes}`,
+        `bufferMinutes=${d.bufferMinutes}`,
+      )
+    }
+    wx.navigateTo({ url: '/pages/therapists/therapists?' + q.join('&') })
   },
 })

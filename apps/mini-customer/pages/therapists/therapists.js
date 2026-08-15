@@ -1,5 +1,6 @@
 const { request } = require('../../utils/api.js')
-const { fenYuan, rating, levelLabel } = require('../../utils/format.js')
+const { fenYuan } = require('../../utils/format.js')
+const mock = require('../../utils/mock.js')
 
 function qs(obj) {
   return Object.keys(obj)
@@ -10,88 +11,64 @@ function qs(obj) {
 
 Page({
   data: {
-    therapists: [],
+    therapists: mock.therapists,
     projects: [],
-    stores: [],
+    stores: mock.stores,
     picked: null,
-    storeId: '',
-    storeName: '',
-    loading: true,
+    storeId: mock.STORE_ID,
+    storeName: mock.stores[0].name,
+    projectId: '',
+    projectName: '',
+    priceFen: '',
+    durationMinutes: '',
+    bufferMinutes: '',
+    loading: false,
     error: '',
   },
   onLoad(query) {
     this.setData({
-      storeId: query.storeId || '',
-      storeName: query.storeName ? decodeURIComponent(query.storeName) : '',
+      storeId: query.storeId || mock.STORE_ID,
+      storeName: query.storeName ? decodeURIComponent(query.storeName) : mock.stores[0].name,
+      projectId: query.projectId || '',
+      projectName: query.projectName ? decodeURIComponent(query.projectName) : '',
+      priceFen: query.priceFen || '',
+      durationMinutes: query.durationMinutes || '',
+      bufferMinutes: query.bufferMinutes || '',
     })
-    this.bootstrap()
+    this.bootstrap(query.therapistId || '')
   },
-  bootstrap() {
+  bootstrap(wantId) {
     this.setData({ loading: true, error: '' })
     const path = this.data.storeId
       ? `/api/v1/c/therapists?storeId=${this.data.storeId}`
       : '/api/v1/c/therapists'
-    Promise.all([
-      request({ path }),
-      this.data.storeId ? Promise.resolve({ items: [] }) : request({ path: '/api/v1/c/stores' }),
-    ])
-      .then(([tPage, sPage]) => {
-        const therapists = ((tPage && tPage.items) || []).map((t) => ({
-          ...t,
-          rating: rating(t.ratingX100),
-          levelLabel: levelLabel(t.level),
-        }))
-        const stores = (sPage && sPage.items) || []
-        const storeName = this.data.storeName
-          || (stores[0] && stores[0].name)
-          || ''
-        const storeId = this.data.storeId
-          || (stores[0] && stores[0].storeId)
-          || ''
-        this.setData({ therapists, stores, storeId, storeName, loading: false })
-        const want = this.options && this.options.therapistId
+    request({ path })
+      .then((tPage) => {
+        const therapists = mock.first(
+          ((tPage && tPage.items) || []).map((t) => mock.decorateTherapist(t)),
+          mock.therapists,
+        )
+        this.setData({ therapists, loading: false })
+        const want = wantId || (this.options && this.options.therapistId)
         if (want) {
-          const hit = therapists.find((x) => String(x.therapistId) === String(want))
+          const hit = therapists.find((x) => String(x.therapistId) === String(want)) || therapists[0]
           if (hit) {
             this.pickTherapist({ currentTarget: { dataset: { id: hit.therapistId } } })
           }
         }
       })
-      .catch((err) => {
-        this.setData({ error: err.message || '加载失败', loading: false })
+      .catch(() => {
+        this.setData({ therapists: mock.therapists, loading: false })
+        const want = wantId || (this.options && this.options.therapistId)
+        const hit = mock.therapists.find((x) => String(x.therapistId) === String(want)) || mock.therapists[0]
+        this.pickTherapist({ currentTarget: { dataset: { id: hit.therapistId } } })
       })
   },
-  pickTherapist(e) {
-    const id = e.currentTarget.dataset.id
-    const t = (this.data.therapists || []).find((x) => String(x.therapistId) === String(id))
-    if (!t) {
-      return
-    }
-    this.setData({ picked: t, projects: [], loading: true })
-    const storeId = this.data.storeId || t.homeStoreId
-    request({ path: `/api/v1/c/projects?storeId=${storeId}` })
-      .then((page) => {
-        const items = ((page && page.items) || []).map((p) => ({
-          ...p,
-          priceYuan: fenYuan(p.priceFen),
-        }))
-        this.setData({ projects: items, loading: false, storeId })
-      })
-      .catch((err) => {
-        this.setData({ error: err.message || '加载失败', loading: false })
-      })
-  },
-  pickProject(e) {
-    const id = e.currentTarget.dataset.id
-    const p = (this.data.projects || []).find((x) => String(x.projectId) === String(id))
-    const t = this.data.picked
-    if (!p || !t) {
-      return
-    }
+  goCalendar(t, p) {
     wx.navigateTo({
       url: '/pages/calendar/calendar?' + qs({
-        storeId: this.data.storeId || t.homeStoreId,
-        storeName: this.data.storeName,
+        storeId: this.data.storeId || t.homeStoreId || mock.STORE_ID,
+        storeName: this.data.storeName || mock.stores[0].name,
         therapistId: t.therapistId,
         therapistName: t.name,
         projectId: p.projectId,
@@ -101,5 +78,45 @@ Page({
         bufferMinutes: p.bufferMinutes,
       }),
     })
+  },
+  pickTherapist(e) {
+    const id = e.currentTarget.dataset.id
+    const t = (this.data.therapists || []).find((x) => String(x.therapistId) === String(id))
+      || mock.therapists.find((x) => String(x.therapistId) === String(id))
+    if (!t) {
+      return
+    }
+    if (this.data.projectId) {
+      this.goCalendar(t, {
+        projectId: this.data.projectId,
+        name: this.data.projectName || '到店调理',
+        priceFen: this.data.priceFen || 19800,
+        durationMinutes: this.data.durationMinutes || 60,
+        bufferMinutes: this.data.bufferMinutes || 15,
+      })
+      return
+    }
+    this.setData({ picked: t, projects: mock.projects, loading: true })
+    const storeId = this.data.storeId || t.homeStoreId || mock.STORE_ID
+    request({ path: `/api/v1/c/projects?storeId=${storeId}` })
+      .then((page) => {
+        const items = mock.first(
+          ((page && page.items) || []).map((p) => ({ ...p, priceYuan: fenYuan(p.priceFen) })),
+          mock.projects,
+        )
+        this.setData({ projects: items, loading: false, storeId })
+      })
+      .catch(() => {
+        this.setData({ projects: mock.projects, loading: false })
+      })
+  },
+  pickProject(e) {
+    const id = e.currentTarget.dataset.id
+    const p = (this.data.projects || []).find((x) => String(x.projectId) === String(id))
+    const t = this.data.picked
+    if (!p || !t) {
+      return
+    }
+    this.goCalendar(t, p)
   },
 })

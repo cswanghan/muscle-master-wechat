@@ -1,5 +1,6 @@
 <view class="page">
   <view class="hero-t">选择推拿师</view>
+  <view class="hint">林晓 / 陈默 / 周可 · 点卡片进选时段</view>
   <view wx:if="{{loading && !picked}}" class="hint">加载中…</view>
   <view wx:if="{{error}}" class="error">{{error}}</view>
 

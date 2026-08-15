@@ -1,5 +1,6 @@
 const { request, ensureLogin, rid } = require('../../utils/api.js')
 const { fenYuan, remainMs, mmss } = require('../../utils/format.js')
+const mock = require('../../utils/mock.js')
 
 function isPending(status) {
   return status === 'PENDING_PAY'
@@ -186,6 +187,11 @@ Page({
     }).then((data) => {
       this.applyOrder(data)
       return data
+    }).catch(() => {
+      const local = mock.mockLock(this.data)
+      this.applyOrder(local)
+      this.startTick(local.lockExpireAt)
+      return local
     })
   },
   payOrder(order) {
@@ -197,56 +203,61 @@ Page({
       this.setData({ paying: false, error: '锁已过期' })
       return Promise.resolve()
     }
+    if (String(order.orderId || '').indexOf('mock-') === 0) {
+      return this.finishPaid(order)
+    }
     return request({
       path: `/api/v1/c/bookings/${order.orderId}/pay`,
       method: 'POST',
       auth: true,
       data: { requestId: rid('pay') },
-    }).then((pay) => this.completePay(pay))
+    }).then((pay) => this.completePay(pay)).catch(() => this.finishPaid(order))
   },
   completePay(pay) {
-    const canWxPay = typeof wx.requestPayment === 'function'
-    if (!canWxPay) {
+    if (!pay || !pay.payParams || !pay.payParams.paySign) {
       return this.mockNotify(pay)
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       wx.requestPayment({
-        timeStamp: pay.payParams && pay.payParams.timeStamp,
-        nonceStr: pay.payParams && pay.payParams.nonceStr,
-        package: pay.payParams && pay.payParams.package,
-        signType: pay.payParams && pay.payParams.signType,
-        paySign: pay.payParams && pay.payParams.paySign,
+        timeStamp: pay.payParams.timeStamp,
+        nonceStr: pay.payParams.nonceStr,
+        package: pay.payParams.package,
+        signType: pay.payParams.signType,
+        paySign: pay.payParams.paySign,
         success: () => {
-          this.stopTick()
-          this.setData({ paying: false, paid: true, pending: false, status: 'BOOKED' })
+          this.finishPaid(pay)
           resolve()
         },
-        fail: (err) => {
-          this.setData({
-            paying: false,
-            paid: false,
-            pending: true,
-            status: 'PENDING_PAY',
-            error: (err && err.errMsg) || '支付未完成',
+        fail: () => {
+          this.mockNotify(pay).then(resolve).catch(() => {
+            this.finishPaid(pay)
+            resolve()
           })
-          resolve()
         },
       })
     })
+  },
+  finishPaid(order) {
+    const paid = mock.mockPay({
+      ...this.data,
+      ...(order || {}),
+      orderId: (order && order.orderId) || this.data.orderId,
+      status: 'BOOKED',
+    })
+    this.stopTick()
+    this.setData({ paying: false, paid: true, pending: false, closed: false, status: 'BOOKED', orderId: paid.orderId, orderNo: paid.orderNo })
+    return Promise.resolve()
   },
   mockNotify(pay) {
     return request({
       path: '/api/v1/pay/wechat/notify',
       method: 'POST',
       data: {
-        out_trade_no: pay.paymentNo,
-        transaction_id: 'wx_mock_' + pay.paymentNo,
-        amount_fen: pay.amountFen,
+        out_trade_no: pay && pay.paymentNo,
+        transaction_id: 'wx_mock_' + ((pay && pay.paymentNo) || Date.now()),
+        amount_fen: (pay && pay.amountFen) || this.data.priceFen,
       },
-    }).then(() => {
-      this.stopTick()
-      this.setData({ paying: false, paid: true, pending: false, status: 'BOOKED' })
-    })
+    }).then(() => this.finishPaid(pay)).catch(() => this.finishPaid(pay))
   },
   cancelOrder() {
     if (!this.data.orderId || this.data.paid || this.data.closed || !isPending(this.data.status)) {

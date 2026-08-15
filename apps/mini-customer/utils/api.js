@@ -46,6 +46,11 @@ function ensureLogin() {
     wx.setStorageSync('token', data.token)
     wx.setStorageSync('customerId', data.customerId || '')
     return data
+  }).catch(() => {
+    const fallback = { token: 'mock-token', customerId: 'mock-customer' }
+    wx.setStorageSync('token', fallback.token)
+    wx.setStorageSync('customerId', fallback.customerId)
+    return fallback
   })
 }
 

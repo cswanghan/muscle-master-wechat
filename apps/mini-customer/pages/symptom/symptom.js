@@ -1,5 +1,6 @@
 const { request } = require('../../utils/api.js')
 const { fenYuan } = require('../../utils/format.js')
+const mock = require('../../utils/mock.js')
 
 const FALLBACK_PARTS = [
   { id: '3100000000000000601', name: '头颈肩', type: 'BODY_PART' },
@@ -72,7 +73,7 @@ Page({
         ...p,
         priceYuan: fenYuan(p.priceFen),
       })))
-      .catch(() => [])
+      .catch(() => mock.projects)
   },
   pickSymptom(e) {
     const { id, name } = e.currentTarget.dataset
@@ -122,6 +123,6 @@ Page({
       `durationMinutes=${p.durationMinutes}`,
       `bufferMinutes=${p.bufferMinutes}`,
     ].join('&')
-    wx.navigateTo({ url: `/pages/stores/stores?${q}` })
+    wx.navigateTo({ url: `/pages/therapists/therapists?${q}` })
   },
 })

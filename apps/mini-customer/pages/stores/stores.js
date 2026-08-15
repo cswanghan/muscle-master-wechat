@@ -1,5 +1,6 @@
 const { request } = require('../../utils/api.js')
 const { fenYuan } = require('../../utils/format.js')
+const mock = require('../../utils/mock.js')
 
 function qs(obj) {
   return Object.keys(obj)
@@ -35,10 +36,10 @@ Page({
     this.setData({ loading: true, error: '' })
     request({ path: '/api/v1/c/stores' })
       .then((page) => {
-        this.setData({ stores: (page && page.items) || [], loading: false })
+        this.setData({ stores: mock.first((page && page.items) || [], mock.stores), loading: false })
       })
-      .catch((err) => {
-        this.setData({ error: err.message || '加载失败', loading: false })
+      .catch(() => {
+        this.setData({ stores: mock.stores, loading: false })
       })
   },
   pickStore(e) {
@@ -64,10 +65,10 @@ Page({
           ...p,
           priceYuan: fenYuan(p.priceFen),
         }))
-        this.setData({ projects: items, loading: false })
+        this.setData({ projects: mock.first(items, mock.projects), loading: false })
       })
-      .catch((err) => {
-        this.setData({ error: err.message || '加载失败', loading: false })
+      .catch(() => {
+        this.setData({ projects: mock.projects, loading: false })
       })
   },
   pickProject(e) {

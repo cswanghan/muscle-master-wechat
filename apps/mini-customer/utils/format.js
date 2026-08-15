@@ -15,7 +15,7 @@ function rating(x100) {
 }
 
 function levelLabel(level) {
-  const map = { SENIOR: '首席', MIDDLE: '中级', JUNIOR: '初级' }
+  const map = { SENIOR: '资深技师', MIDDLE: '中级技师', JUNIOR: '初级技师' }
   return map[level] || level || ''
 }
 

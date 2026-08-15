@@ -1,5 +1,6 @@
 const { request, ensureLogin, rid } = require('../../utils/api.js')
 const { fenYuan, statusLabel, isOngoing, levelLabel } = require('../../utils/format.js')
+const mock = require('../../utils/mock.js')
 
 function maskPhone(customerId) {
   const tail = String(customerId || '0000').replace(/\D/g, '').slice(-4) || '0000'
@@ -64,16 +65,18 @@ Page({
           projects[p.projectId] = p.name
         })
         const freq = {}
-        const orders = ((page && page.items) || []).map((o) => {
+        const remote = ((page && page.items) || [])
+        const locals = mock.readOrders().filter((o) => !remote.some((r) => String(r.orderId) === String(o.orderId)))
+        const orders = remote.concat(locals).map((o) => {
           const therapistName = therapistNames[o.therapistId] || o.therapistId
           freq[therapistName] = (freq[therapistName] || 0) + 1
           return {
             ...o,
             priceYuan: fenYuan(o.payableFen),
             statusLabel: statusLabel(o.status),
-            therapistName,
-            therapistLabel: therapistName + (o.level ? ' · ' + levelLabel(o.level) : ''),
-            storeLabel: stores[o.storeId] || o.storeId,
+            therapistName: o.therapistName || therapistName,
+            therapistLabel: (o.therapistName || therapistName) + (o.level ? ' · ' + levelLabel(o.level) : ''),
+            storeLabel: o.storeName || stores[o.storeId] || o.storeId,
             projectLabel: o.projectName || projects[o.projectId] || projectLabel(o),
             whenLabel: whenLabel(o),
           }
@@ -98,8 +101,24 @@ Page({
           loading: false,
         })
       })
-      .catch((err) => {
-        this.setData({ error: err.message || '加载失败', loading: false })
+      .catch(() => {
+        const orders = mock.readOrders().map((o) => ({
+          ...o,
+          priceYuan: fenYuan(o.payableFen),
+          statusLabel: statusLabel(o.status),
+          therapistName: o.therapistName || '林晓',
+          storeLabel: o.storeName || mock.stores[0].name,
+          projectLabel: o.projectName || '到店调理',
+          whenLabel: whenLabel(o),
+        }))
+        this.setData({
+          orders,
+          next: orders.find((o) => o.status === 'BOOKED') || orders[0] || null,
+          favTherapist: (orders[0] && orders[0].therapistName) || '林晓',
+          visitCount: orders.length,
+          loading: false,
+          error: '',
+        })
       })
   },
   findOrder(id) {
