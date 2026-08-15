@@ -12,7 +12,7 @@
 
 | 端 | AppID | 备注 | 到位日 |
 | --- | --- | --- | --- |
-| C 端 `apps/mini-customer` | `wx212c1b4e136ef4e0` | 已写入 `project.config.json`；Secret 只放本机 `.env.local` | 2026-08-15 |
+| C 端 `apps/mini-customer` | `wxf848c067f5807a75` | 正式号；Secret 只放本机 `.env.local` | 2026-08-15 |
 | 员工端 `apps/mini-staff`（技师 / 前台 / 店长） | | 独立 AppID，不可与 C 端共用 | |
 
 - [ ] C 端 AppID 已写入构建配置
