@@ -1,31 +1,39 @@
 <view class="page">
-  <view wx:if="{{projectName}}" class="hint">已选项目 {{projectName}}</view>
+  <view class="hero-t">选择门店</view>
+  <view wx:if="{{projectName}}" class="hint">已选 {{projectName}}</view>
   <view wx:if="{{loading && !pickedStore}}" class="hint">加载中…</view>
   <view wx:if="{{error}}" class="error">{{error}}</view>
-  <view class="list">
-    <view
-      wx:for="{{stores}}"
-      wx:key="storeId"
-      class="card store {{pickedStore.storeId===item.storeId?'on':''}}"
-      data-item="{{item}}"
-      bindtap="pickStore"
-    >
+
+  <view
+    wx:for="{{stores}}"
+    wx:key="storeId"
+    class="card store {{pickedStore.storeId===item.storeId?'on':''}}"
+    data-item="{{item}}"
+    bindtap="pickStore"
+  >
+    <view class="thumb">门店实拍</view>
+    <view class="grow">
       <view class="store-name">{{item.name}}</view>
-      <view class="hint">{{item.businessStart}}–{{item.businessEnd}} · {{item.open ? '营业中' : '未开业'}}</view>
+      <view class="meta">{{item.businessStart || '10:00'}}–{{item.businessEnd || '22:00'}} <text wx:if="{{index===0}}" class="near">就近</text></view>
+      <view class="jade">{{item.open === false ? '今日休息' : '今晚可约'}}</view>
     </view>
+    <view class="btn ghost sm">预约</view>
   </view>
+
   <view wx:if="{{pickedStore && !projectId}}" class="sec">选择项目</view>
-  <view class="list">
-    <view
-      wx:for="{{projects}}"
-      wx:key="projectId"
-      class="card proj"
-      data-item="{{item}}"
-      bindtap="pickProject"
-    >
+  <view
+    wx:for="{{projects}}"
+    wx:key="projectId"
+    class="card proj"
+    data-item="{{item}}"
+    bindtap="pickProject"
+  >
+    <view class="proj-top">
       <view class="proj-name">{{item.name}}</view>
-      <view class="hint">{{item.durationMinutes}}+{{item.bufferMinutes}} 分钟</view>
       <view class="price">¥{{item.priceYuan}}</view>
     </view>
+    <view class="meta">{{item.durationMinutes}} 分钟</view>
+    <view class="jade">今晚可约</view>
+    <view class="btn sm">选时段</view>
   </view>
 </view>

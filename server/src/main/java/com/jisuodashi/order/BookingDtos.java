@@ -62,7 +62,8 @@ public final class BookingDtos {
             String date,
             int startSlotNo,
             String start,
-            String lockExpireAt
+            String lockExpireAt,
+            String projectName
     ) {
     }
 

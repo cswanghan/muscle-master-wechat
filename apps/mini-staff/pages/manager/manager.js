@@ -170,7 +170,11 @@ Page({
   },
 
   soon() {
-    wx.showToast({ title: 'P0 未开通', icon: 'none' })
+    wx.showToast({ title: '该入口尚未开通', icon: 'none' })
+  },
+
+  goSchedule() {
+    wx.navigateTo({ url: '/pages/schedule/schedule' })
   },
 
   goMine() {

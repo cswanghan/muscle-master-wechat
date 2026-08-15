@@ -63,11 +63,11 @@
       <view class="hint">{{dateLabel}}</view>
     </view>
     <view wx:if="{{rows.length === 0}}" class="hint">暂无排班</view>
-    <view wx:for="{{rows}}" wx:key="key" class="tl {{item.kind}}">
+    <view wx:for="{{rows}}" wx:key="key" class="tl {{item.kind}}" data-id="{{item.orderId}}" bindtap="openRow">
       <view class="tl-time">{{item.time}}</view>
       <view class="tl-dot"></view>
       <view class="tl-body">{{item.title}}</view>
-      <view wx:if="{{item.action}}" class="fill-btn" bindtap="fillGap">{{item.action}}</view>
+      <view wx:if="{{item.action}}" class="fill-btn" catchtap="fillGap">{{item.action}}</view>
       <view wx:else class="tl-st">{{item.status}}</view>
     </view>
   </view>
@@ -83,7 +83,7 @@
       <view class="dock-ico">○</view>
       <view>工作台</view>
     </view>
-    <view class="dock-item" bindtap="soon">
+    <view class="dock-item" bindtap="goSchedule">
       <view class="dock-ico">□</view>
       <view>排班</view>
     </view>

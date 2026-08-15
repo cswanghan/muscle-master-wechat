@@ -5,6 +5,7 @@ import Health from '../views/Health.vue'
 import Catalog from '../views/Catalog.vue'
 import Orders from '../views/Orders.vue'
 import Frontdesk from '../views/Frontdesk.vue'
+import MiniPreview from '../views/MiniPreview.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: '/catalog', name: 'catalog', component: Catalog },
     { path: '/orders', name: 'orders', component: Orders },
     { path: '/frontdesk', name: 'frontdesk', component: Frontdesk },
+    { path: '/mini', name: 'mini', component: MiniPreview },
   ],
 })
 

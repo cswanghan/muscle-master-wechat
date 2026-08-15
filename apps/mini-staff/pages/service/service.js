@@ -164,7 +164,7 @@ Page({
     })
   },
   askAddon() {
-    wx.showToast({ title: '请前台在收银页加钟', icon: 'none' })
+    wx.navigateTo({ url: '/pages/frontdesk/frontdesk' })
   },
   onChief(e) {
     this.setData({ chief: e.detail.value })

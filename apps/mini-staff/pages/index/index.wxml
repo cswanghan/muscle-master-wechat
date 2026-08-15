@@ -1,10 +1,11 @@
 <view class="page">
-  <view class="mark">员</view>
-  <view class="title">{{title}}</view>
-  <view class="hint">技师 / 前台 / 店长 共用此工程 · 前台核销 / 散客收款码</view>
-  <navigator url="/pages/frontdesk/frontdesk" class="go">进入前台 iPad</navigator>
-  <navigator url="/pages/manager/manager" class="go">进入店长台 M1</navigator>
-  <view class="roles">
-    <text wx:for="{{roles}}" wx:key="*this" class="role">{{item}}</text>
+  <view class="hero">
+    <view class="mark">松</view>
+    <view class="title">肌松大师 · 员工端</view>
+    <view class="hint">技师工作台 / 前台收银 / 店长审批</view>
   </view>
+  <navigator url="/pages/today/today" class="go">技师 · 今日工作台</navigator>
+  <navigator url="/pages/frontdesk/frontdesk" class="go">前台 · 核销与收银</navigator>
+  <navigator url="/pages/manager/manager" class="go">店长 · 经营概览</navigator>
+  <navigator url="/pages/schedule/schedule" class="go ghost">门店排班（只读）</navigator>
 </view>

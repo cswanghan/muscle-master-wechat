@@ -11,6 +11,7 @@ import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.inventory.SlotTimes;
 import com.jisuodashi.payment.PaymentDtos;
 import com.jisuodashi.payment.PaymentService;
+import com.jisuodashi.staff.StaffBoardStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,7 @@ public class BookingService {
     private final OrderStateMachine machine;
     private final PaymentService payments;
     private GrayStores gray;
+    private StaffBoardStore board;
 
     public BookingService(SlotOccupyService occupy, OrderStateMachine machine) {
         this(occupy, machine, null);
@@ -42,6 +44,11 @@ public class BookingService {
     @Autowired(required = false)
     public void setGrayStores(GrayStores gray) {
         this.gray = gray;
+    }
+
+    @Autowired(required = false)
+    public void setBoard(StaffBoardStore board) {
+        this.board = board;
     }
 
     public BookingDtos.CreateBookingResponse create(long customerId, BookingDtos.CreateBookingRequest req) {
@@ -144,10 +151,11 @@ public class BookingService {
         return new BookingDtos.Page<>(sliced, next);
     }
 
-    private static BookingDtos.BookingListItem toListItem(BookingOrderRef row) {
+    private BookingDtos.BookingListItem toListItem(BookingOrderRef row) {
         String expire = row.lockExpireAt() == null
                 ? null
                 : row.lockExpireAt().atZone(AppClock.SHANGHAI).toOffsetDateTime().toString();
+        String projectName = board == null ? null : board.firstProjectName(row.id());
         return new BookingDtos.BookingListItem(
                 String.valueOf(row.id()),
                 row.orderNo(),
@@ -158,7 +166,8 @@ public class BookingService {
                 row.serviceDate() == null ? null : row.serviceDate().toString(),
                 row.startSlotNo(),
                 SlotTimes.toTime(row.startSlotNo()).format(DateTimeFormatter.ofPattern("HH:mm")),
-                expire);
+                expire,
+                projectName);
     }
 
     private static Long parseCursor(String cursor) {

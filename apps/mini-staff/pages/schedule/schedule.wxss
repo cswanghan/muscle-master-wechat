@@ -1,0 +1,44 @@
+.page {
+  min-height: 100vh;
+  background: #f4f2ee;
+  padding: 24rpx 24rpx 140rpx;
+  box-sizing: border-box;
+}
+.bar { margin-bottom: 16rpx; }
+.title { font-size: 40rpx; font-weight: 700; color: #143f34; }
+.sub, .hint { font-size: 26rpx; color: #6b7a74; }
+.err { color: #b3452f; margin-bottom: 12rpx; }
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+}
+.name { font-size: 32rpx; font-weight: 700; margin-bottom: 12rpx; }
+.lvl { font-size: 22rpx; color: #8b948f; font-weight: 500; }
+.slots { display: flex; flex-wrap: wrap; gap: 8rpx; }
+.chip {
+  min-width: 120rpx;
+  padding: 8rpx 12rpx;
+  border-radius: 10rpx;
+  background: #f4f2ee;
+  font-size: 22rpx;
+}
+.chip.booked { background: #1e5c4a; color: #f4f2ee; }
+.chip.locked { background: #faf1e4; color: #a9752f; }
+.chip.rest { background: #f4f2ee; color: #8b948f; }
+.chip.gap { background: #fff; border: 2rpx dashed #c9cfcb; color: #c0803a; }
+.empty { padding: 40rpx; text-align: center; color: #8b948f; }
+.dock {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 120rpx;
+  background: #faf8f3; border-top: 1rpx solid #d7e6df; display: flex;
+}
+.dock-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #8b948f; font-size: 22rpx;
+}
+.dock-item.on { color: #1e5c4a; font-weight: 600; }
+.dock-ico {
+  width: 40rpx; height: 40rpx; border: 3rpx solid currentColor; border-radius: 8rpx; margin-bottom: 6rpx;
+}
+.dock-ico.me { border-radius: 50%; }

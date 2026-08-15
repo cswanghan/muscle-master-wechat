@@ -155,8 +155,21 @@ Page({
   onRecharge() {
     wx.showToast({ title: 'P0 未开通储值', icon: 'none' })
   },
+  openArchive() {
+    const records = (this.data.orders || []).filter((o) => o.status === 'COMPLETED' || o.status === 'IN_SERVICE')
+    if (!records.length) {
+      wx.showToast({ title: '暂无理疗记录', icon: 'none' })
+      return
+    }
+    const lines = records.slice(0, 8).map((o) => (o.whenLabel || '') + ' · ' + (o.projectLabel || '到店调理'))
+    wx.showModal({
+      title: '理疗档案 · ' + records.length + ' 次',
+      content: lines.join('\n'),
+      showCancel: false,
+    })
+  },
   soon() {
-    wx.showToast({ title: 'P0 未开通', icon: 'none' })
+    wx.showToast({ title: '该入口尚未开通', icon: 'none' })
   },
   onService() {
     wx.showModal({

@@ -50,6 +50,7 @@ function logout() {
         <router-link to="/orders">订单中心</router-link>
         <router-link to="/catalog">项目 SKU</router-link>
         <router-link to="/frontdesk">前台收银</router-link>
+        <router-link to="/mini">小程序预览</router-link>
         <router-link to="/health">系统管理</router-link>
       </nav>
       <div class="side-foot">

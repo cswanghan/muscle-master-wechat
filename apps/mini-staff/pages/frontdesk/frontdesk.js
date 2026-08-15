@@ -22,6 +22,13 @@ Page({
     pollStatus: '',
     qrReady: false,
     error: '',
+    action: 'addon',
+    actionOrderId: '',
+    addOnMinutes: 30,
+    swapTherapistId: '3100000000000000402',
+    rescheduleDate: '2026-08-14',
+    rescheduleStart: 72,
+    actionText: '',
   },
 
   onUnload() {
@@ -155,6 +162,95 @@ Page({
       if (data.payChannel === 'WECHAT' && data.paymentNo) {
         this.startPoll(data.paymentNo, data.orderId, data.alreadyInStore)
       }
+      if (data.orderId) {
+        this.setData({ actionOrderId: data.orderId })
+      }
+    } catch (e) {
+      this.setData({ error: e.message || String(e) })
+    }
+  },
+
+  onAction(e) {
+    this.setData({ action: e.currentTarget.dataset.action, actionText: '' })
+  },
+  onActionOrder(e) {
+    this.setData({ actionOrderId: e.detail.value })
+  },
+  onSwapTherapist(e) {
+    this.setData({ swapTherapistId: e.detail.value })
+  },
+  onRsDate(e) {
+    this.setData({ rescheduleDate: e.detail.value })
+  },
+  onRsStart(e) {
+    this.setData({ rescheduleStart: Number(e.detail.value || 0) })
+  },
+  requireOrder() {
+    const id = (this.data.actionOrderId || '').trim()
+    if (!id) {
+      this.setData({ error: '请填写订单 ID' })
+      return ''
+    }
+    return id
+  },
+  async onAddOn() {
+    const id = this.requireOrder()
+    if (!id) return
+    try {
+      const data = await this.request('/api/v1/f/orders/' + id + '/add-on', 'POST', {
+        requestId: 'ao-' + Date.now(),
+        projectId: PROJECT,
+        durationMinutes: this.data.addOnMinutes,
+        payChannel: this.data.payChannel,
+      })
+      this.setData({ actionText: '加钟成功 · ' + (data.status || '') + ' · 至 slot ' + (data.endSlotNo || ''), error: '' })
+      if (data.codeUrl) {
+        this.setData({ codeUrl: data.codeUrl })
+        this.drawQr(data.codeUrl)
+      }
+    } catch (e) {
+      this.setData({ error: e.message || String(e) })
+    }
+  },
+  async onSwap() {
+    const id = this.requireOrder()
+    if (!id) return
+    try {
+      const data = await this.request('/api/v1/f/orders/' + id + '/swap-therapist', 'POST', {
+        requestId: 'sw-' + Date.now(),
+        newTherapistId: this.data.swapTherapistId,
+        reason: '前台换师',
+      })
+      this.setData({ actionText: '已换师 · ' + (data.newTherapistId || ''), error: '' })
+    } catch (e) {
+      this.setData({ error: e.message || String(e) })
+    }
+  },
+  async onReschedule() {
+    const id = this.requireOrder()
+    if (!id) return
+    try {
+      const data = await this.request('/api/v1/f/orders/' + id + '/reschedule', 'POST', {
+        requestId: 'rs-' + Date.now(),
+        date: this.data.rescheduleDate,
+        startSlotNo: this.data.rescheduleStart,
+        therapistId: THERAPIST,
+      })
+      this.setData({ actionText: '已改约 · ' + (data.status || ''), error: '' })
+    } catch (e) {
+      this.setData({ error: e.message || String(e) })
+    }
+  },
+  async onRefund() {
+    const id = this.requireOrder()
+    if (!id) return
+    try {
+      const data = await this.request('/api/v1/f/orders/' + id + '/refund', 'POST', {
+        requestId: 'rf-' + Date.now(),
+        amountFen: 0,
+        reason: '前台退款',
+      })
+      this.setData({ actionText: '退款已提交 · ' + (data.status || ''), error: '' })
     } catch (e) {
       this.setData({ error: e.message || String(e) })
     }

@@ -1180,3 +1180,610 @@ body,
     grid-template-columns: 1fr;
   }
 }
+
+.mini-preview {
+  padding: 24px 28px 48px;
+}
+
+.mini-stage {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.phone {
+  width: 390px;
+  height: 780px;
+  background: #111;
+  border-radius: 36px;
+  padding: 12px;
+  flex-shrink: 0;
+  box-shadow: 0 18px 50px rgba(20, 40, 32, 0.2);
+}
+
+.phone-screen {
+  height: 100%;
+  background: #f4f2ee;
+  border-radius: 26px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #17211d;
+}
+
+.phone-screen .nav {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.phone-screen .nav.light {
+  background: #f4f2ee;
+}
+
+.phone-screen .scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 14px 72px;
+}
+
+.phone-screen .scroll.sand {
+  background: #f4f2ee;
+}
+
+.phone-screen .hero-t {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e5c4a;
+  margin: 4px 0 12px;
+}
+
+.phone-screen .search {
+  background: #fff;
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #8b948f;
+  margin-bottom: 12px;
+}
+
+.phone-screen .card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.phone-screen .sec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.phone-screen .sec-row span {
+  color: #8b948f;
+  font-size: 11px;
+}
+
+.phone-screen .row-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.phone-screen .thumb,
+.phone-screen .avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: repeating-linear-gradient(135deg, #efece6 0 6px, #f7f5f1 6px 12px);
+  color: #b7b1a6;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.phone-screen .avatar {
+  border-radius: 50%;
+}
+
+.phone-screen .avatar.light {
+  background: #3d7a68;
+}
+
+.phone-screen .grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.phone-screen .price {
+  color: #c0803a;
+  font-weight: 700;
+}
+
+.phone-screen .price s {
+  color: #8b948f;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.phone-screen .meta,
+.phone-screen .sub {
+  color: #8b948f;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.phone-screen .jade {
+  color: #1e5c4a;
+  font-size: 11px;
+}
+
+.phone-screen .copper {
+  color: #c0803a;
+}
+
+.phone-screen .tag,
+.phone-screen em {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #e8f0ec;
+  color: #1e5c4a;
+  font-style: normal;
+}
+
+.phone-screen .tag {
+  background: #faf1e4;
+  color: #a9752f;
+}
+
+.phone-screen .pill {
+  border: 0;
+  background: #1e5c4a;
+  color: #f4f2ee;
+  border-radius: 999px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.phone-screen .pill.ghost {
+  background: #fff;
+  color: #1e5c4a;
+  border: 1px solid #d7e0db;
+}
+
+.phone-screen .pill.outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #fff;
+}
+
+.phone-screen .pill.light {
+  background: #fff;
+  color: #143f34;
+}
+
+.phone-screen .pill.wide {
+  width: 100%;
+  height: 40px;
+}
+
+.phone-screen .pill.sm {
+  height: 26px;
+  font-size: 11px;
+}
+
+.phone-screen .dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 56px;
+  background: #faf8f3;
+  border-top: 1px solid #d7e6df;
+  display: flex;
+}
+
+.phone-screen .dock span {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b948f;
+  font-size: 11px;
+}
+
+.phone-screen .dock span.on {
+  color: #1e5c4a;
+  font-weight: 600;
+}
+
+.phone-screen .parts {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.phone-screen .part {
+  flex: 1;
+  height: 64px;
+  border-radius: 10px;
+  background: #f4f2ee;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+
+.phone-screen .part.on {
+  background: #1e5c4a;
+  color: #fff;
+}
+
+.phone-screen .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.phone-screen .chip {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f4f2ee;
+}
+
+.phone-screen .chip.on {
+  background: #1e5c4a;
+  color: #fff;
+}
+
+.phone-screen .proj {
+  border: 1px solid #e7e3dc;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.phone-screen .proj.on {
+  border-color: #1e5c4a;
+}
+
+.phone-screen .note {
+  background: #faf1e4;
+  color: #a9752f;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.phone-screen .dates {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.phone-screen .date {
+  width: 48px;
+  text-align: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 0;
+  font-size: 11px;
+}
+
+.phone-screen .date.on {
+  background: #1e5c4a;
+  color: #fff;
+}
+
+.phone-screen .legend {
+  font-size: 11px;
+  color: #6b7a74;
+  margin-bottom: 8px;
+}
+
+.phone-screen .legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin: 0 4px 0 8px;
+}
+
+.phone-screen .legend i.free { background: #e8f0ec; }
+.phone-screen .legend i.locked { background: #faf1e4; }
+.phone-screen .legend i.booked { background: #1e5c4a; }
+.phone-screen .legend i.busy { background: #f4f2ee; border: 1px dashed #c9cfcb; }
+
+.phone-screen .slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.phone-screen .slot {
+  width: 52px;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.phone-screen .slot.free { background: #e8f0ec; color: #1e5c4a; }
+.phone-screen .slot.booked { background: #1e5c4a; color: #fff; }
+.phone-screen .slot.locked { background: #faf1e4; color: #a9752f; }
+.phone-screen .slot.busy { background: #f4f2ee; color: #8b948f; }
+
+.phone-screen .paybar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px 16px;
+  border-top: 1px solid #e7e3dc;
+}
+
+.phone-screen .ticker {
+  background: #faf1e4;
+  color: #a9752f;
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.phone-screen .kv {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.phone-screen .pay {
+  background: #e8f0ec;
+  color: #1e5c4a;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.phone-screen .profile {
+  background: #1e5c4a;
+  color: #f4f2ee;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.phone-screen .wallet {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.phone-screen .wallet b {
+  display: block;
+}
+
+.phone-screen .recharge {
+  margin-left: auto;
+  border: 1px solid #d7e6df;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.phone-screen .next-box {
+  background: #f7f5f1;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.phone-screen .st {
+  background: #e8f0ec;
+  color: #1e5c4a;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.phone-screen .acts {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.phone-screen .menu div {
+  padding: 10px 0;
+  border-bottom: 1px solid #eef2ef;
+}
+
+.phone-screen .hero-dark {
+  background: #143f34;
+  color: #f4f2ee;
+  padding: 14px;
+}
+
+.phone-screen .hero-dark.center {
+  text-align: center;
+}
+
+.phone-screen .duty {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.phone-screen .kpis,
+.phone-screen .rate-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.phone-screen .kpis b,
+.phone-screen .rate-row b {
+  display: block;
+  font-size: 16px;
+}
+
+.phone-screen .big {
+  font-size: 32px !important;
+}
+
+.phone-screen .next-card {
+  background: #fff;
+  border: 2px solid #1e5c4a;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.phone-screen .who {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 6px 0;
+}
+
+.phone-screen .when {
+  margin: 6px 0;
+  font-weight: 700;
+}
+
+.phone-screen .room {
+  background: #1e5c4a;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.phone-screen .eta {
+  color: #c0803a;
+  font-weight: 700;
+}
+
+.phone-screen .tl {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid #eef2ef;
+  align-items: center;
+}
+
+.phone-screen .tl.gap {
+  color: #c0803a;
+}
+
+.phone-screen .timer {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 8px 0;
+}
+
+.phone-screen .field {
+  margin: 10px 0 4px;
+  font-weight: 600;
+}
+
+.phone-screen .box {
+  background: #f7f5f1;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.phone-screen .consent {
+  margin-top: 12px;
+}
+
+.phone-screen .pills span {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  margin: 8px 6px 0 0;
+}
+
+.phone-screen .track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  margin: 10px 0 6px;
+}
+
+.phone-screen .track i {
+  display: block;
+  width: 8%;
+  height: 100%;
+  background: #c0803a;
+}
+
+.phone-screen .badge {
+  background: #b3452f;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.phone-screen .empty {
+  color: #8b948f;
+  padding: 12px 0;
+}
+
+.phone-screen .store-r {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.phone-screen .store-r i {
+  flex: 1;
+  height: 6px;
+  background: #eef2ef;
+  border-radius: 999px;
+}
+
+.phone-screen .bottom {
+  margin-top: 8px;
+}
+
+.mock {
+  margin: 0;
+  max-width: 390px;
+}
+
+.mock figcaption {
+  font-size: 13px;
+  color: #8b948f;
+  margin-bottom: 8px;
+}
+
+.mock img {
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: 0 12px 32px rgba(20, 40, 32, 0.12);
+}

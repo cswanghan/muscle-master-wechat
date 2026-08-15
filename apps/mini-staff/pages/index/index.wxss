@@ -53,12 +53,28 @@
 }
 
 .go {
-  margin-top: 48rpx;
+  margin-top: 20rpx;
+  width: 100%;
+  max-width: 560rpx;
   height: 96rpx;
   line-height: 96rpx;
   padding: 0 40rpx;
   background: #1e5c4a;
   color: #f4f1ea;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   font-size: 30rpx;
+  text-align: center;
+}
+
+.go.ghost {
+  background: #fff;
+  color: #1e5c4a;
+  border: 2rpx solid #1e5c4a;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24rpx;
 }

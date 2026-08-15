@@ -4,6 +4,7 @@
     "pages/service/service",
     "pages/frontdesk/frontdesk",
     "pages/manager/manager",
+    "pages/schedule/schedule",
     "pages/index/index"
   ],
   "window": {

@@ -37,4 +37,32 @@
       <view wx:if="{{pollStatus}}" class="meta">轮询 {{pollStatus}}</view>
     </view>
   </view>
+
+  <view class="card">
+    <view class="h2">本单操作</view>
+    <view class="channels">
+      <view class="chip {{action==='addon'?'on':''}}" data-action="addon" bindtap="onAction">加钟</view>
+      <view class="chip {{action==='swap'?'on':''}}" data-action="swap" bindtap="onAction">换师</view>
+      <view class="chip {{action==='reschedule'?'on':''}}" data-action="reschedule" bindtap="onAction">改约</view>
+      <view class="chip {{action==='refund'?'on':''}}" data-action="refund" bindtap="onAction">退款</view>
+    </view>
+    <input class="field" placeholder="订单 ID" value="{{actionOrderId}}" bindinput="onActionOrder"/>
+    <view wx:if="{{action==='addon'}}">
+      <view class="meta">加钟分钟（15 的倍数）{{addOnMinutes}}</view>
+      <button class="btn" bindtap="onAddOn">确认加钟</button>
+    </view>
+    <view wx:if="{{action==='swap'}}">
+      <input class="field" placeholder="新技师 ID" value="{{swapTherapistId}}" bindinput="onSwapTherapist"/>
+      <button class="btn" bindtap="onSwap">确认换师</button>
+    </view>
+    <view wx:if="{{action==='reschedule'}}">
+      <input class="field" placeholder="日期 YYYY-MM-DD" value="{{rescheduleDate}}" bindinput="onRsDate"/>
+      <input class="field" placeholder="起点 slot" type="number" value="{{rescheduleStart}}" bindinput="onRsStart"/>
+      <button class="btn" bindtap="onReschedule">确认改约</button>
+    </view>
+    <view wx:if="{{action==='refund'}}">
+      <button class="btn" bindtap="onRefund">申请全额退</button>
+    </view>
+    <view wx:if="{{actionText}}" class="ok">{{actionText}}</view>
+  </view>
 </view>

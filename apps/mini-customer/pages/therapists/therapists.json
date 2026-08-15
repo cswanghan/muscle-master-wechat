@@ -1,4 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "选择技师"
+  "navigationBarTitleText": "选择推拿师",
+  "navigationBarBackgroundColor": "#F4F2EE",
+  "navigationBarTextStyle": "black"
 }

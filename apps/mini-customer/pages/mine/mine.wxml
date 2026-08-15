@@ -62,7 +62,7 @@
       <view class="badge">0</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row" bindtap="soon">
+    <view class="menu-row" bindtap="openArchive">
       <view class="menu-ico"></view>
       <view class="grow">理疗档案</view>
       <view class="menu-extra">{{visitCount}} 次记录</view>

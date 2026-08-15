@@ -84,7 +84,7 @@
       <view class="dock-ico"></view>
       <view>审批</view>
     </view>
-    <view class="dock-item" bindtap="soon">
+    <view class="dock-item" bindtap="goSchedule">
       <view class="dock-ico"></view>
       <view>排班</view>
     </view>

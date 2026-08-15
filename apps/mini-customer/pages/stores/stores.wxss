@@ -1,37 +1,82 @@
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-  margin-top: 16rpx;
-}
-
-.store.on {
-  border-color: #1e5c4a;
-  box-shadow: inset 0 0 0 2rpx #1e5c4a;
-}
-
-.store-name,
-.proj-name {
-  font-size: 30rpx;
-  font-weight: 600;
+.hero-t {
+  font-size: 40rpx;
+  font-weight: 700;
   color: #1e5c4a;
+  margin-bottom: 16rpx;
+}
+
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  display: flex;
+  gap: 20rpx;
+  align-items: flex-start;
+}
+
+.card.on {
+  box-shadow: inset 0 0 0 3rpx #1e5c4a;
+}
+
+.thumb {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 16rpx;
+  background: repeating-linear-gradient(135deg, #efece6 0 10rpx, #f7f5f1 10rpx 20rpx);
+  color: #b7b1a6;
+  font-size: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.grow { flex: 1; min-width: 0; }
+
+.store-name, .proj-name {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.meta { color: #8b948f; font-size: 24rpx; margin-top: 4rpx; }
+.jade { color: #1e5c4a; font-size: 24rpx; margin-top: 6rpx; }
+.near {
+  display: inline-block;
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  background: #e8f0ec;
+  color: #1e5c4a;
+  margin-left: 8rpx;
+}
+
+.proj { display: block; }
+.proj-top { display: flex; justify-content: space-between; }
+.price {
+  color: #c0803a;
+  font-size: 32rpx;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
 }
 
 .sec {
-  margin: 28rpx 0 8rpx;
-  font-size: 24rpx;
-  color: #1e5c4a;
-  font-weight: 600;
-}
-
-.proj {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx 16rpx;
-}
-
-.price {
-  margin-left: auto;
+  margin: 16rpx 0 12rpx;
+  font-size: 28rpx;
   font-weight: 700;
+}
+
+.btn.sm {
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  align-self: center;
+}
+
+.btn.ghost.sm {
+  background: #fff;
+  border: 2rpx solid #1e5c4a;
   color: #1e5c4a;
 }

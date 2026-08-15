@@ -175,13 +175,23 @@ Page({
     this.openService()
   },
   fillGap() {
-    wx.showToast({ title: '空档营销 P0 未开通', icon: 'none' })
+    wx.navigateTo({ url: '/pages/schedule/schedule' })
+  },
+  openRow(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id) {
+      return
+    }
+    wx.navigateTo({ url: `/pages/service/service?orderId=${id}` })
   },
   onPending() {
-    wx.showToast({ title: this.data.pendingCount ? '请刷新时间轴接单' : '暂无待接单', icon: 'none' })
+    this.loadToday()
   },
   soon() {
-    wx.showToast({ title: 'P0 未开通', icon: 'none' })
+    wx.showToast({ title: '业绩明细稍后开通', icon: 'none' })
+  },
+  goSchedule() {
+    wx.navigateTo({ url: '/pages/schedule/schedule' })
   },
   goMine() {
     wx.navigateTo({ url: '/pages/index/index' })
