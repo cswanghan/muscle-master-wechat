@@ -17,7 +17,7 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  width: 88rpx;
+  width: 112rpx;
   padding: 12rpx 0;
   margin-right: 12rpx;
   border-radius: 16rpx;
@@ -38,6 +38,11 @@
 .date-d {
   font-size: 30rpx;
   font-weight: 600;
+}
+
+.date-n {
+  font-size: 18rpx;
+  opacity: 0.75;
 }
 
 .legend {
@@ -98,12 +103,12 @@
 }
 
 .slot {
-  width: 92rpx;
-  height: 56rpx;
-  line-height: 56rpx;
+  width: 148rpx;
+  height: 72rpx;
+  line-height: 72rpx;
   text-align: center;
-  font-size: 20rpx;
-  border-radius: 8rpx;
+  font-size: 26rpx;
+  border-radius: 16rpx;
 }
 
 .slot.free {
@@ -176,6 +181,13 @@
   font-weight: 700;
   color: #c0803a;
   font-family: ui-monospace, Menlo, monospace;
+}
+
+.bar-tip {
+  font-size: 20rpx;
+  color: #8b948f;
+  font-weight: 400;
+  margin-left: 8rpx;
 }
 
 .bar-sub {

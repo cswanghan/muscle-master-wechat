@@ -1,4 +1,5 @@
 .hero-title {
+  font-family: "Noto Serif SC", "Songti SC", serif;
   font-size: 40rpx;
   font-weight: 700;
   color: #1e5c4a;
@@ -8,11 +9,22 @@
 .search {
   background: #fff;
   border-radius: 999rpx;
-  padding: 22rpx 28rpx;
+  padding: 20rpx 28rpx;
   color: #8b948f;
   font-size: 28rpx;
   margin-bottom: 28rpx;
   border: 1rpx solid #e7e3dc;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.search-ico {
+  width: 28rpx;
+  height: 28rpx;
+  border: 3rpx solid #c9cfcb;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .sec-card {
@@ -25,6 +37,7 @@
 .sec-row {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   margin-bottom: 20rpx;
 }
 
@@ -44,13 +57,20 @@
   display: flex;
   gap: 20rpx;
   align-items: flex-start;
-  margin-bottom: 20rpx;
+  margin-bottom: 8rpx;
+}
+
+.store + .store,
+.th + .th {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #eef2ef;
 }
 
 .thumb,
 .avatar {
-  width: 112rpx;
-  height: 112rpx;
+  width: 128rpx;
+  height: 128rpx;
   border-radius: 16rpx;
   background: repeating-linear-gradient(135deg, #efece6 0 10rpx, #f7f5f1 10rpx 20rpx);
   color: #b7b1a6;
@@ -62,6 +82,8 @@
 }
 
 .avatar {
+  width: 96rpx;
+  height: 96rpx;
   border-radius: 50%;
 }
 
@@ -70,13 +92,22 @@
   min-width: 0;
 }
 
-.deal-name {
-  font-size: 30rpx;
-  font-weight: 600;
+.deal-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12rpx;
 }
 
-.price-row {
-  margin-top: 6rpx;
+.deal-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #17211d;
+}
+
+.price-col {
+  text-align: right;
+  flex-shrink: 0;
 }
 
 .price {
@@ -87,16 +118,21 @@
 }
 
 .strike {
-  margin-left: 8rpx;
-  color: #8b948f;
+  display: block;
+  color: #b7b1a6;
   text-decoration: line-through;
-  font-size: 24rpx;
+  font-size: 22rpx;
+}
+
+.km {
+  color: #8b948f;
+  font-size: 22rpx;
 }
 
 .meta {
-  color: #8b948f;
+  color: #6b7a74;
   font-size: 24rpx;
-  margin-top: 4rpx;
+  margin-top: 6rpx;
 }
 
 .jade {
@@ -107,6 +143,14 @@
 
 .copper {
   color: #c0803a;
+  font-weight: 600;
+}
+
+.deal-bot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16rpx;
 }
 
 .tag,
@@ -115,30 +159,61 @@
 .lvl {
   display: inline-block;
   font-size: 20rpx;
-  padding: 4rpx 10rpx;
+  padding: 4rpx 12rpx;
   border-radius: 8rpx;
   background: #e8f0ec;
   color: #1e5c4a;
   margin-right: 8rpx;
-  margin-top: 8rpx;
 }
 
 .tag.copper {
-  background: #faf1e4;
+  background: #fff;
   color: #a9752f;
+  border: 1rpx solid #e0c49a;
+}
+
+.th-line {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-wrap: wrap;
+}
+
+.chips {
+  margin-top: 10rpx;
 }
 
 .btn.sm {
   height: 64rpx;
   line-height: 64rpx;
-  padding: 0 22rpx;
+  padding: 0 28rpx;
   border-radius: 999rpx;
   font-size: 24rpx;
-  align-self: center;
+  flex-shrink: 0;
 }
 
 .btn.ghost.sm {
   background: #fff;
   border: 2rpx solid #1e5c4a;
   color: #1e5c4a;
+}
+
+.dock-ring,
+.dock-dia,
+.dock-me {
+  width: 40rpx;
+  height: 40rpx;
+  margin-bottom: 6rpx;
+  border: 3rpx solid currentColor;
+  background: transparent;
+}
+
+.dock-ring { border-radius: 50%; }
+.dock-dia { transform: rotate(45deg); border-radius: 4rpx; width: 28rpx; height: 28rpx; margin-bottom: 12rpx; }
+.dock-me { border-radius: 50%; }
+
+.dock-item.on .dock-ring,
+.dock-item.on .dock-dia,
+.dock-item.on .dock-me {
+  background: transparent;
 }

@@ -60,6 +60,40 @@
   font-weight: 700;
 }
 
+.head-card {
+  display: flex;
+  gap: 20rpx;
+  align-items: center;
+}
+
+.avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: repeating-linear-gradient(135deg, #efece6 0 10rpx, #f7f5f1 10rpx 20rpx);
+}
+
+.jade { color: #1e5c4a; }
+
+.coupon {
+  padding: 20rpx;
+  border-radius: 16rpx;
+  border: 2rpx solid #e7e3dc;
+  margin-bottom: 12rpx;
+}
+
+.coupon.on { border-color: #1e5c4a; }
+.coupon.off { color: #8b948f; }
+.warn { color: #b3452f; font-size: 22rpx; margin-left: 8rpx; }
+
+.pay-row {
+  padding: 18rpx 0;
+  border-top: 1rpx solid #eef2ef;
+}
+
+.pay-row.on { color: #1e5c4a; font-weight: 600; }
+.pay-row.off { color: #8b948f; }
+
 .sec {
   font-weight: 700;
   margin-bottom: 12rpx;

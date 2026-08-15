@@ -15,6 +15,7 @@
 .sec-row {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
 }
 
 .parts {
@@ -25,19 +26,31 @@
 
 .part {
   flex: 1;
-  height: 140rpx;
+  height: 160rpx;
   border-radius: 20rpx;
   background: #f4f2ee;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 16rpx;
+  gap: 12rpx;
   font-size: 26rpx;
+}
+
+.part-box {
+  width: 40rpx;
+  height: 40rpx;
+  border: 3rpx solid #c9cfcb;
+  border-radius: 8rpx;
 }
 
 .part.on {
   background: #1e5c4a;
   color: #fff;
+}
+
+.part.on .part-box {
+  border-color: #fff;
 }
 
 .chips {
@@ -71,6 +84,7 @@
 .proj-top {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
 }
 
 .proj-name {
@@ -80,24 +94,28 @@
 
 .price {
   color: #c0803a;
-  font-size: 32rpx;
+  font-size: 36rpx;
   font-weight: 700;
   font-family: ui-monospace, Menlo, monospace;
+}
+
+.proj-bot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12rpx;
 }
 
 .jade {
   color: #1e5c4a;
   font-size: 24rpx;
-  margin: 8rpx 0;
 }
 
 .btn.sm {
-  display: inline-block;
   height: 64rpx;
   line-height: 64rpx;
   padding: 0 28rpx;
   border-radius: 999rpx;
-  margin-top: 8rpx;
 }
 
 .note {
@@ -106,6 +124,17 @@
   padding: 24rpx;
   border-radius: 16rpx;
   font-size: 24rpx;
+  display: flex;
+  gap: 12rpx;
+}
+
+.note-ico {
+  width: 28rpx;
+  height: 28rpx;
+  border: 3rpx solid #c0803a;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4rpx;
 }
 
 .empty {

@@ -6,17 +6,31 @@
   <view wx:if="{{closed}}" class="ticker dead" id="closed-banner">预约已取消</view>
   <view wx:if="{{paid}}" class="ticker ok">支付成功 · 订单已预约</view>
 
+  <view class="card head-card">
+    <view class="avatar"></view>
+    <view class="grow">
+      <view class="title">{{projectName}}</view>
+      <view class="hint">{{therapistName}} · 指定加成 ¥0</view>
+    </view>
+  </view>
   <view class="card">
-    <view class="title">{{projectName}}</view>
-    <view class="hint">{{therapistName}} · {{durationMinutes}} 分钟</view>
     <view class="row"><text class="k">到店时间</text><text class="mono">{{date}} {{start}}</text></view>
     <view class="row"><text class="k">门店</text><text>{{storeName}}</text></view>
     <view class="row"><text class="k">房间</text><text>到店由前台分配</text></view>
+    <view class="row"><text class="k">主诉备注</text><text class="jade">填写 ›</text></view>
+  </view>
+
+  <view class="card">
+    <view class="sec">优惠</view>
+    <view class="coupon on">新客体验券（P0 演示） <text class="price">-0</text></view>
+    <view class="coupon off">满 300 减 50 <text class="warn">未满门槛</text></view>
   </view>
 
   <view class="card">
     <view class="sec">支付方式</view>
-    <view class="pay on">微信支付</view>
+    <view class="pay-row off">储值余额 ¥0.00 <text class="hint">去充值</text></view>
+    <view class="pay-row off">礼卡余额 ¥0.00</view>
+    <view class="pay-row on">微信支付</view>
   </view>
 
   <view wx:if="{{error}}" class="error">{{error}}</view>

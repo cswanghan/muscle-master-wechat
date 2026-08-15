@@ -8,8 +8,23 @@ const proxy = {
   '/api': { target: apiTarget, changeOrigin: true },
 }
 
+function walkthroughIndex() {
+  return {
+    name: 'walkthrough-index',
+    configureServer(server: { middlewares: { use: (fn: (req: { url?: string }, _res: unknown, next: () => void) => void) => void } }) {
+      server.middlewares.use((req, _res, next) => {
+        const path = (req.url || '').split('?')[0]
+        if (path === '/walkthrough' || path === '/walkthrough/') {
+          req.url = '/walkthrough/index.html'
+        }
+        next()
+      })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), walkthroughIndex()],
   server: {
     port: 5173,
     proxy,

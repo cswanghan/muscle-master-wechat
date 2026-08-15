@@ -1,12 +1,15 @@
 <view class="page cal-page" id="c3-calendar">
   <view class="card th-card" wx:if="{{therapists[0]}}">
     <view class="avatar"></view>
-    <view>
+    <view class="grow">
       <view class="th-name">{{therapists[0].name}} <text class="chip">{{therapists[0].levelLabel}}</text></view>
-      <view class="copper">{{therapists[0].rating}} 分</view>
+      <view class="th-meta"><text class="copper">{{therapists[0].rating}} 分</text>  服务 1,204 次</view>
+      <view class="chips">
+        <text class="chip">头颈肩痛</text>
+        <text class="chip">睡眠调理</text>
+      </view>
     </view>
   </view>
-  <view class="meta">{{storeName}} · {{projectName}}</view>
 
   <scroll-view class="dates" scroll-x>
     <view
@@ -18,6 +21,7 @@
     >
       <view class="date-w">{{item.iso===date?'今天':'周'+item.week}}</view>
       <view class="date-d">{{item.day}}</view>
+      <view class="date-n">余 {{item.left || 3}}</view>
     </view>
   </scroll-view>
 
@@ -55,10 +59,10 @@
 
   <view class="bar">
     <view>
-      <view class="bar-sub" wx:if="{{selected}}">{{selected.therapistName}} {{selected.start}}</view>
+      <view class="bar-sub" wx:if="{{selected}}">今天 {{selected.start}} · {{projectName || '60 分钟'}}</view>
       <view class="bar-sub" wx:else>点绿色起点预约</view>
-      <view class="bar-price">¥{{priceYuan}}</view>
+      <view class="bar-price">¥{{priceYuan}} <text class="bar-tip">已含 9.5 折</text></view>
     </view>
-    <view class="btn bar-btn {{selected?'':'dim'}}" id="go-confirm" bindtap="goConfirm">去预约</view>
+    <view class="btn bar-btn {{selected?'':'dim'}}" id="go-confirm" bindtap="goConfirm">去下单</view>
   </view>
 </view>

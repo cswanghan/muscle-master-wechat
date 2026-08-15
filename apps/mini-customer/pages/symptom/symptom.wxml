@@ -9,7 +9,10 @@
         data-id="{{item.id}}"
         data-name="{{item.name}}"
         bindtap="pickSymptom"
-      >{{item.name}}</view>
+      >
+        <view class="part-box"></view>
+        <view>{{item.name}}</view>
+      </view>
     </view>
     <view class="sec">按不适选</view>
     <view class="chips">
@@ -42,10 +45,15 @@
         <view class="price">¥{{item.priceYuan}}</view>
       </view>
       <view class="hint">{{item.durationMinutes}} 分钟</view>
-      <view class="jade">今晚可约</view>
-      <view class="btn sm">选技师</view>
+      <view class="proj-bot">
+        <view class="jade">今晚可约</view>
+        <view class="btn sm">选技师</view>
+      </view>
     </view>
   </view>
 
-  <view class="note">选不准可先到店，由技师面诊后调整项目，差价按实际结算。</view>
+  <view class="note">
+    <view class="note-ico"></view>
+    <view>选不准可先填写不适描述，到店由技师面诊后调整项目，差价按实际项目结算。</view>
+  </view>
 </view>
