@@ -1,6 +1,7 @@
 const { request, ensureLogin, rid } = require('../../utils/api.js')
 const { fenYuan, remainMs, mmss } = require('../../utils/format.js')
 const mock = require('../../utils/mock.js')
+const config = require('../../config.js')
 
 function isPending(status) {
   return status === 'PENDING_PAY'
@@ -189,7 +190,10 @@ Page({
     }).then((data) => {
       this.applyOrder(data)
       return data
-    }).catch(() => {
+    }).catch((err) => {
+      if (!config.mockFallback) {
+        throw err
+      }
       const local = mock.mockLock(this.data)
       this.applyOrder(local)
       this.startTick(local.lockExpireAt)
@@ -213,7 +217,7 @@ Page({
       method: 'POST',
       auth: true,
       data: { requestId: rid('pay') },
-    }).then((pay) => this.completePay(pay)).catch(() => this.finishPaid(order))
+    }).then((pay) => this.completePay(pay))
   },
   completePay(pay) {
     if (!pay || !pay.payParams || !pay.payParams.paySign) {
@@ -230,9 +234,12 @@ Page({
           this.finishPaid(pay)
           resolve()
         },
+        // Expected while the server runs app.wechat.mock: WeChat rejects the
+        // placeholder paySign, and the demo notify below is the real completion
+        // path. If that notify also fails, the order is genuinely unpaid.
         fail: () => {
-          this.mockNotify(pay).then(resolve).catch(() => {
-            this.finishPaid(pay)
+          this.mockNotify(pay).then(resolve).catch((err) => {
+            this.setData({ paying: false, error: err.message || '支付未完成，请重试' })
             resolve()
           })
         },
@@ -259,7 +266,7 @@ Page({
         transaction_id: 'wx_mock_' + ((pay && pay.paymentNo) || Date.now()),
         amount_fen: (pay && pay.amountFen) || this.data.priceFen,
       },
-    }).then(() => this.finishPaid(pay)).catch(() => this.finishPaid(pay))
+    }).then(() => this.finishPaid(pay))
   },
   cancelOrder() {
     if (!this.data.orderId || this.data.paid || this.data.closed || !isPending(this.data.status)) {

@@ -68,7 +68,10 @@ Page({
         })
         const freq = {}
         const remote = ((page && page.items) || [])
-        const locals = mock.readOrders().filter((o) => !remote.some((r) => String(r.orderId) === String(o.orderId)))
+        // Locally faked orders would sit here looking exactly like real ones.
+        const locals = config.mockFallback
+          ? mock.readOrders().filter((o) => !remote.some((r) => String(r.orderId) === String(o.orderId)))
+          : []
         const orders = remote.concat(locals).map((o) => {
           const therapistName = therapistNames[o.therapistId] || o.therapistId
           freq[therapistName] = (freq[therapistName] || 0) + 1
@@ -103,7 +106,19 @@ Page({
           loading: false,
         })
       })
-      .catch(() => {
+      .catch((err) => {
+        if (!config.mockFallback) {
+          // Was: fall back to local orders AND clear `error`, so an outage
+          // rendered as a normal booking list.
+          this.setData({
+            orders: [],
+            next: null,
+            visitCount: 0,
+            loading: false,
+            error: err.message || '加载失败，请检查网络',
+          })
+          return
+        }
         const orders = mock.readOrders().map((o) => ({
           ...o,
           priceYuan: fenYuan(o.payableFen),

@@ -1,6 +1,6 @@
 const { request } = require('../../utils/api.js')
 const { fenYuan, slotToTime } = require('../../utils/format.js')
-const { demoDate } = require('../../config.js')
+const { demoDate, mockFallback } = require('../../config.js')
 const mock = require('../../utils/mock.js')
 
 function addDays(iso, n) {
@@ -137,10 +137,18 @@ Page({
     }
     request({ path })
       .then(apply)
-      .catch(() => apply(mock.mockAvailability({
-        therapistId,
-        priceFen: this.data.priceFen || 19800,
-      })))
+      .catch((err) => {
+        if (!mockFallback) {
+          // Faking availability offers slots the server never held, so the
+          // booking can only fail later — report it here instead.
+          this.setData({ therapists: [], loading: false, error: err.message || '加载时段失败' })
+          return
+        }
+        apply(mock.mockAvailability({
+          therapistId,
+          priceFen: this.data.priceFen || 19800,
+        }))
+      })
   },
   pickSlot(e) {
     const { tid, tname, slot, start, price, bookable } = e.currentTarget.dataset

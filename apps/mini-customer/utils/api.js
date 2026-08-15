@@ -1,4 +1,4 @@
-const { apiBase } = require('../config.js')
+const { apiBase, mockFallback } = require('../config.js')
 
 function request({ path, method, data, auth }) {
   const header = { 'Content-Type': 'application/json' }
@@ -46,7 +46,12 @@ function ensureLogin() {
     wx.setStorageSync('token', data.token)
     wx.setStorageSync('customerId', data.customerId || '')
     return data
-  }).catch(() => {
+  }).catch((err) => {
+    if (!mockFallback) {
+      // Handing back a fake token here turns "cannot reach the API" into a
+      // confusing 401 three calls later. Fail where the failure happened.
+      throw err
+    }
     const fallback = { token: 'mock-token', customerId: 'mock-customer' }
     wx.setStorageSync('token', fallback.token)
     wx.setStorageSync('customerId', fallback.customerId)
