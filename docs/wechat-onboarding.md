@@ -145,6 +145,10 @@ cd apps/admin-web && wxcloud run:deploy . -e <ENV_ID> -s muscle-admin \
 | 0.3.0 | 2026-08-15 | `apiBase` 切云托管；「我的」页显示版本号 |
 | 0.4.0 | 2026-08-16 | 请求失败不再降级成本地假单，如实报错（`mockFallback` 默认关） |
 | 0.5.0 | 2026-08-16 | 改走 `wx.cloud.callContainer`，不再需要 request 合法域名 |
+| 0.6.0 | 2026-08-16 | 401 自动重登重试，清掉 0.4.0 前遗留的 `mock-token` |
+
+JWT 只有 2 小时（`app.jwt.customer-ttl`），演示跨了午休回来就会过期。
+0.6.0 起遇到 401 会自动重新登录并重放那次请求，不用手工清缓存。
 
 发布顺序（第一步不做，后面两步白费）：
 
