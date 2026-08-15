@@ -105,6 +105,8 @@
     </view>
   </view>
 
+  <view class="build">体验版 v{{version}}</view>
+
   <view class="dock">
     <view class="dock-item" hover-class="tap" bindtap="goHome">
       <view class="ico ico-book"></view>

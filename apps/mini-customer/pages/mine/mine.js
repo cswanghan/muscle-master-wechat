@@ -1,6 +1,7 @@
 const { request, ensureLogin, rid } = require('../../utils/api.js')
 const { fenYuan, statusLabel, isOngoing, levelLabel } = require('../../utils/format.js')
 const mock = require('../../utils/mock.js')
+const config = require('../../config.js')
 
 function maskPhone(customerId) {
   const tail = String(customerId || '0000').replace(/\D/g, '').slice(-4) || '0000'
@@ -30,6 +31,7 @@ Page({
     orders: [],
     loading: true,
     error: '',
+    version: config.version,
   },
   onShow() {
     this.reload()

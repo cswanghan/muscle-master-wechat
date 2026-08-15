@@ -244,3 +244,11 @@
   flex: 1;
   min-width: 0;
 }
+
+/* Sits above the fixed dock, inside .mine-page's 160rpx bottom padding. */
+.build {
+  text-align: center;
+  color: #b3bab6;
+  font-size: 22rpx;
+  padding: 8rpx 0 4rpx;
+}
