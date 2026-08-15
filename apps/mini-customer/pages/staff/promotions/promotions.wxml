@@ -1,0 +1,60 @@
+<view class="page" id="t3-promo">
+  <view class="card">
+    <view class="sec-row">
+      <view class="sec">明天的空档</view>
+      <view class="hint">08-16 周日</view>
+    </view>
+    <view class="pills">
+      <view
+        wx:for="{{slots}}"
+        wx:key="id"
+        class="pill {{item.on?'on':''}}"
+        data-id="{{item.id}}"
+        bindtap="toggle"
+      >
+        <view class="t">{{item.time}}</view>
+        <view class="s">{{item.minutes}} 分钟</view>
+      </view>
+    </view>
+    <view class="hint">仅距今 48 小时内的空档可发起。已选 {{picked}} 档。</view>
+  </view>
+
+  <view class="card">
+    <view class="sec-row">
+      <view class="sec">折扣</view>
+      <view class="hint">总部允许 8.5–9.5 折</view>
+    </view>
+    <view class="pills">
+      <view
+        wx:for="{{discounts}}"
+        wx:key="*this"
+        class="pill num {{discount===item?'on':''}}"
+        data-v="{{item}}"
+        bindtap="pickDiscount"
+      >{{item}}</view>
+    </view>
+    <view class="box">
+      <view class="row"><text>客户实付</text><text class="copper">¥{{pay}}</text></view>
+      <view class="row"><text>你的提成（按实收）</text><text>¥{{commission}}</text></view>
+      <view class="row mute"><text>折扣分摊 · 总部 70% / 门店 30%</text><text>¥{{share}}</text></view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="sec">分享卡预览</view>
+    <view class="share">
+      <view class="avatar"></view>
+      <view class="grow">
+        <view class="share-t">本店技师 明天 14:00 有空档</view>
+        <view class="hint">头颈肩痛 60 分钟 · {{discount}} 折 ¥{{pay}}</view>
+        <view class="warn">17 小时后失效</view>
+      </view>
+    </view>
+    <view class="hint">本周还可发起 2 次；同一客户 30 天内仅可享 1 次；成交仍计你的提成与归因。</view>
+  </view>
+
+  <view class="bar">
+    <view class="ghost" bindtap="shareOld">发给老客</view>
+    <view class="btn" bindtap="shareCard">生成分享卡</view>
+  </view>
+</view>

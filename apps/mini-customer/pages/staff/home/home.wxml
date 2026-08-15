@@ -1,0 +1,11 @@
+<view class="page">
+  <view class="hero">
+    <view class="mark">松</view>
+    <view class="title">肌松大师 · 员工端</view>
+    <view class="hint">技师工作台 / 前台收银 / 店长审批</view>
+  </view>
+  <navigator url="/pages/staff/today/today" class="go">技师 · 今日工作台</navigator>
+  <navigator url="/pages/staff/frontdesk/frontdesk" class="go">前台 · 核销与收银</navigator>
+  <navigator url="/pages/staff/manager/manager" class="go">店长 · 经营概览</navigator>
+  <navigator url="/pages/staff/schedule/schedule" class="go ghost">门店排班（只读）</navigator>
+</view>

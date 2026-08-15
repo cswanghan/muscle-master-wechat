@@ -1,0 +1,118 @@
+.page {
+  min-height: 100vh;
+  background: #f4f2ee;
+  padding: 24rpx;
+  font-size: 30rpx;
+}
+
+.card {
+  background: #fff;
+  border-radius: 28rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.ranges {
+  display: flex;
+  gap: 16rpx;
+}
+
+.rg {
+  flex: 1;
+  text-align: center;
+  background: #f8f7f4;
+  border-radius: 16rpx;
+  padding: 22rpx 0;
+  color: #4a544f;
+}
+
+.rg.on {
+  background: #1e5c4a;
+  color: #fff;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 32rpx;
+}
+
+.cap {
+  color: #8b948f;
+  font-size: 26rpx;
+}
+
+.big {
+  margin-top: 12rpx;
+  font-size: 68rpx;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.mid {
+  margin-top: 12rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.right { text-align: right; }
+
+.rows {
+  margin-top: 28rpx;
+  padding-top: 28rpx;
+  border-top: 1rpx solid #f0ede7;
+}
+
+.row,
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+}
+
+.item {
+  border-top: 1rpx solid #f4f2ee;
+}
+
+.item:first-of-type {
+  border-top: none;
+}
+
+.hint {
+  color: #8b948f;
+  font-size: 24rpx;
+  margin-top: 6rpx;
+}
+
+.warn { color: #b3452f; }
+
+.sec {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.sec-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+
+.grow { flex: 1; }
+
+.appeal {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.ghost {
+  border: 2rpx solid #1e5c4a;
+  color: #1e5c4a;
+  border-radius: 999rpx;
+  padding: 16rpx 32rpx;
+  font-size: 28rpx;
+}

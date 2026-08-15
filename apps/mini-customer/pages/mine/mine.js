@@ -33,6 +33,7 @@ Page({
     error: '',
     version: config.version,
     transport: config.transport,
+    staffEntry: false,
   },
   onShow() {
     this.reload()
@@ -138,6 +139,19 @@ Page({
           error: '',
         })
       })
+  },
+  // Staff screens live in this same mini program now (one AppID, so they get
+  // callContainer too). Keep the door shut for ordinary customers: five taps
+  // on the build line opens it, and it is not a tab.
+  tapBuild() {
+    this._taps = (this._taps || 0) + 1
+    if (this._taps >= 5 && !this.data.staffEntry) {
+      this.setData({ staffEntry: true })
+      wx.showToast({ title: '员工入口已开启', icon: 'none' })
+    }
+  },
+  goStaff() {
+    wx.navigateTo({ url: '/pages/staff/home/home' })
   },
   findOrder(id) {
     return (this.data.orders || []).find((x) => String(x.orderId) === String(id))

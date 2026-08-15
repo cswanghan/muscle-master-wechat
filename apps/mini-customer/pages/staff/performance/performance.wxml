@@ -1,0 +1,69 @@
+<view class="page" id="t4-perf">
+  <view class="card">
+    <view class="ranges">
+      <view class="rg {{range==='day'?'on':''}}" data-v="day" bindtap="pick">今日</view>
+      <view class="rg {{range==='week'?'on':''}}" data-v="week" bindtap="pick">本周</view>
+      <view class="rg {{range==='month'?'on':''}}" data-v="month" bindtap="pick">本月</view>
+    </view>
+    <view class="hero">
+      <view>
+        <view class="cap">累计提成</view>
+        <view class="big">¥{{total}}</view>
+      </view>
+      <view class="right">
+        <view class="cap">钟数</view>
+        <view class="mid">{{clocks}}</view>
+      </view>
+    </view>
+    <view class="rows">
+      <view class="row"><text>钟数提成</text><text>¥5,880</text></view>
+      <view class="row"><text>加钟提成</text><text>¥760</text></view>
+      <view class="row"><text>卡销提成</text><text>¥1,200</text></view>
+      <view class="row"><text>指定加成</text><text>¥520</text></view>
+      <view class="row warn"><text>退款回滚</text><text>-¥120</text></view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="sec-row">
+      <view class="sec">明细</view>
+      <view class="hint">可下钻到单</view>
+    </view>
+    <view class="item">
+      <view class="grow">
+        <view>头颈肩痛 60 分钟</view>
+        <view class="hint">08-12 19:30 · 指定 · #A8821</view>
+      </view>
+      <view>+¥68</view>
+    </view>
+    <view class="item">
+      <view class="grow">
+        <view>加钟 30 分钟</view>
+        <view class="hint">08-12 20:30 · #A8821</view>
+      </view>
+      <view>+¥40</view>
+    </view>
+    <view class="item">
+      <view class="grow">
+        <view>储值卡销售 ¥2,000</view>
+        <view class="hint">08-11 · 卡销 4% · #C1092</view>
+      </view>
+      <view>+¥80</view>
+    </view>
+    <view class="item warn">
+      <view class="grow">
+        <view>退款回滚 · 腰背 60 分钟</view>
+        <view class="hint">08-10 · 跨月退款本月扣回</view>
+      </view>
+      <view>-¥60</view>
+    </view>
+  </view>
+
+  <view class="card appeal">
+    <view class="grow">
+      <view>数据有疑问？</view>
+      <view class="hint">提成 T+1 生成，昨日 04:00 前完成</view>
+    </view>
+    <view class="ghost" bindtap="appeal">申诉</view>
+  </view>
+</view>

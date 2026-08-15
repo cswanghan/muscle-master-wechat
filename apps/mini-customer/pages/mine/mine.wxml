@@ -105,7 +105,8 @@
     </view>
   </view>
 
-  <view class="build">体验版 v{{version}} · {{transport}}</view>
+  <view class="build" bindtap="tapBuild">体验版 v{{version}} · {{transport}}</view>
+  <view wx:if="{{staffEntry}}" class="staff-entry" hover-class="tap" bindtap="goStaff">员工端 · 技师 / 前台 / 店长</view>
 
   <view class="dock">
     <view class="dock-item" hover-class="tap" bindtap="goHome">

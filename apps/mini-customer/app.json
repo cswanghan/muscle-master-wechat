@@ -8,7 +8,15 @@
     "pages/confirm/confirm",
     "pages/mine/mine",
     "pages/coupon/coupon",
-    "pages/mall/mall"
+    "pages/mall/mall",
+    "pages/staff/home/home",
+    "pages/staff/today/today",
+    "pages/staff/service/service",
+    "pages/staff/frontdesk/frontdesk",
+    "pages/staff/manager/manager",
+    "pages/staff/schedule/schedule",
+    "pages/staff/promotions/promotions",
+    "pages/staff/performance/performance"
   ],
   "window": {
     "navigationBarBackgroundColor": "#F4F2EE",

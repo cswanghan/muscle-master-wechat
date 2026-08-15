@@ -130,7 +130,20 @@ cd apps/admin-web && wxcloud run:deploy . -e <ENV_ID> -s muscle-admin \
 | uploadFile | P0 可不配 | [ ] 头像/封面如走 OSS |
 | downloadFile | [ ] | [ ] |
 
-## 员工端上传（阻塞中）
+## 员工端已并入顾客端（2026-08-16）
+
+一个小程序按角色分流，不再需要第二个 AppID。员工页面在
+`apps/mini-customer/pages/staff/`，入口在「我的」页连点版本号 5 次，不进 tabBar。
+好处是员工端也能走 callContainer（同 AppID），免配 request 合法域名。
+`apps/mini-staff/` 保留为将来拆分的起点，不再维护、不会上传。
+
+**主包体积要盯着**：合并后 1.8 MB，上限 2 MB，余量约 150 KB。图片占 1.7 MB，
+`images/goods/*.jpg` 三张就 580 KB。再加内容前先压图，或者把员工端做成分包
+（`subPackages`），主包只留顾客端。
+
+下面这节是历史记录，说明当初为什么不走"独立员工端小程序"这条路。
+
+## 员工端独立上传（已放弃）
 
 `apps/mini-staff/project.config.json` 的 `appid` 还是 `touristappid`，上传直接被拒：
 
@@ -176,6 +189,8 @@ H5 版 `<ADMIN_HOST>/phone/` 里技师端和店长端都在，功能一致，随
 | 0.4.0 | 2026-08-16 | 请求失败不再降级成本地假单，如实报错（`mockFallback` 默认关） |
 | 0.5.0 | 2026-08-16 | 改走 `wx.cloud.callContainer`，不再需要 request 合法域名 |
 | 0.6.0 | 2026-08-16 | 401 自动重登重试，清掉 0.4.0 前遗留的 `mock-token` |
+| 0.7.0 | 2026-08-16 | 日历改用真实今天（原来写死 08-15）；约满不再假填时段 |
+| 0.8.0 | 2026-08-16 | 员工端并入，一个小程序多角色；员工端也走 callContainer |
 
 JWT 只有 2 小时（`app.jwt.customer-ttl`），演示跨了午休回来就会过期。
 0.6.0 起遇到 401 会自动重新登录并重放那次请求，不用手工清缓存。

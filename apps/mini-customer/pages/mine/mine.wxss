@@ -252,3 +252,14 @@
   font-size: 22rpx;
   padding: 8rpx 0 4rpx;
 }
+
+/* Revealed by tapping the build line 5x; not a tab, so customers never see it. */
+.staff-entry {
+  margin: 4rpx 24rpx 0;
+  padding: 18rpx 0;
+  text-align: center;
+  border: 1rpx dashed #C0803A;
+  border-radius: 12rpx;
+  color: #C0803A;
+  font-size: 24rpx;
+}
