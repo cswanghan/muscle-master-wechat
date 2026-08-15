@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>肌松大师 · 小程序功能流程验收</title>
+<style>
+:root { --jade:#1e5c4a; --deep:#143f34; --sand:#f4f2ee; --ink:#17211d; --mute:#6b7a74; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--sand); color:var(--ink); font-family:"PingFang SC","Noto Sans SC",sans-serif; }
+header { background:var(--deep); color:#f4f2ee; padding:28px 32px; }
+header h1 { margin:0 0 8px; font-size:24px; }
+header p { margin:0; color:#c8d6d0; font-size:14px; max-width:720px; line-height:1.6; }
+nav { position:sticky; top:0; background:#fff; border-bottom:1px solid #d7e0db; padding:10px 24px; display:flex; gap:12px; flex-wrap:wrap; z-index:2; }
+nav a { color:var(--jade); text-decoration:none; font-size:14px; }
+main { max-width:880px; margin:0 auto; padding:24px 20px 80px; }
+.flow { margin:36px 0 12px; color:var(--jade); border-bottom:2px solid #d7e6df; padding-bottom:8px; }
+.step { background:#fff; border:1px solid #d7e0db; border-radius:16px; padding:20px 22px 24px; margin:16px 0; }
+.num { color:var(--mute); font-size:12px; letter-spacing:.08em; }
+.step h3 { margin:4px 0 8px; font-size:20px; }
+.step p { margin:0 0 16px; color:#3d4f48; line-height:1.6; }
+figure { margin:0; text-align:center; }
+img { width:min(390px,100%); border-radius:28px; box-shadow:0 16px 40px rgba(20,40,32,.18); background:#111; }
+</style>
+</head>
+<body>
+<header>
+  <h1>肌松大师 · 小程序功能流程验收</h1>
+  <p>按顾客预约 → 技师服务 → 前台收银 → 店长审批的真实路径整理。每一步对应开发者工具里的页面。数据用本机 dev 目录：演示旗舰店、林晓/陈默/周可、全身推拿放松 ¥198。</p>
+</header>
+<nav>
+  <a href="#c1">顾客预约</a>
+  <a href="#t-index">技师服务</a>
+  <a href="#f1">前台收银</a>
+  <a href="#m1">店长</a>
+</nav>
+<main>
+<h2 class="flow">顾客预约</h2>
+        <article class="step" id="c1">
+          <div class="num">步骤 1</div>
+          <h3>打开顾客端首页</h3>
+          <p>进入「肌松大师-顾客端」，默认页是预约首页。三入口：症状搜索、门店、推拿师。</p>
+          <figure><img src="shots/c1.png" alt="打开顾客端首页"/></figure>
+        </article>
+        <article class="step" id="c2">
+          <div class="num">步骤 2</div>
+          <h3>点搜索：说说哪里不舒服</h3>
+          <p>进入症状路由。点「头颈肩」后出现推荐项目「肩颈专项疏通」。</p>
+          <figure><img src="shots/c2.png" alt="点搜索：说说哪里不舒服"/></figure>
+        </article>
+        <article class="step" id="c-stores">
+          <div class="num">步骤 3</div>
+          <h3>或从首页进门店预约</h3>
+          <p>选「肌松大师·演示旗舰店」，再选项目，进入选时段。</p>
+          <figure><img src="shots/c-stores.png" alt="或从首页进门店预约"/></figure>
+        </article>
+        <article class="step" id="c-therapists">
+          <div class="num">步骤 4</div>
+          <h3>或从首页进推拿师预约</h3>
+          <p>选「林晓 / 资深」，再选可做项目。</p>
+          <figure><img src="shots/c-therapists.png" alt="或从首页进推拿师预约"/></figure>
+        </article>
+        <article class="step" id="c3">
+          <div class="num">步骤 5</div>
+          <h3>选时段</h3>
+          <p>四态格子：绿可约、玉已约、铜锁定、灰不可约。点 19:30，底栏「去预约」。</p>
+          <figure><img src="shots/c3.png" alt="选时段"/></figure>
+        </article>
+        <article class="step" id="c4">
+          <div class="num">步骤 6</div>
+          <h3>确认下单</h3>
+          <p>锁单 15 分钟倒计时。微信支付，点「立即支付」。</p>
+          <figure><img src="shots/c4.png" alt="确认下单"/></figure>
+        </article>
+        <article class="step" id="c4-ok">
+          <div class="num">步骤 7</div>
+          <h3>支付成功</h3>
+          <p>状态变为已预约，点「查看订单」进我的。</p>
+          <figure><img src="shots/c4-ok.png" alt="支付成功"/></figure>
+        </article>
+        <article class="step" id="c6">
+          <div class="num">步骤 8</div>
+          <h3>我的</h3>
+          <p>下次调理、核销码、改约（转前台）、取消、理疗档案。储值展示 ¥0。</p>
+          <figure><img src="shots/c6.png" alt="我的"/></figure>
+        </article><h2 class="flow">技师服务</h2>
+        <article class="step" id="t-index">
+          <div class="num">步骤 9</div>
+          <h3>打开员工端入口</h3>
+          <p>四个入口：技师工作台、前台收银、店长概览、门店排班。</p>
+          <figure><img src="shots/t-index.png" alt="打开员工端入口"/></figure>
+        </article>
+        <article class="step" id="t1">
+          <div class="num">步骤 10</div>
+          <h3>今日工作台</h3>
+          <p>下一单卡片：谁 / 几点 / 哪张床。点「开始服务」。时间轴可点进服务页。</p>
+          <figure><img src="shots/t1.png" alt="今日工作台"/></figure>
+        </article>
+        <article class="step" id="t2">
+          <div class="num">步骤 11</div>
+          <h3>服务中理疗记录</h3>
+          <p>倒计时、申请加钟（跳前台）、主诉/手法/力度、口头告知后「提交记录并结单」。</p>
+          <figure><img src="shots/t2.png" alt="服务中理疗记录"/></figure>
+        </article><h2 class="flow">前台收银</h2>
+        <article class="step" id="f1">
+          <div class="num">步骤 12</div>
+          <h3>核销与散客开单</h3>
+          <p>查单号/手机后核销。散客支持现金或微信收款码。</p>
+          <figure><img src="shots/f1.png" alt="核销与散客开单"/></figure>
+        </article>
+        <article class="step" id="f2">
+          <div class="num">步骤 13</div>
+          <h3>加钟 / 换师 / 改约 / 退款</h3>
+          <p>核销或开单后填订单 ID，选动作提交。失败进人工队列。</p>
+          <figure><img src="shots/f2.png" alt="加钟 / 换师 / 改约 / 退款"/></figure>
+        </article><h2 class="flow">店长</h2>
+        <article class="step" id="m1">
+          <div class="num">步骤 14</div>
+          <h3>经营概览</h3>
+          <p>满班率、待我审批（同意/驳回）、门店实时。</p>
+          <figure><img src="shots/m1.png" alt="经营概览"/></figure>
+        </article>
+        <article class="step" id="m2">
+          <div class="num">步骤 15</div>
+          <h3>门店排班只读</h3>
+          <p>从工作台或店长底栏「排班」进入，对照技师档期，不能改约。</p>
+          <figure><img src="shots/m2.png" alt="门店排班只读"/></figure>
+        </article>
+</main>
+</body>
+</html>

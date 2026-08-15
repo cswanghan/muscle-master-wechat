@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>frames</title>
+<style>
+:root { --jade:#1e5c4a; --deep:#143f34; --sand:#f4f2ee; --copper:#c0803a; --ink:#17211d; --mute:#8b948f; --alert:#b3452f; }
+* { box-sizing: border-box; }
+body { margin:0; background:#ddd; font-family:"PingFang SC","Noto Sans SC",sans-serif; }
+.wrap { padding: 20px; }
+.phone { width:390px; height:780px; background:#111; border-radius:36px; padding:12px; margin: 24px auto; }
+.screen { height:100%; background:var(--sand); border-radius:26px; overflow:hidden; position:relative; display:flex; flex-direction:column; color:var(--ink); font-size:13px; }
+.nav { height:48px; display:flex; align-items:center; justify-content:center; font-weight:600; background:var(--sand); }
+.nav.dark { background:var(--deep); color:#f4f2ee; }
+.scroll { flex:1; overflow:hidden; padding:10px 14px 68px; }
+.hero-t { font-size:20px; font-weight:700; color:var(--jade); margin:4px 0 12px; }
+.search { background:#fff; border-radius:999px; padding:10px 14px; color:var(--mute); margin-bottom:12px; }
+.card { background:#fff; border-radius:14px; padding:12px; margin-bottom:10px; }
+.sec-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.sec-row span { color:var(--mute); font-size:11px; }
+.row { display:flex; gap:10px; align-items:flex-start; margin-bottom:8px; }
+.thumb,.avatar { width:48px; height:48px; border-radius:10px; background:repeating-linear-gradient(135deg,#efece6 0 6px,#f7f5f1 6px 12px); flex-shrink:0; color:#b7b1a6; font-size:10px; display:flex; align-items:center; justify-content:center; }
+.avatar { border-radius:50%; }
+.avatar.g { background:#3d7a68; }
+.grow { flex:1; min-width:0; }
+.price { color:var(--copper); font-weight:700; }
+.meta,.sub { color:var(--mute); font-size:11px; margin-top:2px; }
+.jade { color:var(--jade); font-size:11px; }
+.tag,.lvl { display:inline-block; font-size:10px; padding:1px 6px; border-radius:4px; background:#e8f0ec; color:var(--jade); }
+.tag { background:#faf1e4; color:#a9752f; }
+.pill { border:0; background:var(--jade); color:#f4f2ee; border-radius:999px; height:32px; padding:0 12px; font-size:12px; }
+.pill.ghost { background:#fff; color:var(--jade); border:1px solid #d7e0db; }
+.pill.wide { width:100%; height:40px; }
+.dock { position:absolute; left:0; right:0; bottom:0; height:56px; background:#faf8f3; border-top:1px solid #d7e6df; display:flex; }
+.dock span { flex:1; display:flex; align-items:center; justify-content:center; color:var(--mute); font-size:11px; }
+.dock span.on { color:var(--jade); font-weight:600; }
+.parts { display:flex; gap:8px; margin:8px 0 12px; }
+.part { flex:1; height:64px; border-radius:10px; background:#f4f2ee; display:flex; align-items:flex-end; justify-content:center; padding-bottom:8px; }
+.part.on { background:var(--jade); color:#fff; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.chip { padding:6px 10px; border-radius:8px; background:#f4f2ee; }
+.chip.on { background:var(--jade); color:#fff; }
+.proj { border:1px solid #e7e3dc; border-radius:10px; padding:10px; }
+.proj.on { border-color:var(--jade); }
+.note { background:#faf1e4; color:#a9752f; padding:10px; border-radius:10px; font-size:12px; }
+.dates { display:flex; gap:8px; margin:8px 0; }
+.date { width:48px; text-align:center; background:#fff; border-radius:10px; padding:6px 0; font-size:11px; }
+.date.on { background:var(--jade); color:#fff; }
+.slots { display:flex; flex-wrap:wrap; gap:4px; }
+.slot { width:52px; height:26px; line-height:26px; text-align:center; font-size:11px; border-radius:4px; }
+.slot.free { background:#e8f0ec; color:var(--jade); }
+.slot.booked { background:var(--jade); color:#fff; }
+.slot.locked { background:#faf1e4; color:#a9752f; }
+.slot.busy { background:#f4f2ee; color:var(--mute); }
+.paybar { position:absolute; left:0; right:0; bottom:0; background:#fff; display:flex; justify-content:space-between; align-items:center; padding:10px 14px 16px; border-top:1px solid #e7e3dc; }
+.ticker { background:#faf1e4; color:#a9752f; text-align:center; padding:8px; border-radius:8px; font-weight:600; margin-bottom:10px; }
+.ticker.ok { background:#e8f0ec; color:var(--jade); }
+.kv { display:flex; justify-content:space-between; padding:6px 0; }
+.pay { background:#e8f0ec; color:var(--jade); padding:10px; border-radius:8px; margin-top:8px; }
+.profile { background:var(--jade); color:#f4f2ee; border-radius:14px; padding:14px; margin-bottom:10px; }
+.wallet { display:flex; align-items:flex-end; gap:12px; margin-top:12px; }
+.wallet b { display:block; }
+.recharge { margin-left:auto; border:1px solid #d7e6df; border-radius:999px; padding:4px 12px; font-size:12px; }
+.next-box { background:#f7f5f1; border-radius:10px; padding:10px; }
+.st { background:#e8f0ec; color:var(--jade); font-size:11px; padding:2px 6px; border-radius:4px; }
+.acts { display:flex; gap:8px; margin-top:10px; }
+.menu div { padding:10px 0; border-bottom:1px solid #eef2ef; }
+.hero-dark { background:var(--deep); color:#f4f2ee; padding:14px; }
+.hero-dark.center { text-align:center; }
+.duty { border:1px solid rgba(255,255,255,.3); border-radius:999px; padding:4px 10px; font-size:12px; }
+.kpis,.rate-row { display:flex; justify-content:space-between; margin-top:12px; }
+.kpis b,.rate-row b { display:block; font-size:16px; }
+.big { font-size:32px !important; }
+.next-card { background:#fff; border:2px solid var(--jade); border-radius:14px; padding:12px; margin-bottom:10px; }
+.who { font-size:20px; font-weight:700; margin:6px 0; }
+.when { margin:6px 0; font-weight:700; }
+.room { background:var(--jade); color:#fff; font-size:11px; padding:2px 6px; border-radius:4px; }
+.eta { color:var(--copper); font-weight:700; }
+.tl { display:flex; gap:8px; padding:8px 0; border-top:1px solid #eef2ef; align-items:center; }
+.tl.gap { color:var(--copper); }
+.timer { font-size:48px; font-weight:700; margin:8px 0; }
+.field { margin:10px 0 4px; font-weight:600; }
+.box { background:#f7f5f1; border-radius:8px; padding:10px; }
+.go { display:block; background:var(--jade); color:#fff; text-align:center; height:44px; line-height:44px; border-radius:12px; margin:8px 0; text-decoration:none; }
+.go.ghost { background:#fff; color:var(--jade); border:1px solid var(--jade); }
+.input { height:40px; border:1px solid #d7e0db; border-radius:8px; padding:0 10px; margin:8px 0; background:#f8faf9; line-height:40px; color:var(--mute); }
+.badge { background:var(--alert); color:#fff; border-radius:999px; padding:0 8px; font-size:11px; }
+.mark { width:56px; height:56px; border-radius:50%; background:var(--jade); color:#fff; display:flex; align-items:center; justify-content:center; font-size:22px; margin:20px auto 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="phone" data-id="c1"><div class="screen">
+  <div class="nav">预约</div>
+  <div class="scroll">
+    <div class="hero-t">疲劳酸痛，到肌松大师</div>
+    <div class="search">说说哪里不舒服，为你找师傅</div>
+    <div class="card">
+      <div class="sec-row"><b>特惠预约</b><span>更多活动</span></div>
+      <div class="row"><div class="thumb">技师照</div><div class="grow"><b>全身推拿放松</b><div class="price">¥188 <s style="color:#8b948f;font-weight:400">¥198</s></div><div class="meta">林晓 · 今天可约</div><div class="tag">9.5折 · 仅此1档</div></div><button class="pill">立即抢约</button></div>
+    </div>
+    <div class="card">
+      <div class="sec-row"><b>门店预约</b><span>更多门店</span></div>
+      <div class="row"><div class="thumb">门店</div><div class="grow"><b>肌松大师·演示旗舰店</b><div class="meta">10:00-22:00 <span class="lvl">就近</span></div><div class="jade">今晚可约</div></div><button class="pill ghost">预约</button></div>
+    </div>
+    <div class="card">
+      <div class="sec-row"><b>推拿师预约</b><span>按症找找</span></div>
+      <div class="row"><div class="avatar"></div><div class="grow"><b>林晓 <span class="lvl">资深</span></b><div class="price">4.9</div></div><button class="pill ghost">预约</button></div>
+    </div>
+  </div>
+  <div class="dock"><span class="on">预约</span><span>好礼</span><span>我的</span></div>
+</div></div>
+
+<div class="phone" data-id="c2"><div class="screen">
+  <div class="nav">哪里不舒服</div>
+  <div class="scroll">
+    <div class="card"><b>按部位选</b>
+      <div class="parts"><div class="part on">头颈肩</div><div class="part">腰背</div><div class="part">下肢</div></div>
+      <b>按不适选</b>
+      <div class="chips"><span class="chip on">僵硬</span><span class="chip">酸痛</span><span class="chip">睡眠差</span></div>
+    </div>
+    <div class="card">
+      <div class="sec-row"><b>头颈肩 · 推荐项目</b></div>
+      <div class="proj on"><div class="sec-row"><b>肩颈专项疏通</b><span class="price">¥128</span></div><div class="meta">60 分钟</div><div class="jade">今晚可约</div><button class="pill">选技师</button></div>
+    </div>
+    <div class="note">选不准可先到店，由技师面诊后调整项目。</div>
+  </div>
+</div></div>
+
+<div class="phone" data-id="c-stores"><div class="screen">
+  <div class="nav">选择门店</div>
+  <div class="scroll">
+    <div class="hero-t">选择门店</div>
+    <div class="card row" style="box-shadow:inset 0 0 0 2px #1e5c4a"><div class="thumb">门店实拍</div><div class="grow"><b>肌松大师·演示旗舰店</b><div class="meta">10:00–22:00 <span class="lvl">就近</span></div><div class="jade">今晚可约</div></div><button class="pill ghost">预约</button></div>
+    <div class="card"><div class="sec-row"><b>选择项目</b></div>
+      <div class="proj"><div class="sec-row"><b>全身推拿放松</b><span class="price">¥198</span></div><div class="meta">60 分钟</div><button class="pill">选时段</button></div>
+    </div>
+  </div>
+</div></div>
+
+<div class="phone" data-id="c-therapists"><div class="screen">
+  <div class="nav">选择推拿师</div>
+  <div class="scroll">
+    <div class="hero-t">选择推拿师</div>
+    <div class="card row" style="box-shadow:inset 0 0 0 2px #1e5c4a"><div class="avatar"></div><div class="grow"><b>林晓 <span class="lvl">资深</span></b><div class="price">4.9 分</div><div class="meta">手法稳、力度可调</div></div><button class="pill ghost">预约</button></div>
+    <div class="card row"><div class="avatar"></div><div class="grow"><b>陈默 <span class="lvl">中级</span></b><div class="price">4.8 分</div></div><button class="pill ghost">预约</button></div>
+    <div class="card"><div class="sec-row"><b>林晓 · 可做项目</b></div>
+      <div class="proj"><div class="sec-row"><b>全身推拿放松</b><span class="price">¥198</span></div><button class="pill">选时段</button></div>
+    </div>
+  </div>
+</div></div>
+
+<div class="phone" data-id="c3"><div class="screen">
+  <div class="nav">选择时段</div>
+  <div class="scroll">
+    <div class="card row"><div class="avatar"></div><div><b>林晓 <span class="lvl">资深</span></b><div class="price">4.9 分</div></div></div>
+    <div class="dates"><div class="date on">今天<br>15</div><div class="date">周六<br>16</div><div class="date">周日<br>17</div></div>
+    <div class="slots">
+      <span class="slot free">10:00</span><span class="slot booked">10:15</span><span class="slot locked">11:00</span>
+      <span class="slot busy">11:15</span><span class="slot free">19:30</span><span class="slot free">19:45</span>
+    </div>
+  </div>
+  <div class="paybar"><div><small>林晓 19:30</small><div class="price">¥198</div></div><button class="pill">去预约</button></div>
+</div></div>
+
+<div class="phone" data-id="c4"><div class="screen">
+  <div class="nav">确认支付</div>
+  <div class="scroll">
+    <div class="ticker">时段已锁定，请在 14:32 内完成支付</div>
+    <div class="card"><b>全身推拿放松</b><div class="meta">林晓 · 60 分钟</div>
+      <div class="kv"><span>到店时间</span><b>今天 19:30</b></div>
+      <div class="kv"><span>门店</span><b>肌松大师·演示旗舰店</b></div>
+      <div class="kv"><span>房间</span><span>到店由前台分配</span></div>
+    </div>
+    <div class="card"><b>支付方式</b><div class="pay">微信支付</div></div>
+  </div>
+  <div class="paybar"><div><div class="price">¥198</div><small>锁定 15 分钟</small></div><button class="pill">立即支付</button></div>
+</div></div>
+
+<div class="phone" data-id="c4-ok"><div class="screen">
+  <div class="nav">确认支付</div>
+  <div class="scroll">
+    <div class="ticker ok">支付成功 · 订单已预约</div>
+    <div class="card"><b>全身推拿放松</b><div class="meta">林晓 · 60 分钟</div>
+      <div class="kv"><span>到店时间</span><b>今天 19:30</b></div>
+      <div class="kv"><span>门店</span><b>肌松大师·演示旗舰店</b></div>
+    </div>
+  </div>
+  <div class="paybar"><div><div class="price">¥198</div><small>已预约</small></div><button class="pill">查看订单</button></div>
+</div></div>
+
+<div class="phone" data-id="c6"><div class="screen">
+  <div class="nav">我的</div>
+  <div class="scroll">
+    <div class="profile">
+      <div class="row"><div class="avatar g"></div><div><b>186****0302</b><div class="sub">调理 1 次 · 常约技师 林晓</div></div></div>
+      <div class="wallet"><div>储值余额<b>¥0.00</b></div><div>礼卡余额<b>¥0.00</b></div><span class="recharge">充值</span></div>
+    </div>
+    <div class="card">
+      <div class="sec-row"><b>下一次调理</b><span>全部订单 ›</span></div>
+      <div class="next-box">
+        <div class="sec-row"><b>全身推拿放松</b><em class="st">待到店</em></div>
+        <div class="meta">今天 19:30 · 林晓 · 演示旗舰店</div>
+        <div class="acts"><button class="pill">核销码</button><button class="pill ghost">改约</button><button class="pill ghost">取消</button></div>
+      </div>
+    </div>
+    <div class="card menu"><div>项目订单</div><div>好礼订单</div><div>我的券包</div><div>理疗档案 · 1 次记录</div></div>
+  </div>
+  <div class="dock"><span>预约</span><span>好礼</span><span class="on">我的</span></div>
+</div></div>
+
+<div class="phone" data-id="t-index"><div class="screen">
+  <div class="nav dark">员工端</div>
+  <div class="scroll" style="text-align:center;padding-top:24px">
+    <div class="mark">松</div>
+    <div style="font-size:18px;font-weight:700;color:var(--jade)">肌松大师 · 员工端</div>
+    <div class="meta">技师工作台 / 前台收银 / 店长审批</div>
+    <a class="go">技师 · 今日工作台</a>
+    <a class="go">前台 · 核销与收银</a>
+    <a class="go">店长 · 经营概览</a>
+    <a class="go ghost">门店排班（只读）</a>
+  </div>
+</div></div>
+
+<div class="phone" data-id="t1"><div class="screen">
+  <div class="hero-dark">
+    <div class="row"><div class="avatar g"></div><div class="grow"><b>林晓</b><div class="sub">资深技师 · 本店</div></div><span class="duty">在岗</span></div>
+    <div class="kpis"><div>今日已完成<b>0 钟</b></div><div>预估收入<b>—</b></div><div>今日满班<b>18%</b></div></div>
+  </div>
+  <div class="scroll">
+    <div class="next-card">
+      <div class="sec-row"><b>下一单</b><span class="eta">23 分钟后</span></div>
+      <div class="who">王女士 <span class="lvl">熟客</span></div>
+      <div>全身推拿放松</div>
+      <div class="when">19:30–20:30 <span class="room">3 号房</span></div>
+      <div class="acts"><button class="pill wide">开始服务</button><button class="pill ghost">档案</button></div>
+    </div>
+    <div class="card"><b>今日时间轴</b>
+      <div class="tl gap"><span>17:00</span><span>空档 90 分钟</span><button class="pill ghost">填满它</button></div>
+      <div class="tl"><span>19:30</span><span>王女士 · 全身推拿</span><em class="jade">待服务</em></div>
+    </div>
+  </div>
+  <div class="dock"><span class="on">工作台</span><span>排班</span><span>业绩</span><span>我的</span></div>
+</div></div>
+
+<div class="phone" data-id="t2"><div class="screen">
+  <div class="hero-dark center">
+    <div class="sub">服务进行中 · 3 号房</div>
+    <div class="timer">28:15</div>
+    <div class="sub">王女士 · 全身推拿放松</div>
+    <div class="acts"><button class="pill" style="background:transparent;border:1px solid rgba(255,255,255,.45)">申请加钟</button><button class="pill" style="background:#fff;color:#143f34">结束服务</button></div>
+  </div>
+  <div class="scroll">
+    <div class="card">
+      <div class="sec-row"><b>理疗记录</b><span>提交后不可删除</span></div>
+      <div class="field">主诉</div><div class="box">右侧颈肩僵硬，转头受限</div>
+      <div class="field">手法</div><div class="chips"><span class="chip on">滚法</span><span class="chip on">拿捏</span><span class="chip">点按</span></div>
+      <div class="field">力度</div><div class="chips"><span class="chip">轻</span><span class="chip on">中</span><span class="chip">重</span></div>
+      <div style="margin-top:10px">☑ 已向客户口头告知本次记录内容</div>
+    </div>
+    <button class="pill wide">提交记录并结单</button>
+  </div>
+</div></div>
+
+<div class="phone" data-id="f1"><div class="screen">
+  <div class="nav">门店前台</div>
+  <div class="scroll">
+    <div class="card"><b>到店核销</b>
+      <div class="input">JS20260815… 或 18600001111</div>
+      <button class="pill">查找</button>
+      <div class="sec-row" style="margin-top:12px"><div><b>A202608150007</b><div class="meta">王* · 3号房 3床</div></div><button class="pill">核销</button></div>
+    </div>
+    <div class="card"><b>散客开单</b>
+      <div class="input">18600001111</div>
+      <div class="input">王先生</div>
+      <div class="chips"><span class="chip">现金</span><span class="chip on">微信码</span></div>
+      <button class="pill wide">开单收款</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="phone" data-id="f2"><div class="screen">
+  <div class="nav">门店前台</div>
+  <div class="scroll">
+    <div class="card"><b>本单操作</b>
+      <div class="chips"><span class="chip on">加钟</span><span class="chip">换师</span><span class="chip">改约</span><span class="chip">退款</span></div>
+      <div class="input">订单 ID</div>
+      <div class="meta">加钟 30 分钟</div>
+      <button class="pill wide">确认加钟</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="phone" data-id="m1"><div class="screen">
+  <div class="hero-dark">
+    <b>经营概览</b>
+    <div class="sub" style="margin-top:8px">店长 · 本店 · 今日实时</div>
+    <div class="rate-row"><div>今日满班率<b class="big">0.0%</b></div><div>今日营收<b>—</b></div></div>
+    <div class="sub">剩余可售 slot · 19:00 后低谷</div>
+  </div>
+  <div class="scroll">
+    <div class="card"><div class="sec-row"><b>待我审批</b><span class="badge">0</span></div><div class="meta">队列已清空</div></div>
+    <div class="card"><b>门店实时</b><div class="sec-row" style="margin-top:8px"><span>演示旗舰店</span><em>0%</em></div></div>
+  </div>
+  <div class="dock"><span class="on">概览</span><span>审批</span><span>排班</span><span>我的</span></div>
+</div></div>
+
+<div class="phone" data-id="m2"><div class="screen">
+  <div class="nav">门店排班</div>
+  <div class="scroll">
+    <div class="card"><b>林晓 <span class="lvl">资深</span></b>
+      <div class="slots" style="margin-top:8px"><span class="slot booked">10:00 已约</span><span class="slot locked">19:30 锁</span><span class="slot busy">空档</span></div>
+    </div>
+    <div class="card"><b>陈默 <span class="lvl">中级</span></b>
+      <div class="slots" style="margin-top:8px"><span class="slot busy">空档 720'</span></div>
+    </div>
+    <div class="card"><b>周可 <span class="lvl">初级</span></b>
+      <div class="slots" style="margin-top:8px"><span class="slot booked">10:00 已约</span></div>
+    </div>
+  </div>
+  <div class="dock"><span>工作台</span><span class="on">排班</span><span>概览</span><span>我的</span></div>
+</div></div>
+
+</div>
+</body>
+</html>
