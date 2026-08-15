@@ -58,18 +58,27 @@ JSAPI 授权目录：
 
 本机已安装 `@wxcloud/cli`（`wxcloud`）。
 
+仓库是公开的，所以下面用占位符代替真实地址。取真实值：
+
+```
+wxcloud env:list                    # <ENV_ID>
+wxcloud service:list --envId <ENV_ID>   # <API_HOST> / <ADMIN_HOST>
+```
+
+本机另有一份 `docs/deploy-endpoints.local.md`（已在 `.gitignore`），记着当前实际地址。
+
 正式号 `wxf848c067f5807a75` 已开通环境：
 
-- 环境 ID：`prod-d3gvc0fd30c1c760d`
+- 环境 ID：`<ENV_ID>`
 - 微信自带模板 `springboot-tm6p` 已于 2026-08-15 部署成功（计数器 Demo，不是本仓库）
-- 模板公网：`https://springboot-tm6p-297565-11-1469372614.sh.run.tcloudbase.com`（可留着对照，不要写进小程序 `apiBase`）
+- 模板公网：`<模板服务域名>`（可留着对照，不要写进小程序 `apiBase`）
 
 ### 已部署服务（2026-08-15）
 
 | 服务 | 公网地址 | 说明 |
 | --- | --- | --- |
-| `muscle-api` | `https://muscle-api-297565-11-1469372614.sh.run.tcloudbase.com` | 本仓库 `server/`，端口 8080，`dev` profile + H2 |
-| `muscle-admin` | `https://muscle-admin-297565-11-1469372614.sh.run.tcloudbase.com` | 本仓库 `apps/admin-web/`，nginx:80，`/api/` 反代到 `muscle-api` |
+| `muscle-api` | `<API_HOST>` | 本仓库 `server/`，端口 8080，`dev` profile + H2 |
+| `muscle-admin` | `<ADMIN_HOST>` | 本仓库 `apps/admin-web/`，nginx:80，`/api/` 反代到 `muscle-api` |
 | `springboot-tm6p` | — | 微信自带计数器模板，可随时删除 |
 
 已验证：`GET /`（探活）、`GET /actuator/health`、`GET /api/v1/c/stores`、`GET /api/v1/c/therapists` 均 200，演示种子数据在。
@@ -78,11 +87,11 @@ JSAPI 授权目录：
 
 ```
 # API：跳过 target/，否则代码包超限
-cd server && wxcloud run:deploy . -e prod-d3gvc0fd30c1c760d -s muscle-api \
+cd server && wxcloud run:deploy . -e <ENV_ID> -s muscle-api \
   --containerPort 8080 --targetDir . --dockerfile Dockerfile --noConfirm --remark p0-demo
 
 # 管理后台：上传前先排除 node_modules/ 和 dist/（174M，CLI 不完全遵守 .dockerignore）
-cd apps/admin-web && wxcloud run:deploy . -e prod-d3gvc0fd30c1c760d -s muscle-admin \
+cd apps/admin-web && wxcloud run:deploy . -e <ENV_ID> -s muscle-admin \
   --containerPort 80 --targetDir . --dockerfile Dockerfile --noConfirm --remark p0-admin-web
 ```
 
@@ -94,13 +103,13 @@ cd apps/admin-web && wxcloud run:deploy . -e prod-d3gvc0fd30c1c760d -s muscle-ad
 
 ## 服务器域名（小程序后台）
 
-两个小程序的 `config.js` 已指向 `https://muscle-api-297565-11-1469372614.sh.run.tcloudbase.com`。
+两个小程序的 `config.js` 已指向 `<API_HOST>`。
 真机体验前必须在 MP 后台「开发管理 → 开发设置 → 服务器域名」把该域名加进 request 合法域名；
 开发者工具里可临时勾「不校验合法域名」跳过。
 
 | 类型 | C 端 | 员工端 |
 | --- | --- | --- |
-| request 合法域名 | [ ] `muscle-api-297565-11-1469372614.sh.run.tcloudbase.com` | [ ] 同左 |
+| request 合法域名 | [ ] `<API_HOST>` 的域名部分 | [ ] 同左 |
 | uploadFile | P0 可不配 | [ ] 头像/封面如走 OSS |
 | downloadFile | [ ] | [ ] |
 
@@ -117,17 +126,24 @@ cd apps/admin-web && wxcloud run:deploy . -e prod-d3gvc0fd30c1c760d -s muscle-ad
 | --- | --- | --- |
 | 0.2.0 | 2026-08-15 | 首个体验版。`apiBase` 还是局域网 IP，外部设备用不了 |
 | 0.3.0 | 2026-08-15 | `apiBase` 切云托管；「我的」页显示版本号 |
+| 0.4.0 | 2026-08-16 | 请求失败不再降级成本地假单，如实报错（`mockFallback` 默认关） |
 
 发布顺序（第一步不做，后面两步白费）：
 
 1. MP 后台配好 request 合法域名 —— 体验版在真机上强制校验，工具里的「不校验合法域名」只在工具内有效
-2. 开发者工具「上传」，版本号填 `0.3.0`
+2. 开发者工具「上传」，版本号填当前 `config.js` 里的 `version`
 3. MP 后台「版本管理」把这版设为体验版
+
+没配域名的症状（0.4.0 起会直接显示，此前会被吞成本地假单）：
+
+```
+request:fail url not in domain list
+```
 
 体验版二维码长期有效，**不用重新发给别人**；但只有「成员管理 → 体验成员」名单里的微信号能扫开。
 对方拿到新版要**完全退出小程序再进**（从最近使用列表划掉），下拉刷新不换代码包。
 
-谁都能开、不用加名单的那条路是 H5：`https://muscle-admin-297565-11-1469372614.sh.run.tcloudbase.com/phone/`，
+谁都能开、不用加名单的那条路是 H5：`<ADMIN_HOST>/phone/`，
 顾客 / 技师 / 店长三个角色都在里面。
 
 ## 验收签字

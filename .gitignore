@@ -11,3 +11,6 @@ dist/
 .env
 .env.local
 server/.mvn/wrapper/maven-wrapper.jar
+
+# Real deploy endpoints; public repo keeps placeholders in docs/
+docs/*.local.md
