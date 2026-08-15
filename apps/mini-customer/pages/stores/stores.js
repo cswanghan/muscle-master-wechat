@@ -42,7 +42,11 @@ Page({
       })
   },
   pickStore(e) {
-    const store = e.currentTarget.dataset.item
+    const id = e.currentTarget.dataset.id
+    const store = (this.data.stores || []).find((s) => String(s.storeId) === String(id))
+    if (!store) {
+      return
+    }
     if (this.data.projectId) {
       this.goCalendar(store, {
         projectId: this.data.projectId,
@@ -67,7 +71,11 @@ Page({
       })
   },
   pickProject(e) {
-    const p = e.currentTarget.dataset.item
+    const id = e.currentTarget.dataset.id
+    const p = (this.data.projects || []).find((x) => String(x.projectId) === String(id))
+    if (!p || !this.data.pickedStore) {
+      return
+    }
     this.goCalendar(this.data.pickedStore, p)
   },
   goCalendar(store, project) {

@@ -6,6 +6,7 @@
         wx:for="{{parts}}"
         wx:key="id"
         class="part {{selectedId===item.id?'on':''}}"
+        hover-class="tap"
         data-id="{{item.id}}"
         data-name="{{item.name}}"
         bindtap="pickSymptom"
@@ -20,6 +21,7 @@
         wx:for="{{discomforts}}"
         wx:key="id"
         class="chip {{selectedId===item.id?'on':''}}"
+        hover-class="tap"
         data-id="{{item.id}}"
         data-name="{{item.name}}"
         bindtap="pickSymptom"
@@ -37,7 +39,8 @@
       wx:for="{{projects}}"
       wx:key="projectId"
       class="proj {{index===0?'on':''}}"
-      data-item="{{item}}"
+      hover-class="tap"
+      data-id="{{item.projectId}}"
       bindtap="pickProject"
     >
       <view class="proj-top">

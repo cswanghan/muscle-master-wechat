@@ -49,13 +49,24 @@ Page({
           || (stores[0] && stores[0].storeId)
           || ''
         this.setData({ therapists, stores, storeId, storeName, loading: false })
+        const want = this.options && this.options.therapistId
+        if (want) {
+          const hit = therapists.find((x) => String(x.therapistId) === String(want))
+          if (hit) {
+            this.pickTherapist({ currentTarget: { dataset: { id: hit.therapistId } } })
+          }
+        }
       })
       .catch((err) => {
         this.setData({ error: err.message || '加载失败', loading: false })
       })
   },
   pickTherapist(e) {
-    const t = e.currentTarget.dataset.item
+    const id = e.currentTarget.dataset.id
+    const t = (this.data.therapists || []).find((x) => String(x.therapistId) === String(id))
+    if (!t) {
+      return
+    }
     this.setData({ picked: t, projects: [], loading: true })
     const storeId = this.data.storeId || t.homeStoreId
     request({ path: `/api/v1/c/projects?storeId=${storeId}` })
@@ -71,8 +82,12 @@ Page({
       })
   },
   pickProject(e) {
-    const p = e.currentTarget.dataset.item
+    const id = e.currentTarget.dataset.id
+    const p = (this.data.projects || []).find((x) => String(x.projectId) === String(id))
     const t = this.data.picked
+    if (!p || !t) {
+      return
+    }
     wx.navigateTo({
       url: '/pages/calendar/calendar?' + qs({
         storeId: this.data.storeId || t.homeStoreId,

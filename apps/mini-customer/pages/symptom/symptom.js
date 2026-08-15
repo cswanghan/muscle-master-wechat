@@ -50,7 +50,11 @@ Page({
       })
   },
   pickProject(e) {
-    const p = e.currentTarget.dataset.item
+    const id = e.currentTarget.dataset.id
+    const p = (this.data.projects || []).find((x) => String(x.projectId) === String(id))
+    if (!p) {
+      return
+    }
     const q = [
       `projectId=${p.projectId}`,
       `projectName=${encodeURIComponent(p.name)}`,

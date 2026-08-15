@@ -82,9 +82,101 @@ page {
   font-weight: 500;
 }
 
-.dock-svg {
+.dock-svg,
+.dock image {
+  width: 44rpx !important;
+  height: 44rpx !important;
+  display: block;
+  flex-shrink: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ico {
   width: 44rpx;
   height: 44rpx;
+  position: relative;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.ico-book {
+  border: 3rpx solid currentColor;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+}
+.ico-book::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 12rpx;
+  height: 3rpx;
+  background: currentColor;
+}
+.ico-book::after {
+  content: "";
+  position: absolute;
+  left: 14rpx;
+  top: 22rpx;
+  width: 10rpx;
+  height: 6rpx;
+  border-left: 3rpx solid currentColor;
+  border-bottom: 3rpx solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.ico-gift {
+  border: 3rpx solid currentColor;
+  border-radius: 6rpx;
+  box-sizing: border-box;
+  margin-top: 10rpx;
+  height: 34rpx;
+}
+.ico-gift::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -10rpx;
+  width: 3rpx;
+  height: 44rpx;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+.ico-gift::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8rpx;
+  height: 3rpx;
+  background: currentColor;
+}
+
+.ico-me {
+  border: 3rpx solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+  width: 20rpx;
+  height: 20rpx;
+  margin: 0 auto 22rpx;
+}
+.ico-me::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 22rpx;
+  width: 36rpx;
+  height: 18rpx;
+  border: 3rpx solid currentColor;
+  border-bottom: 0;
+  border-radius: 18rpx 18rpx 0 0;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+}
+
+.tap {
+  opacity: 0.65;
 }
 
 .dock-ico {

@@ -67,9 +67,9 @@
       <view class="bar-price">¥{{priceYuan}}</view>
       <view class="hint">锁定 15 分钟</view>
     </view>
-    <view wx:if="{{!orderId && !paid && !closed}}" class="btn" id="lock-btn" bindtap="lockOrder">确认预约</view>
-    <view wx:if="{{pending && !expired}}" class="btn" id="pay-btn" bindtap="lockAndPay">立即支付</view>
-    <view wx:if="{{paid || closed}}" class="btn" bindtap="goMine">查看订单</view>
+    <view wx:if="{{!orderId && !paid && !closed}}" class="btn" id="lock-btn" hover-class="tap" bindtap="lockOrder">确认预约</view>
+    <view wx:if="{{pending && !expired}}" class="btn" id="pay-btn" hover-class="tap" bindtap="lockAndPay">立即支付</view>
+    <view wx:if="{{paid || closed}}" class="btn" hover-class="tap" bindtap="goMine">查看订单</view>
   </view>
   <view wx:if="{{pending}}" class="ghost" bindtap="cancelOrder">取消预约</view>
 </view>

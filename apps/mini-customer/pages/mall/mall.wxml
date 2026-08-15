@@ -1,7 +1,7 @@
 <view class="page" id="c7-mall">
   <view class="sec-card">
     <view class="sec-name">肌松礼卡</view>
-    <view class="hero-card" bindtap="soon">
+    <view class="hero-card" hover-class="tap" bindtap="soon">
       <view>
         <view class="hero-title">项目礼卡</view>
         <view class="hero-sub">对症调理 · 健康守护</view>
@@ -53,16 +53,16 @@
   </view>
 
   <view class="dock">
-    <view class="dock-item" bindtap="goHome">
-      <image class="dock-svg" src="/images/dock/booking.svg" />
+    <view class="dock-item" hover-class="tap" bindtap="goHome">
+      <view class="ico ico-book"></view>
       <view>预约</view>
     </view>
     <view class="dock-item on">
-      <image class="dock-svg" src="/images/dock/gift-on.svg" />
+      <view class="ico ico-gift"></view>
       <view>好礼</view>
     </view>
-    <view class="dock-item" bindtap="goMine">
-      <image class="dock-svg" src="/images/dock/profile.svg" />
+    <view class="dock-item" hover-class="tap" bindtap="goMine">
+      <view class="ico ico-me"></view>
       <view>我的</view>
     </view>
   </view>

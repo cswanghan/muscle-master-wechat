@@ -102,8 +102,12 @@ Page({
         this.setData({ error: err.message || '加载失败', loading: false })
       })
   },
+  findOrder(id) {
+    return (this.data.orders || []).find((x) => String(x.orderId) === String(id))
+      || (this.data.next && String(this.data.next.orderId) === String(id) ? this.data.next : null)
+  },
   openOrder(e) {
-    const o = e.currentTarget.dataset.item
+    const o = this.findOrder(e.currentTarget.dataset.id)
     if (!o) {
       return
     }
@@ -114,7 +118,7 @@ Page({
     }
   },
   onCheckin(e) {
-    const o = e.currentTarget.dataset.item
+    const o = this.findOrder(e.currentTarget.dataset.id) || this.data.next
     wx.showModal({
       title: '核销码',
       content: '到店出示订单号\n' + (o && o.orderNo ? o.orderNo : '暂无'),
@@ -125,7 +129,7 @@ Page({
     wx.showToast({ title: '请联系前台改约', icon: 'none' })
   },
   onCancel(e) {
-    const o = e.currentTarget.dataset.item
+    const o = this.findOrder(e.currentTarget.dataset.id) || this.data.next
     if (!o || !o.orderId) {
       return
     }

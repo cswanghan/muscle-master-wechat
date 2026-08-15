@@ -7,6 +7,7 @@ Page({
     stores: [],
     therapists: [],
     nearStore: '',
+    error: '',
   },
   onShow() {
     this.load()
@@ -42,7 +43,10 @@ Page({
         therapists: thItems,
         deal,
         nearStore: storeItems[0] ? `${storeItems[0].name}` : '',
+        error: storeItems.length || deal ? '' : '列表为空，点下方入口仍可进入',
       })
+    }).catch((err) => {
+      this.setData({ error: (err && err.message) || '网络连不上本机接口，请确认同一 Wi-Fi 且已关代理' })
     })
   },
   goSymptom() {
@@ -72,9 +76,10 @@ Page({
     })
   },
   goStore(e) {
-    const store = e.currentTarget.dataset.item
+    const id = e.currentTarget.dataset.id
+    const store = (this.data.stores || []).find((s) => String(s.storeId) === String(id))
     const d = this.data.deal
-    if (d) {
+    if (store && d) {
       wx.navigateTo({
         url: `/pages/calendar/calendar?storeId=${store.storeId}&storeName=${encodeURIComponent(store.name)}&projectId=${d.projectId}&projectName=${encodeURIComponent(d.name)}&priceFen=${d.priceFen}&durationMinutes=${d.durationMinutes}&bufferMinutes=${d.bufferMinutes}`,
       })
@@ -83,7 +88,12 @@ Page({
     this.goStores()
   },
   goTherapist(e) {
-    const t = e.currentTarget.dataset.item
+    const id = e.currentTarget.dataset.id
+    const t = (this.data.therapists || []).find((x) => String(x.therapistId) === String(id))
+    if (!t) {
+      this.goTherapists()
+      return
+    }
     wx.navigateTo({
       url: `/pages/therapists/therapists?therapistId=${t.therapistId}`,
     })

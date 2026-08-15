@@ -80,19 +80,19 @@
 
   <view class="dock">
     <view class="dock-item on">
-      <image class="dock-svg" src="/images/dock/workbench-on.svg" />
+      <view class="ico"></view>
       <view>工作台</view>
     </view>
     <view class="dock-item" bindtap="goSchedule">
-      <image class="dock-svg" src="/images/dock/schedule.svg" />
+      <view class="ico"></view>
       <view>排班</view>
     </view>
     <view class="dock-item" bindtap="goPerf">
-      <image class="dock-svg" src="/images/dock/performance.svg" />
+      <view class="ico"></view>
       <view>业绩</view>
     </view>
     <view class="dock-item" bindtap="goMine">
-      <image class="dock-svg" src="/images/dock/profile.svg" />
+      <view class="ico"></view>
       <view>我的</view>
     </view>
   </view>

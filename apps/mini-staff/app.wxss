@@ -33,10 +33,27 @@ page {
   font-weight: 500;
 }
 
-.dock-svg {
-  width: 44rpx;
-  height: 44rpx;
+.dock-svg,
+.dock image {
+  width: 44rpx !important;
+  height: 44rpx !important;
+  display: block;
+  flex-shrink: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
+
+.ico {
+  width: 40rpx;
+  height: 40rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.tap { opacity: 0.65; }
 
 .brand {
   color: #1e5c4a;

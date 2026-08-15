@@ -36,49 +36,49 @@
       </view>
       <view class="meta">{{next.whenLabel}} · {{next.therapistName}} · {{next.storeLabel}}</view>
       <view class="acts">
-        <view class="btn sm" data-item="{{next}}" bindtap="onCheckin">核销码</view>
-        <view class="btn ghost sm" data-item="{{next}}" bindtap="onReschedule">改约</view>
-        <view class="btn ghost sm" data-item="{{next}}" bindtap="onCancel">取消</view>
+        <view class="btn sm" data-id="{{next.orderId}}" hover-class="tap" bindtap="onCheckin">核销码</view>
+        <view class="btn ghost sm" hover-class="tap" bindtap="onReschedule">改约</view>
+        <view class="btn ghost sm" data-id="{{next.orderId}}" hover-class="tap" bindtap="onCancel">取消</view>
       </view>
     </view>
     <view wx:else class="empty">暂无下次预约</view>
   </view>
 
   <view class="card menu">
-    <view class="menu-row" bindtap="scrollOrders">
+    <view class="menu-row" hover-class="tap" bindtap="scrollOrders">
       <view class="menu-ico"></view>
       <view class="grow">项目订单</view>
       <view class="menu-extra">{{orders.length}}</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row" bindtap="goMall">
+    <view class="menu-row" hover-class="tap" bindtap="goMall">
       <view class="menu-ico"></view>
       <view class="grow">好礼订单</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row" bindtap="goCoupon">
+    <view class="menu-row" hover-class="tap" bindtap="goCoupon">
       <view class="menu-ico"></view>
       <view class="grow">我的券包</view>
       <view class="badge">3</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row" bindtap="openArchive">
+    <view class="menu-row" hover-class="tap" bindtap="openArchive">
       <view class="menu-ico"></view>
       <view class="grow">理疗档案</view>
       <view class="menu-extra">{{visitCount}} 次记录</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row" bindtap="soon">
+    <view class="menu-row" hover-class="tap" bindtap="soon">
       <view class="menu-ico"></view>
       <view class="grow">邀请有奖</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row" bindtap="onService">
+    <view class="menu-row" hover-class="tap" bindtap="onService">
       <view class="menu-ico"></view>
       <view class="grow">联系客服</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row last" bindtap="onAbout">
+    <view class="menu-row last" hover-class="tap" bindtap="onAbout">
       <view class="menu-ico"></view>
       <view class="grow">关于肌松大师</view>
       <view class="chev">›</view>
@@ -92,7 +92,8 @@
       wx:for="{{orders}}"
       wx:key="orderId"
       class="order"
-      data-item="{{item}}"
+      data-id="{{item.orderId}}"
+      hover-class="tap"
       bindtap="openOrder"
     >
       <view class="order-top">
@@ -105,16 +106,16 @@
   </view>
 
   <view class="dock">
-    <view class="dock-item" bindtap="goHome">
-      <image class="dock-svg" src="/images/dock/booking.svg" />
+    <view class="dock-item" hover-class="tap" bindtap="goHome">
+      <view class="ico ico-book"></view>
       <view>预约</view>
     </view>
-    <view class="dock-item" bindtap="goMall">
-      <image class="dock-svg" src="/images/dock/gift.svg" />
+    <view class="dock-item" hover-class="tap" bindtap="goMall">
+      <view class="ico ico-gift"></view>
       <view>好礼</view>
     </view>
     <view class="dock-item on">
-      <image class="dock-svg" src="/images/dock/profile-on.svg" />
+      <view class="ico ico-me"></view>
       <view>我的</view>
     </view>
   </view>

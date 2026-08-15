@@ -139,7 +139,7 @@ Page({
   },
   pickSlot(e) {
     const { tid, tname, slot, start, price, bookable } = e.currentTarget.dataset
-    if (!bookable) {
+    if (bookable !== 1 && bookable !== '1' && bookable !== true) {
       return
     }
     const selected = {

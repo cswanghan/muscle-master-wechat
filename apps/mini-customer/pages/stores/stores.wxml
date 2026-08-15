@@ -8,7 +8,8 @@
     wx:for="{{stores}}"
     wx:key="storeId"
     class="card store {{pickedStore.storeId===item.storeId?'on':''}}"
-    data-item="{{item}}"
+    hover-class="tap"
+    data-id="{{item.storeId}}"
     bindtap="pickStore"
   >
     <view class="thumb">门店实拍</view>
@@ -25,7 +26,8 @@
     wx:for="{{projects}}"
     wx:key="projectId"
     class="card proj"
-    data-item="{{item}}"
+    hover-class="tap"
+    data-id="{{item.projectId}}"
     bindtap="pickProject"
   >
     <view class="proj-top">
