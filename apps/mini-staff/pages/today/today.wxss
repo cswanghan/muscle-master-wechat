@@ -21,8 +21,10 @@
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;
+  overflow: hidden;
   background: #3d7a68;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .hero-name {

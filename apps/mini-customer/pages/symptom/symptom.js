@@ -3,10 +3,10 @@ const { fenYuan } = require('../../utils/format.js')
 const mock = require('../../utils/mock.js')
 
 const FALLBACK_PARTS = [
-  { id: '3100000000000000601', name: '头颈肩', type: 'BODY_PART' },
-  { id: '3100000000000000602', name: '腰背', type: 'BODY_PART' },
-  { id: '3100000000000000604', name: '手臂', type: 'BODY_PART' },
-  { id: '3100000000000000605', name: '腿足', type: 'BODY_PART' },
+  { id: '3100000000000000601', name: '头颈肩', type: 'BODY_PART', photo: '/images/parts/neck.jpg' },
+  { id: '3100000000000000602', name: '腰背', type: 'BODY_PART', photo: '/images/parts/back.jpg' },
+  { id: '3100000000000000604', name: '手臂', type: 'BODY_PART', photo: '/images/parts/arm.jpg' },
+  { id: '3100000000000000605', name: '腿足', type: 'BODY_PART', photo: '/images/parts/leg.jpg' },
 ]
 
 const FALLBACK_DISCOMFORTS = [
@@ -44,7 +44,11 @@ Page({
   },
   applyItems(items) {
     const list = items || []
-    const parts = list.filter((s) => s.type === 'BODY_PART').map((s) => ({ ...s, name: labelOf(s) }))
+    const parts = list.filter((s) => s.type === 'BODY_PART').map((s) => ({
+      ...s,
+      name: labelOf(s),
+      photo: mock.partPhoto(s.name, s.id),
+    }))
     const discomforts = list.filter((s) => s.type === 'DISCOMFORT' && s.name !== '其他').map((s) => ({ ...s, name: labelOf(s) }))
     this.setData({
       parts: parts.length ? parts : FALLBACK_PARTS,

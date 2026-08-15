@@ -1,7 +1,7 @@
 <view class="page mine-page" id="c6-mine">
   <view class="profile">
     <view class="profile-top">
-      <view class="avatar"></view>
+      <image class="avatar" src="/images/avatar.jpg" mode="aspectFill" />
       <view class="grow">
         <view class="phone">{{phoneMask}}</view>
         <view class="sub">调理 {{visitCount}} 次 · 常约技师 {{favTherapist}}</view>

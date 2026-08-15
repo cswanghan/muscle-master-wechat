@@ -12,7 +12,7 @@
     data-id="{{item.therapistId}}"
     bindtap="pickTherapist"
   >
-    <view class="avatar"></view>
+    <image class="avatar" src="{{item.photo}}" mode="aspectFill" />
     <view class="grow">
       <view class="th-name">{{item.name}} <text class="lvl">{{item.levelLabel}}</text></view>
       <view class="copper">{{item.rating}} 分</view>

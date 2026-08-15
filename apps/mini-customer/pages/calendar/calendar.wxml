@@ -1,6 +1,6 @@
 <view class="page cal-page" id="c3-calendar">
   <view class="card th-card" wx:if="{{therapists[0]}}">
-    <view class="avatar"></view>
+    <image class="avatar" src="{{therapists[0].photo}}" mode="aspectFill" />
     <view class="grow">
       <view class="th-name">{{therapists[0].name}} <text class="chip">{{therapists[0].levelLabel}}</text></view>
       <view class="th-meta"><text class="copper">{{therapists[0].rating}} 分</text>  服务 1,204 次</view>

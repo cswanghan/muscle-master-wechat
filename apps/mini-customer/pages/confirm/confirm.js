@@ -38,6 +38,7 @@ Page({
     error: '',
     payParams: null,
     discountYuan: '0',
+    photo: '/images/therapists/lin.jpg',
   },
   timer: null,
   onLoad(query) {
@@ -46,6 +47,7 @@ Page({
       storeName: query.storeName ? decodeURIComponent(query.storeName) : '',
       therapistId: query.therapistId || '',
       therapistName: query.therapistName ? decodeURIComponent(query.therapistName) : '',
+      photo: mock.therapistPhoto(query.therapistId),
       projectId: query.projectId || '',
       projectName: query.projectName ? decodeURIComponent(query.projectName) : '',
       date: query.date || '',

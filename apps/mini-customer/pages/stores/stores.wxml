@@ -12,7 +12,7 @@
     data-id="{{item.storeId}}"
     bindtap="pickStore"
   >
-    <view class="thumb">门店实拍</view>
+    <image class="thumb" src="{{item.photo}}" mode="aspectFill" />
     <view class="grow">
       <view class="store-name">{{item.name}}</view>
       <view class="meta">{{item.businessStart || '10:00'}}–{{item.businessEnd || '22:00'}} <text wx:if="{{index===0}}" class="near">就近</text></view>

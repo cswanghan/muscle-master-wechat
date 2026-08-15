@@ -19,7 +19,10 @@ Page({
       request({ path: '/api/v1/c/therapists' }).catch(() => ({ items: [] })),
       request({ path: '/api/v1/c/projects' }).catch(() => ({ items: [] })),
     ]).then(([stores, therapists, projects]) => {
-      const storeItems = mock.first((stores.items || []).slice(0, 2), mock.stores)
+      const storeItems = mock.first(
+        (stores.items || []).slice(0, 2).map((s) => mock.decorateStore(s)),
+        mock.stores,
+      )
       const thItems = mock.first(
         (therapists.items || []).slice(0, 3).map((t) => mock.decorateTherapist(t)),
         mock.therapists,
@@ -31,6 +34,7 @@ Page({
             priceYuan: fenYuan(Math.round(p.priceFen * 0.95)),
             strikeYuan: fenYuan(p.priceFen),
             therapistName: (thItems[0] && thItems[0].name) || '推荐技师',
+            photo: (thItems[0] && thItems[0].photo) || mock.therapistPhoto(),
             projectId: p.projectId,
             priceFen: p.priceFen,
             durationMinutes: p.durationMinutes,
@@ -54,6 +58,7 @@ Page({
           priceYuan: fenYuan(Math.round(p.priceFen * 0.95)),
           strikeYuan: fenYuan(p.priceFen),
           therapistName: mock.therapists[0].name,
+          photo: mock.therapists[0].photo,
           projectId: p.projectId,
           priceFen: p.priceFen,
           durationMinutes: p.durationMinutes,

@@ -23,13 +23,10 @@
   width: 112rpx;
   height: 112rpx;
   border-radius: 16rpx;
-  background: repeating-linear-gradient(135deg, #efece6 0 10rpx, #f7f5f1 10rpx 20rpx);
-  color: #b7b1a6;
-  font-size: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
+  background: #edeae4;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .grow { flex: 1; min-width: 0; }

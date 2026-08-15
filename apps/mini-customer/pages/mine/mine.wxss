@@ -21,8 +21,10 @@
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
+  overflow: hidden;
   background: #3d7a68;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .phone {

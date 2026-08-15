@@ -13,7 +13,7 @@
         data-name="{{item.name}}"
         bindtap="pickSymptom"
       >
-        <view class="part-box"></view>
+        <image class="part-img" src="{{item.photo}}" mode="aspectFill" />
         <view>{{item.name}}</view>
       </view>
     </view>

@@ -36,7 +36,13 @@ Page({
     this.setData({ loading: true, error: '' })
     request({ path: '/api/v1/c/stores' })
       .then((page) => {
-        this.setData({ stores: mock.first((page && page.items) || [], mock.stores), loading: false })
+        this.setData({
+          stores: mock.first(
+            ((page && page.items) || []).map((s) => mock.decorateStore(s)),
+            mock.stores,
+          ),
+          loading: false,
+        })
       })
       .catch(() => {
         this.setData({ stores: mock.stores, loading: false })

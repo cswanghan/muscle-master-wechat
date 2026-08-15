@@ -12,7 +12,7 @@
       <view class="sec-more" hover-class="tap" bindtap="goMall">更多活动 ›</view>
     </view>
     <view wx:if="{{deal}}" class="deal" hover-class="tap" bindtap="goDeal">
-      <view class="thumb deal-thumb">技师照</view>
+      <image class="thumb deal-thumb" src="{{deal.photo}}" mode="aspectFill" />
       <view class="grow">
         <view class="deal-top">
           <view class="deal-name">{{deal.name}}</view>
@@ -44,7 +44,7 @@
       data-id="{{item.storeId}}"
       bindtap="goStore"
     >
-      <view class="thumb store-thumb">门店实拍</view>
+      <image class="thumb store-thumb" src="{{item.photo}}" mode="aspectFill" />
       <view class="grow">
         <view class="deal-top">
           <view class="deal-name">{{item.name}}</view>
@@ -72,7 +72,7 @@
       data-id="{{item.therapistId}}"
       bindtap="goTherapist"
     >
-      <view class="avatar"></view>
+      <image class="avatar" src="{{item.photo}}" mode="aspectFill" />
       <view class="grow">
         <view class="th-line">
           <text class="deal-name">{{item.name}}</text>

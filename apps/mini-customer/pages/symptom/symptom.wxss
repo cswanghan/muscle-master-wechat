@@ -39,20 +39,17 @@
   font-size: 26rpx;
 }
 
-.part-box {
-  width: 40rpx;
-  height: 40rpx;
-  border: 3rpx solid #c9cfcb;
-  border-radius: 8rpx;
+.part-img {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 16rpx;
+  pointer-events: none;
+  background: #fff;
 }
 
 .part.on {
   background: #1e5c4a;
   color: #fff;
-}
-
-.part.on .part-box {
-  border-color: #fff;
 }
 
 .chips {

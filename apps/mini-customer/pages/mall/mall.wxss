@@ -31,11 +31,28 @@
   margin-top: 24rpx;
   height: 300rpx;
   border-radius: 24rpx;
-  background: repeating-linear-gradient(45deg, #edeae4 0 16rpx, #f7f5f1 16rpx 32rpx);
+  overflow: hidden;
+  position: relative;
+}
+
+.hero-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.hero-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
   padding: 32rpx;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  background: linear-gradient(180deg, rgba(244,242,238,.15) 0%, rgba(20,63,52,.45) 100%);
   box-sizing: border-box;
 }
 
@@ -43,7 +60,11 @@
   font-family: "Noto Serif SC", "Songti SC", serif;
   font-size: 42rpx;
   font-weight: 600;
-  color: #1e5c4a;
+  color: #fff;
+}
+
+.hero-mask .hero-sub {
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .hero-sub,
@@ -51,6 +72,10 @@
   margin-top: 8rpx;
   font-size: 22rpx;
   color: #8b948f;
+}
+
+.hero-mask .price {
+  color: #f4d6a8;
 }
 
 .hero-bot {
@@ -108,14 +133,11 @@
 
 .g-img {
   height: 216rpx;
+  width: 100%;
   border-radius: 20rpx;
-  background: repeating-linear-gradient(45deg, #edeae4 0 12rpx, #f7f5f1 12rpx 24rpx);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 10rpx;
-  color: #9aa39e;
-  font-size: 18rpx;
+  overflow: hidden;
+  background: #edeae4;
+  pointer-events: none;
 }
 
 .g-name {

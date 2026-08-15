@@ -9,6 +9,35 @@ const P60 = '3100000000000000501'
 const P45 = '3100000000000000502'
 const P90 = '3100000000000000503'
 
+const PHOTO = {
+  [LIN]: '/images/therapists/lin.jpg',
+  [CHEN]: '/images/therapists/chen.jpg',
+  [ZHOU]: '/images/therapists/zhou.jpg',
+  [STORE_ID]: '/images/stores/flagship.jpg',
+  [STORE2_ID]: '/images/stores/yintai.jpg',
+  neck: '/images/parts/neck.jpg',
+  back: '/images/parts/back.jpg',
+  arm: '/images/parts/arm.jpg',
+  leg: '/images/parts/leg.jpg',
+}
+
+function therapistPhoto(id) {
+  return PHOTO[String(id)] || '/images/therapists/lin.jpg'
+}
+
+function storePhoto(id) {
+  return PHOTO[String(id)] || '/images/stores/flagship.jpg'
+}
+
+function partPhoto(name, id) {
+  const key = String(name || '') + String(id || '')
+  if (/颈|肩|头/.test(key) || id === '3100000000000000601') return PHOTO.neck
+  if (/腰|背|骶/.test(key) || id === '3100000000000000602') return PHOTO.back
+  if (/臂|手/.test(key) || id === '3100000000000000604') return PHOTO.arm
+  if (/腿|足/.test(key) || id === '3100000000000000605') return PHOTO.leg
+  return PHOTO.neck
+}
+
 const stores = [
   {
     storeId: STORE_ID,
@@ -17,6 +46,7 @@ const stores = [
     businessEnd: '22:00',
     open: true,
     near: true,
+    photo: '/images/stores/flagship.jpg',
   },
   {
     storeId: STORE2_ID,
@@ -25,6 +55,7 @@ const stores = [
     businessEnd: '22:00',
     open: true,
     near: false,
+    photo: '/images/stores/yintai.jpg',
   },
 ]
 
@@ -37,6 +68,7 @@ const therapists = [
     ratingX100: 490,
     rating: '4.9',
     intro: '肩颈深层，力度可调',
+    photo: '/images/therapists/lin.jpg',
     homeStoreId: STORE_ID,
     tags: ['头颈肩痛', '睡眠调理'],
     symptomNames: ['头颈肩痛', '睡眠调理'],
@@ -49,6 +81,7 @@ const therapists = [
     ratingX100: 480,
     rating: '4.8',
     intro: '腰背理筋',
+    photo: '/images/therapists/chen.jpg',
     homeStoreId: STORE_ID,
     tags: ['腰酸背痛', '久坐劳损'],
     symptomNames: ['腰酸背痛', '久坐劳损'],
@@ -61,6 +94,7 @@ const therapists = [
     ratingX100: 470,
     rating: '4.7',
     intro: '全身放松',
+    photo: '/images/therapists/zhou.jpg',
     homeStoreId: STORE_ID,
     tags: ['足底疲劳', '全身放松'],
     symptomNames: ['足底疲劳', '全身放松'],
@@ -100,6 +134,14 @@ function decorateTherapist(t) {
     rating: t.rating || rating(t.ratingX100),
     levelLabel: t.levelLabel || levelLabel(t.level) || '技师',
     tags: (t.symptomNames || t.tags || ['头颈肩痛', '睡眠调理']).slice(0, 2),
+    photo: t.photo || therapistPhoto(t.therapistId),
+  }
+}
+
+function decorateStore(s) {
+  return {
+    ...s,
+    photo: s.photo || storePhoto(s.storeId),
   }
 }
 
@@ -196,6 +238,10 @@ module.exports = {
   therapists,
   projects,
   decorateTherapist,
+  decorateStore,
+  therapistPhoto,
+  storePhoto,
+  partPhoto,
   first,
   mockAvailability,
   readOrders,

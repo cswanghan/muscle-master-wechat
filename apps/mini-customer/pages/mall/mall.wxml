@@ -2,13 +2,13 @@
   <view class="sec-card">
     <view class="sec-name">肌松礼卡</view>
     <view class="hero-card" hover-class="tap" bindtap="soon">
-      <view>
-        <view class="hero-title">项目礼卡</view>
-        <view class="hero-sub">对症调理 · 健康守护</view>
-      </view>
-      <view class="hero-bot">
+      <image class="hero-img" src="/images/goods/giftcard.jpg" mode="aspectFill" />
+      <view class="hero-mask">
+        <view>
+          <view class="hero-title">项目礼卡</view>
+          <view class="hero-sub">对症调理 · 健康守护</view>
+        </view>
         <view class="price">¥119 起</view>
-        <view class="ph">礼卡主视觉</view>
       </view>
     </view>
     <view class="split">
@@ -32,12 +32,12 @@
     </view>
     <view class="goods">
       <view class="good" bindtap="soon">
-        <view class="g-img">商品图</view>
+        <image class="g-img" src="/images/goods/pillow.jpg" mode="aspectFill" />
         <view class="g-name">护颈助眠小枕</view>
         <view class="price sm">¥299.00</view>
       </view>
       <view class="good" bindtap="soon">
-        <view class="g-img">商品图</view>
+        <image class="g-img" src="/images/goods/pack.jpg" mode="aspectFill" />
         <view class="g-name">祛寒理疗包</view>
         <view class="price sm">¥199.00</view>
       </view>

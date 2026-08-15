@@ -72,15 +72,10 @@
   width: 148rpx;
   height: 176rpx;
   border-radius: 20rpx;
-  background: repeating-linear-gradient(45deg, #edeae4 0 12rpx, #f7f5f1 12rpx 24rpx);
-  color: #9aa39e;
-  font-size: 18rpx;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 10rpx;
-  box-sizing: border-box;
+  background: #edeae4;
   flex-shrink: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .store-thumb {

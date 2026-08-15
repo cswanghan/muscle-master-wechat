@@ -21,8 +21,10 @@
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  background: repeating-linear-gradient(135deg, #efece6 0 10rpx, #f7f5f1 10rpx 20rpx);
+  overflow: hidden;
+  background: #edeae4;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .grow { flex: 1; min-width: 0; }

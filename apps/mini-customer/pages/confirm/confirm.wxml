@@ -7,7 +7,7 @@
   <view wx:if="{{paid}}" class="ticker ok">支付成功 · 订单已预约</view>
 
   <view class="card head-card">
-    <view class="avatar"></view>
+    <image class="avatar" src="{{photo}}" mode="aspectFill" />
     <view class="grow">
       <view class="title">{{projectName}}</view>
       <view class="hint">{{therapistName}} · 指定加成 ¥0</view>
