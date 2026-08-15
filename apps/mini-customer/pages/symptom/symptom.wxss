@@ -20,12 +20,14 @@
 
 .parts {
   display: flex;
+  flex-wrap: wrap;
   gap: 16rpx;
   margin-bottom: 28rpx;
 }
 
 .part {
-  flex: 1;
+  width: 22%;
+  flex: none;
   height: 160rpx;
   border-radius: 20rpx;
   background: #f4f2ee;

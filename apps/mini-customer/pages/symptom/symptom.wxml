@@ -1,4 +1,6 @@
 <view class="page" id="c2-symptom">
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+  <view wx:if="{{loading && !parts.length}}" class="hint">加载中…</view>
   <view class="card">
     <view class="sec">按部位选</view>
     <view class="parts">

@@ -14,6 +14,15 @@ public final class DemoCatalogIds {
     public static final long SYMPTOM_NECK = 3_100_000_000_000_000_601L;
     public static final long SYMPTOM_BACK = 3_100_000_000_000_000_602L;
     public static final long SYMPTOM_SORE = 3_100_000_000_000_000_603L;
+    public static final long SYMPTOM_ARM = 3_100_000_000_000_000_604L;
+    public static final long SYMPTOM_LEG = 3_100_000_000_000_000_605L;
+    public static final long SYMPTOM_SIT = 3_100_000_000_000_000_611L;
+    public static final long SYMPTOM_SLEEP = 3_100_000_000_000_000_612L;
+    public static final long SYMPTOM_BACK_PAIN = 3_100_000_000_000_000_613L;
+    public static final long SYMPTOM_STIFF = 3_100_000_000_000_000_614L;
+    public static final long SYMPTOM_HEAD = 3_100_000_000_000_000_615L;
+    public static final long SYMPTOM_POSTPARTUM = 3_100_000_000_000_000_616L;
+    public static final long SYMPTOM_FOOT = 3_100_000_000_000_000_617L;
     /** Fixture-only: no SKU mapping, for C2 empty hint. */
     public static final long SYMPTOM_OTHER = 3_100_000_000_000_000_699L;
     public static final long TEMPLATE_BASE = 3_100_000_000_000_000_700L;

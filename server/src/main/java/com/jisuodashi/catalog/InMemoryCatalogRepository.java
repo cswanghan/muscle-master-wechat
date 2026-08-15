@@ -106,13 +106,32 @@ public class InMemoryCatalogRepository implements CatalogRepository {
 
         symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_NECK, null, "BODY_PART", "肩颈", 1, 1));
         symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_BACK, null, "BODY_PART", "腰骶", 2, 1));
-        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_SORE, null, "DISCOMFORT", "酸胀", 3, 1));
-        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_OTHER, null, "DISCOMFORT", "其他", 9, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_ARM, null, "BODY_PART", "手臂", 3, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_LEG, null, "BODY_PART", "腿足", 4, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_SIT, null, "DISCOMFORT", "久坐僵硬", 5, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_SLEEP, null, "DISCOMFORT", "睡不好", 6, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_BACK_PAIN, null, "DISCOMFORT", "腰酸背痛", 7, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_STIFF, null, "DISCOMFORT", "肩周僵硬", 8, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_HEAD, null, "DISCOMFORT", "头痛头晕", 9, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_POSTPARTUM, null, "DISCOMFORT", "产后调理", 10, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_FOOT, null, "DISCOMFORT", "足底疲劳", 11, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_SORE, null, "DISCOMFORT", "酸胀", 12, 1));
+        symptoms.add(new CatalogModels.Symptom(DemoCatalogIds.SYMPTOM_OTHER, null, "DISCOMFORT", "其他", 19, 1));
 
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.PROJECT_P60));
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.PROJECT_P45));
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.PROJECT_P60));
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.PROJECT_P90));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_ARM, DemoCatalogIds.PROJECT_P45));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_LEG, DemoCatalogIds.PROJECT_P60));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SIT, DemoCatalogIds.PROJECT_P45));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SIT, DemoCatalogIds.PROJECT_P60));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SLEEP, DemoCatalogIds.PROJECT_P60));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_BACK_PAIN, DemoCatalogIds.PROJECT_P90));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_STIFF, DemoCatalogIds.PROJECT_P45));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_HEAD, DemoCatalogIds.PROJECT_P45));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_POSTPARTUM, DemoCatalogIds.PROJECT_P60));
+        symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_FOOT, DemoCatalogIds.PROJECT_P60));
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P60));
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P45));
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P90));
