@@ -54,6 +54,18 @@ JSAPI 授权目录：
 - [ ] Native 下单权限
 - [ ] 回调 URL 已在商户平台登记（`/api/v1/pay/wechat/notify`）
 
+## 微信云托管（远程体验）
+
+本机已安装 `@wxcloud/cli`（`wxcloud`）。部署前管理员在控制台完成：
+
+1. 打开 [云托管控制台](https://cloud.weixin.qq.com/cloudrun)，用正式号 `wxf848c067f5807a75` 开通环境
+2. [设置 → CLI 密钥](https://cloud.weixin.qq.com/cloudrun/settings/other) 生成密钥（管理员扫码）
+3. 本机执行：`wxcloud login --appId wxf848c067f5807a75`，粘贴密钥
+4. 部署 API：`cd server && wxcloud service:create -s muscle-api --isPublic`  
+   然后 `wxcloud run:deploy . -s muscle-api --containerPort 8080 --noConfirm --remark p0-demo`
+
+`server/wxcloud.config.js` 已按 8080 / 现有 Dockerfile 配好。首次用 `dev` profile（H2），不必先挂 MySQL。
+
 ## 服务器域名（小程序后台）
 
 | 类型 | C 端 | 员工端 |
