@@ -39,14 +39,14 @@
     </div>
 
     <div class="card warn">
-      远程朋友请扫「公网体验」码，不需要同一 Wi-Fi。电脑要开着，隧道断了码就失效。微信正式体验版还要把对方加成体验者，并配置 https 合法域名。
+      「公网体验」码跑在微信云托管上，不用同一 Wi-Fi，也不用我的电脑开着，随时可扫。微信正式体验版另说：要把对方加成体验成员，并在 MP 后台配好 https 合法域名。
     </div>
 
     <div class="card">
       <div class="title">远程扫码 · 公网体验</div>
       <div class="qr">
         <img src="./remote-qr.png" width="240" height="240" alt="远程体验码" />
-        <div class="url">https://disposition-commissioner-student-prefer.trycloudflare.com/phone/app.html#c1</div>
+        <div class="url" id="url-app"></div>
       </div>
     </div>
 
@@ -54,7 +54,8 @@
       <div class="title">当面扫码 · 顾客端小程序（需加体验者）</div>
       <div class="qr">
         <img src="./wechat-c-preview.jpg" width="240" height="240" alt="顾客端微信预览码" />
-        <div class="url">AppID wx212c1b4e136ef4e0 · 开发版预览</div>
+        <div class="url">AppID wxf848c067f5807a75 · 开发版预览</div>
+        <div class="url">预览码 25 分钟失效，过期请在开发者工具重新生成</div>
       </div>
     </div>
 
@@ -62,7 +63,6 @@
       <div class="title">备用：手机浏览器 H5</div>
       <div class="qr">
         <img src="./qr.png" width="196" height="196" alt="扫码打开真机 Demo" />
-        <canvas id="qr" width="196" height="196" style="display:none"></canvas>
         <div class="url" id="url"></div>
       </div>
     </div>
@@ -83,17 +83,16 @@
         <li>我的：看下一单、核销码、改约提示、券包 / 好礼。</li>
         <li>技师端：下一单开始服务、空档「填满它」、业绩明细。</li>
         <li>店长端：满班率 + 待审批。</li>
-        <li>员工端还没有正式 AppID，请再注册一个员工端小程序后发给我。</li>
+        <li>员工端小程序还没有正式 AppID（仍是 touristappid），只能在开发者工具里跑。这里的技师端 / 店长端是 H5 版，功能一致。</li>
+        <li>支付会先弹一次微信失败提示，然后自动走演示回调把订单置为已支付，这是预期行为。</li>
       </ol>
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script>
-    const url = location.origin + '/phone/app.html#c1'
-    document.getElementById('url').textContent = url
-    if (window.QRCode) {
-      QRCode.toCanvas(document.getElementById('qr'), url, { width: 196, margin: 1, color: { dark: '#143F34', light: '#FFFFFF' } })
-    }
+    // The two PNGs are pre-rendered for the CloudBase host. Showing the live origin
+    // makes a stale image obvious instead of silently handing out a dead link.
+    document.getElementById('url-app').textContent = location.origin + '/phone/app.html#c1'
+    document.getElementById('url').textContent = location.origin + '/phone/'
   </script>
 </body>
 </html>

@@ -1,7 +1,8 @@
-/** Byte-mode QR, ECC L, versions 1–10. Encodes Native code_url for the iPad desk. */
-const BYTE_CAP = [0, 17, 32, 53, 78, 106, 134]
-const DATA_CW = [0, 19, 34, 55, 80, 108, 136]
-const EC_L = [0, 7, 10, 15, 20, 26, 36]
+/** Byte-mode QR, ECC L, versions 1–5. Encodes Native code_url for the iPad desk. */
+const MAX_VERSION = 5
+const BYTE_CAP = [0, 17, 32, 53, 78, 106]
+const DATA_CW = [0, 19, 34, 55, 80, 108]
+const EC_L = [0, 7, 10, 15, 20, 26]
 const ALIGN: Record<number, number[]> = {
   2: [6, 18],
   3: [6, 22],
@@ -152,11 +153,13 @@ export function qrModules(text: string): boolean[][] {
   if (!text) {
     return []
   }
+  // Capped at 5: version 6-L splits into two RS blocks with interleaving, which
+  // rsEcc does not implement. 106 bytes covers the Native code_url this encodes.
   let version = 1
-  while (version <= 6 && text.length > BYTE_CAP[version]) {
+  while (version <= MAX_VERSION && text.length > BYTE_CAP[version]) {
     version++
   }
-  if (version > 6) {
+  if (version > MAX_VERSION) {
     return []
   }
   let best: boolean[][] | null = null
@@ -218,6 +221,9 @@ export function qrModules(text: string): boolean[][] {
           for (let dy = -2; dy <= 2; dy++) {
             for (let dx = -2; dx <= 2; dx++) {
               mod[y + dy][x + dx] = Math.max(Math.abs(dx), Math.abs(dy)) !== 1
+              // Must also be reserved, or the data pass below overwrites the
+              // pattern and every version >= 2 becomes unscannable.
+              mark(x + dx, y + dy)
             }
           }
         })
