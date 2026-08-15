@@ -130,7 +130,37 @@ cd apps/admin-web && wxcloud run:deploy . -e <ENV_ID> -s muscle-admin \
 | uploadFile | P0 可不配 | [ ] 头像/封面如走 OSS |
 | downloadFile | [ ] | [ ] |
 
-员工端 `apps/mini-staff/project.config.json` 仍是 `touristappid`，只能在工具里跑，无法真机预览/上传，需要单独的小程序 AppID。
+## 员工端上传（阻塞中）
+
+`apps/mini-staff/project.config.json` 的 `appid` 还是 `touristappid`，上传直接被拒：
+
+```
+Error: AppID 不合法, invalid appid (code 10)
+```
+
+游客号只能在开发者工具里跑，不能预览、不能上传、不能设体验版。**必须注册第二个小程序**，
+员工端和顾客端是两个独立小程序，不能共用一个 AppID。
+
+拿到 AppID 之后：
+
+1. 填进 `apps/mini-staff/project.config.json` 的 `appid`
+2. `wxcloud`/开发者工具 CLI 上传：
+   `cli upload --project apps/mini-staff -v 0.1.0 -d "员工端首个体验版"`
+3. **必须在员工端自己的 MP 后台配 request 合法域名**（见下）
+
+### 员工端为什么用不了 callContainer
+
+`wx.cloud.callContainer` 要求小程序和云托管服务在**同一 AppID** 下，而服务开在顾客端
+`wxf848c067f5807a75` 的环境里。员工端换了 AppID 就走不了这条路，只能 `wx.request` 打
+`apiBase`，因此那个域名必须登记进员工端的 request 合法域名，否则一样是 `url not in domain list`。
+
+要让员工端也免配域名，就得在员工端 AppID 下另开一个云托管环境部署同一个镜像——但两个环境
+各自一份 H2 内存库，数据不互通，等于两套系统。除非先切到共享的 MySQL，否则不要这么做。
+
+### 演示等不及的话
+
+H5 版 `<ADMIN_HOST>/phone/` 里技师端和店长端都在，功能一致，随时能发。
+注册小程序要过主体和类目审核，别把演示排期压在它上面。
 
 ## 体验版发布
 
