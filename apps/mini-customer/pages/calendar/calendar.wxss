@@ -9,6 +9,8 @@
 }
 
 .dates {
+  display: flex;
+  gap: 16rpx;
   white-space: nowrap;
   margin-bottom: 16rpx;
 }
@@ -17,12 +19,10 @@
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  width: 112rpx;
-  padding: 12rpx 0;
-  margin-right: 12rpx;
-  border-radius: 16rpx;
-  background: #fff;
-  border: 1rpx solid #d7e6df;
+  flex: 1;
+  padding: 18rpx 0;
+  border-radius: 20rpx;
+  background: #f8f7f4;
 }
 
 .date.on {
@@ -99,7 +99,7 @@
 .slots {
   display: flex;
   flex-wrap: wrap;
-  gap: 8rpx;
+  gap: 18rpx;
 }
 
 .slot {
@@ -109,16 +109,19 @@
   text-align: center;
   font-size: 26rpx;
   border-radius: 16rpx;
+  font-family: ui-monospace, Menlo, monospace;
 }
 
 .slot.free {
   background: #e8f0ec;
   color: #1e5c4a;
+  border: 1rpx solid #cfe0d7;
 }
 
 .slot.locked {
   background: #faf1e4;
   color: #a9752f;
+  border: 1rpx solid #e8d3b2;
 }
 
 .slot.booked,

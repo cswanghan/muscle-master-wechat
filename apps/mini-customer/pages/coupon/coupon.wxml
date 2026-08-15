@@ -1,0 +1,46 @@
+<view class="page" id="c5-coupon">
+  <view class="tabs">
+    <view class="tab {{tab==='unused'?'on':''}}" data-tab="unused" bindtap="switchTab">
+      <text>未使用 {{unused.length}}</text>
+      <view class="bar"></view>
+    </view>
+    <view class="tab {{tab==='used'?'on':''}}" data-tab="used" bindtap="switchTab">
+      <text>已使用 0</text>
+      <view class="bar"></view>
+    </view>
+    <view class="tab {{tab==='expired'?'on':''}}" data-tab="expired" bindtap="switchTab">
+      <text>已过期 0</text>
+      <view class="bar"></view>
+    </view>
+  </view>
+
+  <view wx:if="{{tab==='unused'}}" class="list">
+    <view wx:for="{{unused}}" wx:key="id" class="ticket">
+      <view class="left {{item.tone}}">
+        <view class="amt">{{item.amount}}</view>
+        <view class="cap">{{item.cap}}</view>
+      </view>
+      <view class="right">
+        <view class="title">{{item.title}}</view>
+        <view class="rule">{{item.rule}}</view>
+        <view wx:if="{{item.date}}" class="date">{{item.date}}</view>
+        <view wx:if="{{item.expire}}" class="expire">{{item.expire}}</view>
+        <view class="row">
+          <view class="link" bindtap="showRule">规则 ⌄</view>
+          <view class="btn {{item.solid?'':'ghost'}} sm" bindtap="useCoupon">去使用</view>
+        </view>
+      </view>
+    </view>
+    <view class="foot-hint">同一订单可叠加 1 张券 + 时段折扣；储值赠金不与券叠加。</view>
+  </view>
+  <view wx:else class="empty">暂无此类券</view>
+
+  <view class="notify">
+    <view class="mark">松</view>
+    <view class="grow">
+      <view class="n-title">关注服务通知</view>
+      <view class="n-sub">开启后到店提醒与优惠券到期提醒</view>
+    </view>
+    <view class="btn sm" bindtap="enableNotify">开启</view>
+  </view>
+</view>

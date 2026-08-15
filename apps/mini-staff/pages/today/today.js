@@ -175,7 +175,7 @@ Page({
     this.openService()
   },
   fillGap() {
-    wx.navigateTo({ url: '/pages/schedule/schedule' })
+    wx.navigateTo({ url: '/pages/promotions/promotions' })
   },
   openRow(e) {
     const id = e.currentTarget.dataset.id
@@ -188,7 +188,10 @@ Page({
     this.loadToday()
   },
   soon() {
-    wx.showToast({ title: '业绩明细稍后开通', icon: 'none' })
+    wx.navigateTo({ url: '/pages/performance/performance' })
+  },
+  goPerf() {
+    wx.navigateTo({ url: '/pages/performance/performance' })
   },
   goSchedule() {
     wx.navigateTo({ url: '/pages/schedule/schedule' })

@@ -77,19 +77,19 @@
 
   <view class="dock">
     <view class="dock-item on">
-      <view class="dock-ico"></view>
+      <image class="dock-svg" src="/images/dock/overview-on.svg" />
       <view>概览</view>
     </view>
     <view class="dock-item" bindtap="scrollTasks">
-      <view class="dock-ico"></view>
+      <image class="dock-svg" src="/images/dock/approval.svg" />
       <view>审批</view>
     </view>
     <view class="dock-item" bindtap="goSchedule">
-      <view class="dock-ico"></view>
+      <image class="dock-svg" src="/images/dock/schedule.svg" />
       <view>排班</view>
     </view>
     <view class="dock-item" bindtap="goMine">
-      <view class="dock-ico me"></view>
+      <image class="dock-svg" src="/images/dock/profile.svg" />
       <view>我的</view>
     </view>
   </view>

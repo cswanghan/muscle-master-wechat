@@ -19,19 +19,19 @@
   <view wx:if="{{!loading && !rows.length}}" class="empty">今日暂无排班</view>
   <view class="dock">
     <view class="dock-item" bindtap="goToday">
-      <view class="dock-ico"></view>
+      <image class="dock-svg" src="/images/dock/workbench.svg" />
       <view>工作台</view>
     </view>
     <view class="dock-item on">
-      <view class="dock-ico"></view>
+      <image class="dock-svg" src="/images/dock/schedule-on.svg" />
       <view>排班</view>
     </view>
-    <view class="dock-item" bindtap="goManager">
-      <view class="dock-ico"></view>
-      <view>概览</view>
+    <view class="dock-item" bindtap="goPerf">
+      <image class="dock-svg" src="/images/dock/performance.svg" />
+      <view>业绩</view>
     </view>
     <view class="dock-item" bindtap="goMine">
-      <view class="dock-ico me"></view>
+      <image class="dock-svg" src="/images/dock/profile.svg" />
       <view>我的</view>
     </view>
   </view>

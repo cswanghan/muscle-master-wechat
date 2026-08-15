@@ -1,6 +1,6 @@
 page {
-  background-color: #f4f1ea;
-  color: #1a1c1b;
+  background-color: #f4f2ee;
+  color: #17211d;
   font-size: 28rpx;
   min-height: 100%;
 }
@@ -59,10 +59,10 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 120rpx;
-  background: #faf8f3;
-  border-top: 1rpx solid #d7e6df;
+  background: #fff;
+  border-top: 1rpx solid #edeae4;
   display: flex;
+  padding: 18rpx 0 44rpx;
   z-index: 20;
 }
 
@@ -72,29 +72,29 @@ page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8rpx;
   color: #8b948f;
   font-size: 22rpx;
 }
 
 .dock-item.on {
   color: #1e5c4a;
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.dock-svg {
+  width: 44rpx;
+  height: 44rpx;
 }
 
 .dock-ico {
-  width: 48rpx;
-  height: 48rpx;
+  width: 44rpx;
+  height: 44rpx;
   border-radius: 50%;
-  background: #e8f0ec;
-  color: #1e5c4a;
+  background: transparent;
+  color: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 22rpx;
-  margin-bottom: 6rpx;
-}
-
-.dock-item.on .dock-ico {
-  background: #1e5c4a;
-  color: #f4f1ea;
 }

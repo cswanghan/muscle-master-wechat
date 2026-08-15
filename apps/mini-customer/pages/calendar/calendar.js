@@ -78,9 +78,10 @@ Page({
   },
   onLoad(query) {
     const dates = []
-    for (let i = 0; i < 7; i += 1) {
+    for (let i = 0; i < 5; i += 1) {
       const iso = addDays(demoDate, i)
-      dates.push({ iso, day: iso.slice(8), week: weekday(iso), on: i === 0 })
+      const label = i === 0 ? '今天' : i === 1 ? '明天' : '周' + weekday(iso)
+      dates.push({ iso, day: iso.slice(8), week: weekday(iso), label, left: '—', on: i === 0 })
     }
     this.setData({
       storeId: query.storeId || '',
@@ -128,7 +129,9 @@ Page({
       .then((data) => {
         const selected = this.data.selected
         const therapists = ((data && data.therapists) || []).map((t) => paintTherapist(t, selected))
-        this.setData({ therapists, loading: false })
+        const left = therapists.reduce((n, t) => n + ((t.starts && t.starts.length) || (t.slots || []).filter((s) => s.bookable).length), 0)
+        const dates = this.data.dates.map((d) => (d.iso === this.data.date ? { ...d, left } : d))
+        this.setData({ therapists, dates, loading: false })
       })
       .catch((err) => {
         this.setData({ error: err.message || '加载失败', loading: false })

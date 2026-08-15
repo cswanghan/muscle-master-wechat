@@ -116,6 +116,16 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         seedBedSlots(BED2, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
         seedBedSlots(BED2, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
         seedOccupancy(ResourceType.BED, BED2, DEMO_DATE, 40, 45);
+
+        // 后续 14 天全空，方便真机按「今天」下单
+        for (int day = 1; day < 15; day++) {
+            LocalDate date = DEMO_DATE.plusDays(day);
+            seedTherapistSlots(t1, date, OPEN, CLOSE, SlotStatus.FREE);
+            seedTherapistSlots(t2, date, OPEN, CLOSE, SlotStatus.FREE);
+            seedTherapistSlots(t3, date, OPEN, CLOSE, SlotStatus.FREE);
+            seedBedSlots(BED1, date, OPEN, CLOSE, SlotStatus.FREE);
+            seedBedSlots(BED2, date, OPEN, CLOSE, SlotStatus.FREE);
+        }
     }
 
     @Override

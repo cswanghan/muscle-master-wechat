@@ -22,15 +22,42 @@
 
   <view class="card">
     <view class="sec">优惠</view>
-    <view class="coupon on">新客体验券（P0 演示） <text class="price">-0</text></view>
-    <view class="coupon off">满 300 减 50 <text class="warn">未满门槛</text></view>
+    <view class="coupon on">
+      <view class="dot on">✓</view>
+      <view class="grow">
+        <view>新客体验券 ¥20</view>
+        <view class="hint">周一至周五 10:00–17:00 可用</view>
+      </view>
+      <text class="off-amt">-20</text>
+    </view>
+    <view class="coupon off">
+      <view class="dot"></view>
+      <view class="grow">
+        <view>满 300 减 50</view>
+        <view class="warn">未满门槛，还差 ¥101</view>
+      </view>
+    </view>
+    <view class="pay-row">
+      <text class="k">9.5 折时段优惠</text>
+      <text class="off-amt">-{{discountYuan}}</text>
+    </view>
   </view>
 
   <view class="card">
     <view class="sec">支付方式</view>
-    <view class="pay-row off">储值余额 ¥0.00 <text class="hint">去充值</text></view>
-    <view class="pay-row off">礼卡余额 ¥0.00</view>
-    <view class="pay-row on">微信支付</view>
+    <view class="pay-row off">
+      <view class="dot"></view>
+      <text class="grow">储值余额 ¥0.00</text>
+      <text class="jade">去充值</text>
+    </view>
+    <view class="pay-row off">
+      <view class="dot"></view>
+      <text class="grow">礼卡余额 ¥200.00</text>
+    </view>
+    <view class="pay-row on">
+      <view class="dot on">✓</view>
+      <text class="grow">微信支付</text>
+    </view>
   </view>
 
   <view wx:if="{{error}}" class="error">{{error}}</view>

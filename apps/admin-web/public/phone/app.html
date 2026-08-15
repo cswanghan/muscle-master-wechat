@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <title>肌松大师</title>
+  <style>
+    :root { --jade:#1E5C4A; --deep:#143F34; --copper:#C0803A; --sand:#F4F2EE; --ink:#17211D; --mute:#8B948F; --alert:#B3452F; --wash:#E8F0EC; }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { margin:0; height:100%; background:#111; }
+    body { font-family:"Noto Sans SC","PingFang SC",sans-serif; color:var(--ink); }
+    #app { max-width:430px; margin:0 auto; min-height:100%; background:var(--sand); position:relative; padding-bottom:88px; }
+    .nav { height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 14px; font-weight:500; }
+    .nav.w { background:#fff; }
+    .nav.d { background:var(--deep); color:#fff; }
+    .back { width:28px; font-size:22px; }
+    .roles { position:sticky; top:0; z-index:30; display:flex; gap:6px; padding:8px 12px; background:rgba(244,242,238,.94); backdrop-filter:blur(8px); }
+    .roles b { flex:1; text-align:center; font-size:12px; padding:7px 0; border-radius:999px; color:var(--mute); background:#fff; border:1px solid #E7E3DC; font-weight:500; }
+    .roles b.on { background:var(--jade); color:#fff; border-color:var(--jade); }
+    .page { padding:8px 12px 16px; }
+    .hero { font:600 21px/1.3 "Noto Serif SC",serif; color:var(--jade); padding:4px 4px 10px; }
+    .card { background:#fff; border-radius:14px; padding:14px; margin-bottom:10px; }
+    .sec { font:600 16px/1 "Noto Serif SC",serif; }
+    .row { display:flex; justify-content:space-between; align-items:center; }
+    .more,.hint,.km { color:var(--mute); font-size:12px; }
+    .search { background:#fff; border-radius:14px; padding:12px 14px; color:var(--mute); display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+    .dot { width:15px; height:15px; border:1.6px solid #8B948F; border-radius:50%; flex:none; }
+    .deal { display:flex; gap:12px; }
+    .thumb { background:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px); color:#9AA39E; font-size:9px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:5px; flex:none; }
+    .deal .thumb { width:74px; height:88px; border-radius:10px; }
+    .store .thumb { width:88px; height:64px; border-radius:8px; }
+    .avatar { width:52px; height:52px; border-radius:50%; background:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px); flex:none; }
+    .name { font-weight:600; font-size:15px; }
+    .price { color:var(--copper); font:700 17px/1 ui-monospace,Menlo,monospace; }
+    .strike { color:#B6BDB8; text-decoration:line-through; font-size:11px; }
+    .meta { color:#4A544F; font-size:12px; margin-top:6px; }
+    .jade { color:var(--jade); font-size:12px; }
+    .tag { border:1px solid var(--copper); color:var(--copper); border-radius:5px; padding:3px 7px; font-size:11px; }
+    .chip { background:var(--wash); color:var(--jade); border-radius:5px; padding:3px 7px; font-size:11px; margin-right:6px; }
+    .lvl { background:var(--wash); color:var(--jade); border-radius:4px; padding:2px 6px; font-size:10px; }
+    .btn { background:var(--jade); color:#fff; border:0; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:500; }
+    .btn.ghost { background:#fff; color:var(--jade); border:1px solid var(--jade); }
+    .btn.lg { padding:14px 30px; font-size:15px; }
+    .btn.block { display:block; width:100%; text-align:center; padding:16px 0; border-radius:12px; font-size:16px; font-weight:600; }
+    .btn:disabled { opacity:.4; }
+    .store + .store, .th + .th { margin-top:12px; padding-top:12px; border-top:1px solid #F0EDE7; }
+    .store, .th { display:flex; gap:12px; align-items:center; }
+    .grow { flex:1; min-width:0; }
+    .dock { position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:430px; background:#fff; border-top:1px solid #EDEAE4; display:flex; padding:9px 0 22px; z-index:20; }
+    .dock i { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--mute); font-size:11px; font-style:normal; }
+    .dock i.on { color:var(--jade); font-weight:500; }
+    .dock img { width:22px; height:22px; }
+    .parts { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    .part { background:#F8F7F4; border-radius:10px; padding:12px 6px; text-align:center; font-size:11px; }
+    .part.on { background:var(--jade); color:#fff; }
+    .part .box { width:22px; height:22px; border:1.6px solid #B6BDB8; border-radius:6px; margin:0 auto 7px; }
+    .part.on .box { border-color:rgba(255,255,255,.7); }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip-lg { background:#F8F7F4; color:#4A544F; border-radius:8px; padding:9px 13px; font-size:13px; }
+    .chip-lg.on { background:var(--wash); color:var(--jade); }
+    .proj { border:1px solid #EDEAE4; border-radius:12px; padding:13px; margin-top:10px; }
+    .proj.on { border-color:var(--jade); }
+    .note { background:#FAF1E4; color:#8A5F24; border-radius:14px; padding:13px 14px; font-size:12px; line-height:1.7; }
+    .dates { display:flex; gap:8px; }
+    .date { flex:1; background:#F8F7F4; border-radius:10px; padding:9px 0; text-align:center; font-size:12px; }
+    .date.on { background:var(--jade); color:#fff; }
+    .slots { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-top:12px; }
+    .slot { border-radius:8px; padding:10px 0; text-align:center; font:400 13px/1 ui-monospace,Menlo,monospace; }
+    .slot.free { background:var(--wash); color:var(--jade); border:1px solid #CFE0D7; }
+    .slot.locked { background:#FAF1E4; color:#A9752F; border:1px solid #E8D3B2; }
+    .slot.sel,.slot.booked { background:var(--jade); color:#fff; }
+    .slot.busy { background:var(--sand); color:#B6BDB8; border:1px dashed #D8DCD8; }
+    .bar { position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:430px; background:#fff; border-top:1px solid #EDEAE4; padding:12px 16px 22px; display:flex; align-items:center; gap:12px; z-index:21; }
+    .ticker { background:#FAF1E4; color:#8A5F24; padding:10px 16px; display:flex; justify-content:space-between; font-size:12px; }
+    .ticker.ok { background:var(--wash); color:var(--jade); }
+    .coupon { border:1px solid #EDEAE4; border-radius:10px; padding:11px 12px; display:flex; gap:10px; align-items:center; margin-top:10px; }
+    .coupon.on { border-color:var(--jade); }
+    .radio { width:17px; height:17px; border-radius:50%; border:1.5px solid #D8DCD8; flex:none; }
+    .radio.on { background:var(--jade); border-color:var(--jade); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; }
+    .payrow { display:flex; align-items:center; gap:10px; padding:8px 0; }
+    .profile { background:var(--jade); color:#fff; border-radius:16px; padding:20px; }
+    .wallet { display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid rgba(255,255,255,.16); padding-top:16px; margin-top:16px; }
+    .menu-row { display:flex; align-items:center; gap:12px; padding:15px 0; border-bottom:1px solid #F4F2EE; font-size:15px; }
+    .menu-row:last-child { border:0; }
+    .badge { background:var(--alert); color:#fff; border-radius:999px; min-width:18px; height:18px; font-size:11px; display:flex; align-items:center; justify-content:center; padding:0 5px; }
+    .ticket { display:flex; background:#fff; border-radius:14px; overflow:hidden; margin-bottom:12px; }
+    .t-left { width:104px; background:var(--wash); display:flex; flex-direction:column; align-items:center; justify-content:center; border-right:1px dashed #CFE0D7; }
+    .t-left.cu { background:#FAF1E4; border-color:#E8D3B2; }
+    .err { color:var(--alert); font-size:13px; padding:8px 4px; }
+    .ok { color:var(--jade); font-size:13px; padding:8px 4px; }
+    .deep-hero { background:var(--deep); color:#fff; padding:14px 16px 18px; }
+    .kpi { flex:1; }
+    .kpi b { display:block; font:700 20px/1 ui-monospace,Menlo,monospace; margin-top:6px; }
+    .next { border:2px solid var(--jade); }
+    .tl { display:flex; align-items:center; gap:12px; padding:11px 0; font-size:15px; }
+    .tl .tm { width:42px; font:500 14px/1 ui-monospace,Menlo,monospace; }
+    .tl .d { width:8px; height:8px; border-radius:50%; background:#C9CFCB; flex:none; }
+    .hidden { display:none !important; }
+    input,textarea { width:100%; border:0; background:#F8F7F4; border-radius:10px; padding:13px; font:400 15px/1.6 "Noto Sans SC",sans-serif; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="roles">
+    <b data-role="c" class="on">顾客</b>
+    <b data-role="t">技师</b>
+    <b data-role="m">店长</b>
+  </div>
+  <div id="screen"></div>
+</div>
+<script>
+const API = 'http://' + location.hostname + ':8080'
+const $ = (s, el=document) => el.querySelector(s)
+const state = {
+  role: 'c', screen: 'c1',
+  stores: [], therapists: [], projects: [], symptoms: [],
+  deal: null, selectedSymptom: null, recs: [],
+  date: '2026-08-15', dates: [], slotsTherapists: [], selected: null,
+  order: null, remain: '', token: '', customerId: '',
+  bookings: [],
+  staffToken: '', staffName: '', today: null,
+  mgrToken: '', mgrName: '', util: null, tasks: [],
+  err: '', notice: '',
+}
+const ICO = {
+  book: ['icons/booking.svg','icons/booking-on.svg'],
+  gift: ['icons/gift.svg','icons/gift-on.svg'],
+  me: ['icons/profile.svg','icons/profile-on.svg'],
+  work: ['icons/workbench.svg','icons/workbench-on.svg'],
+  sch: ['icons/schedule.svg','icons/schedule-on.svg'],
+  perf: ['icons/performance.svg','icons/performance-on.svg'],
+  ov: ['icons/overview.svg','icons/overview-on.svg'],
+  ap: ['icons/approval.svg','icons/approval-on.svg'],
+}
+function fen(n){ return (Number(n||0)/100).toFixed(Number(n||0)%100?2:0) }
+function dockC(on){
+  return `<div class="dock">
+    <i class="${on==='c1'?'on':''}" onclick="go('c1')"><img src="${on==='c1'?ICO.book[1]:ICO.book[0]}">预约</i>
+    <i class="${on==='c7'?'on':''}" onclick="go('c7')"><img src="${on==='c7'?ICO.gift[1]:ICO.gift[0]}">好礼</i>
+    <i class="${on==='c6'?'on':''}" onclick="go('c6')"><img src="${on==='c6'?ICO.me[1]:ICO.me[0]}">我的</i>
+  </div>`
+}
+function dockT(on){
+  return `<div class="dock">
+    <i class="${on==='t1'?'on':''}" onclick="go('t1')"><img src="${on==='t1'?ICO.work[1]:ICO.work[0]}">工作台</i>
+    <i onclick="go('t1')"><img src="${ICO.sch[0]}">排班</i>
+    <i class="${on==='t4'?'on':''}" onclick="go('t4')"><img src="${on==='t4'?ICO.perf[1]:ICO.perf[0]}">业绩</i>
+    <i onclick="alert('员工「我的」：前台/店长入口在开发者工具员工端首页')"><img src="${ICO.me[0]}">我的</i>
+  </div>`
+}
+async function api(path, opt={}){
+  const headers = { 'Content-Type':'application/json' }
+  if (opt.token) headers.Authorization = 'Bearer ' + opt.token
+  const res = await fetch(API+path, { method: opt.method||'GET', headers, body: opt.data?JSON.stringify(opt.data):undefined })
+  const body = await res.json().catch(()=>({}))
+  if (res.status>=200 && res.status<300 && (body.code===0 || body.code==='SUCCESS')) return body.data
+  throw new Error(body.message || ('HTTP '+res.status))
+}
+async function loginC(){
+  if (state.token) return
+  const d = await api('/api/v1/c/auth/wechat', { method:'POST', data:{ code:'dev' } })
+  state.token = d.token; state.customerId = d.customerId
+}
+async function loginT(){
+  if (state.staffToken) return
+  const d = await api('/api/v1/staff/auth/wechat', { method:'POST', data:{ code:'dev-staff-t1' } })
+  state.staffToken = d.token; state.staffName = d.name || '林晓'
+}
+async function loginM(){
+  if (state.mgrToken) return
+  const d = await api('/api/v1/staff/auth/wechat', { method:'POST', data:{ code:'dev-staff-manager' } })
+  state.mgrToken = d.token; state.mgrName = d.name || '店长'
+}
+function go(name){
+  state.screen = name
+  location.hash = name
+  if (name==='c2') loadSymptoms().then(render)
+  else if (name==='c6') loadMine().then(render)
+  else if (name==='t1'||name==='t2') loadToday().then(render)
+  else if (name==='m1') loadMgr().then(render)
+  else render()
+}
+function weekday(iso){ return '日一二三四五六'[new Date(iso+'T00:00:00').getDay()] }
+function addDays(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10) }
+
+function viewC1(){
+  const deal = state.deal
+  const stores = state.stores
+  const ths = state.therapists.slice(0,2)
+  return `<div class="page" id="c1-home">
+    <div class="hero">疲劳酸痛，到肌松大师</div>
+    <div class="search" onclick="go('c2')"><span class="dot"></span>说说哪里不舒服，为你找师傅</div>
+    <div class="card">
+      <div class="row"><div class="sec">特惠预约</div><div class="more" onclick="go('c7')">更多活动 ›</div></div>
+      ${deal?`<div class="deal" style="margin-top:12px" onclick="openCal(state.stores[0], deal)">
+        <div class="thumb">技师照</div>
+        <div class="grow">
+          <div class="row"><div class="name">${deal.name}</div><div style="text-align:right"><div class="price">¥${fen(Math.round(deal.priceFen*0.95))}</div><div class="strike">${fen(deal.priceFen)}</div></div></div>
+          <div class="meta">${deal.therapistName} · 今天 19:30–20:30</div>
+          <div class="km" style="margin-top:4px">4.0km · ${(stores[0]&&stores[0].name)||''}</div>
+          <div class="row" style="margin-top:8px"><span class="tag">9.5折 · 仅此1档</span><button class="btn">立即抢约</button></div>
+        </div>
+      </div>`:''}
+    </div>
+    <div class="card">
+      <div class="row"><div class="sec">门店预约</div><div class="more">更多门店 ›</div></div>
+      ${stores.map((s,i)=>`<div class="store" onclick="openCal(s, state.deal)">
+        <div class="thumb">门店实拍</div>
+        <div class="grow">
+          <div class="row"><div class="name">${s.name}</div><div class="km">${i?'7.3km':'4.0km'}</div></div>
+          <div class="meta">${s.businessStart||'10:00'}–${s.businessEnd||'22:00'} ${i?'':'<span class="chip">就近</span>'}</div>
+          <div class="row" style="margin-top:6px"><div class="jade">${i?'今晚已满 · 可约明天':'今晚余 6 档'}</div><button class="btn ghost">预约</button></div>
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="row"><div class="sec">推拿师预约</div><div class="more" onclick="go('c2')">按症状找 ›</div></div>
+      ${ths.map(t=>`<div class="th" onclick="openCal(state.stores[0], state.deal, t)">
+        <div class="avatar"></div>
+        <div class="grow"><div class="name">${t.name} <span class="lvl">${t.levelLabel}</span> <span style="color:var(--copper)">${t.rating}</span></div>
+        <div style="margin-top:6px">${(t.tags||[]).map(x=>`<span class="chip">${x}</span>`).join('')}</div></div>
+        <button class="btn ghost">预约</button>
+      </div>`).join('')}
+    </div>
+    ${state.err?`<div class="err">${state.err}</div>`:''}
+    ${dockC('c1')}
+  </div>`
+}
+function viewC2(){
+  const parts = state.symptoms.filter(s=>s.type==='BODY_PART')
+  const dcs = state.symptoms.filter(s=>s.type==='DISCOMFORT')
+  return `<div class="nav w"><span class="back" onclick="go('c1')">‹</span><span>找准症状</span><span style="width:28px"></span></div>
+  <div class="page">
+    <div class="card">
+      <div class="sec">按部位选</div>
+      <div class="parts" style="margin-top:12px">${parts.map(p=>`<div class="part ${state.selectedSymptom&&state.selectedSymptom.id===p.id?'on':''}" onclick="pickSymptom('${p.id}')"><div class="box"></div>${p.name}</div>`).join('')}</div>
+      <div class="sec" style="margin-top:14px">按不适选</div>
+      <div class="chips" style="margin-top:10px">${dcs.map(p=>`<span class="chip-lg ${state.selectedSymptom&&state.selectedSymptom.id===p.id?'on':''}" onclick="pickSymptom('${p.id}')">${p.name}</span>`).join('')}</div>
+    </div>
+    ${state.recs.length?`<div class="card">
+      <div class="row"><div class="sec">${state.selectedSymptom.name} · 推荐项目</div><div class="hint">${state.recs.length} 项</div></div>
+      ${state.recs.map((p,i)=>`<div class="proj ${i===0?'on':''}">
+        <div class="row"><div><div class="name">${p.name}</div><div class="hint" style="margin-top:5px">${p.durationMinutes} 分钟</div></div><div class="price">¥${fen(p.priceFen)}</div></div>
+        <div class="row" style="margin-top:8px"><div class="jade">今晚可约</div><button class="btn" onclick='openCal(state.stores[0], ${JSON.stringify(p)})'>选技师</button></div>
+      </div>`).join('')}
+    </div>`:''}
+    <div class="note">选不准可先填写不适描述，到店由技师面诊后调整项目，差价按实际项目结算。</div>
+  </div>`
+}
+function viewC3(){
+  const t0 = state.slotsTherapists[0]
+  return `<div class="nav w"><span class="back" onclick="go('c1')">‹</span><span>${t0?t0.name:'选时段'}</span><span style="width:28px"></span></div>
+  <div class="page" style="padding-bottom:90px">
+    ${t0?`<div class="card" style="display:flex;gap:14px"><div class="avatar" style="width:76px;height:76px"></div>
+      <div class="grow"><div class="name" style="font:600 19px/1 'Noto Serif SC',serif">${t0.name} <span class="lvl" style="background:var(--jade);color:#fff">${t0.levelLabel||''}</span></div>
+      <div class="meta"><span style="color:var(--copper);font-weight:700">${t0.rating||'4.9'} 分</span> · 服务 1,204 次</div>
+      <div style="margin-top:6px"><span class="chip">头颈肩痛</span><span class="chip">睡眠调理</span></div></div></div>`:''}
+    <div class="card">
+      <div class="row"><div class="sec">选择时间</div><div class="hint">${(state.deal&&state.deal.name)||''}</div></div>
+      <div class="dates" style="margin-top:12px">${state.dates.map(d=>`<div class="date ${d.on?'on':''}" onclick="pickDate('${d.iso}')"><div>${d.label}</div><div style="font-size:10px;opacity:.75">余 ${d.left}</div></div>`).join('')}</div>
+      ${state.slotsTherapists.map(t=>`<div style="margin-top:12px"><div class="hint">${t.name}</div>
+        <div class="slots">${(t.slots||[]).slice(0,16).map(s=>`<div class="slot ${s.kind}" onclick="pickSlot('${t.therapistId}','${t.name}',${s.slotNo},'${s.start}',${s.priceFen||0},${s.bookable?1:0})">${s.start}</div>`).join('')}</div></div>`).join('')}
+      <div class="hint" style="margin-top:10px">玉底可约 · 暖铜他人锁定 · 实心已选 · 虚线不可约</div>
+    </div>
+    ${state.err?`<div class="err">${state.err}</div>`:''}
+  </div>
+  <div class="bar">
+    <div class="grow"><div class="hint">${state.selected?state.selected.start+' · 60 分钟':'点绿色起点预约'}</div><div class="price" style="font-size:21px">¥${state.selected?fen(Math.round(state.selected.priceFen*0.95)):fen((state.deal&&state.deal.priceFen)||0)} <span class="hint">已含 9.5 折</span></div></div>
+    <button class="btn lg" ${state.selected?'':'disabled'} onclick="goConfirm()">去下单</button>
+  </div>`
+}
+function viewC4(){
+  const o = state.order || {}
+  const pending = o.status==='PENDING_PAY'
+  return `<div class="nav w"><span class="back" onclick="go('c3')">‹</span><span>确认预约</span><span style="width:28px"></span></div>
+  ${pending?`<div class="ticker">时段已为你锁定，请在 <b>${state.remain||'14:52'}</b> 内完成支付</div>`:''}
+  ${o.status==='BOOKED'?`<div class="ticker ok">支付成功 · 订单已预约</div>`:''}
+  <div class="page" style="padding-bottom:90px">
+    <div class="card">
+      <div style="display:flex;gap:12px;align-items:center"><div class="avatar"></div>
+        <div><div class="name">${(state.deal&&state.deal.name)||'到店调理'}</div><div class="hint">${(state.selected&&state.selected.therapistName)||''} · 指定加成 ¥0</div></div></div>
+      <div style="height:1px;background:#F0EDE7;margin:12px 0"></div>
+      <div class="row" style="padding:8px 0"><span class="hint">到店时间</span><span>${state.date} ${state.selected&&state.selected.start}</span></div>
+      <div class="row" style="padding:8px 0"><span class="hint">门店</span><span>${(state.stores[0]&&state.stores[0].name)||''}</span></div>
+      <div class="row" style="padding:8px 0"><span class="hint">房间</span><span>到店由前台分配</span></div>
+    </div>
+    <div class="card">
+      <div class="sec">优惠</div>
+      <div class="coupon on"><div class="radio on">✓</div><div class="grow"><div>新客体验券 ¥20</div><div class="hint">周一至周五 10:00–17:00 可用</div></div><div class="price">-20</div></div>
+      <div class="coupon"><div class="radio"></div><div class="grow"><div style="color:#B6BDB8">满 300 减 50</div><div style="color:var(--alert);font-size:11px">未满门槛，还差 ¥101</div></div></div>
+    </div>
+    <div class="card">
+      <div class="sec">支付方式</div>
+      <div class="payrow"><div class="radio"></div><div class="grow hint">储值余额 ¥0.00</div><span class="jade">去充值</span></div>
+      <div class="payrow"><div class="radio"></div><div class="grow">礼卡余额 ¥200.00</div></div>
+      <div class="payrow"><div class="radio on">✓</div><div class="grow">微信支付</div></div>
+    </div>
+    ${state.err?`<div class="err">${state.err}</div>`:''}
+    ${state.notice?`<div class="ok">${state.notice}</div>`:''}
+  </div>
+  <div class="bar">
+    <div class="grow"><div class="price" style="font-size:21px">¥${fen((state.selected&&state.selected.priceFen)||0)}</div><div class="hint">锁定 15 分钟</div></div>
+    ${o.status==='BOOKED'?`<button class="btn lg" onclick="go('c6')">查看订单</button>`
+      : pending?`<button class="btn lg" onclick="payNow()">立即支付</button>`
+      : `<button class="btn lg" onclick="lockOrder()">确认预约</button>`}
+  </div>`
+}
+function viewC5(){
+  return `<div class="nav w"><span class="back" onclick="go('c6')">‹</span><span>我的券包</span><span style="width:28px"></span></div>
+  <div class="page">
+    <div class="ticket"><div class="t-left"><div class="price" style="color:var(--jade);font-size:30px">¥20</div><div class="hint">无门槛</div></div>
+      <div class="grow" style="padding:13px 14px"><div class="name">新客体验券</div><div class="hint">周一至周五 · 10:00–17:00 · 全门店</div><div class="row" style="margin-top:8px"><span class="hint">规则 ⌄</span><button class="btn ghost" onclick="go('c1')">去使用</button></div></div></div>
+    <div class="ticket"><div class="t-left cu"><div class="price" style="color:#A9752F;font-size:22px">9.5折</div><div class="hint">限指定技师</div></div>
+      <div class="grow" style="padding:13px 14px"><div class="name">空档专享</div><div class="hint">仅今晚 14:00–17:00 · 本店</div><div style="color:var(--alert);font-size:11px;margin-top:4px">17 小时后过期</div><div class="row" style="margin-top:8px"><span class="hint">规则 ⌄</span><button class="btn" onclick="go('c1')">去使用</button></div></div></div>
+    <div class="hint">同一订单可叠加 1 张券 + 时段折扣；储值赠金不与券叠加。</div>
+  </div>`
+}
+function viewC6(){
+  const next = state.bookings.find(o=>['BOOKED','CHECKED_IN','IN_SERVICE'].includes(o.status))
+  return `<div class="page">
+    <div class="profile">
+      <div style="display:flex;gap:14px;align-items:center"><div class="avatar" style="background:rgba(255,255,255,.18)"></div>
+        <div><div style="font:600 18px/1 ui-monospace,Menlo,monospace">186****7752</div><div style="opacity:.72;font-size:12px;margin-top:6px">调理 ${state.bookings.length} 次</div></div></div>
+      <div class="wallet"><div><div style="opacity:.72;font-size:11px">储值余额</div><div style="font:700 22px/1 ui-monospace,Menlo,monospace;margin-top:5px">¥0.00</div></div>
+        <div><div style="opacity:.72;font-size:11px">礼卡余额</div><div style="font:700 22px/1 ui-monospace,Menlo,monospace;margin-top:5px">¥200.00</div></div>
+        <button class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.55)" onclick="alert('演示：P0 不入账')">充值</button></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="row"><div class="sec">下一次调理</div><div class="more">全部订单 ›</div></div>
+      ${next?`<div style="background:#F8F7F4;border-radius:10px;padding:12px;margin-top:10px">
+        <div class="row"><div class="name">${next.projectName||'到店调理'}</div><span class="lvl">${next.status}</span></div>
+        <div class="meta">${next.date||''} ${next.start||''}</div>
+        <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" onclick="alert('到店出示 '+ (next.orderNo||next.orderId))">核销码</button><button class="btn ghost" onclick="alert('请联系前台改约')">改约</button></div>
+      </div>`:'<div class="hint" style="padding:12px 0">暂无下次预约</div>'}
+    </div>
+    <div class="card">
+      <div class="menu-row" onclick="go('c6')"><div class="grow">项目订单</div><span class="hint">${state.bookings.length}</span> ›</div>
+      <div class="menu-row" onclick="go('c7')"><div class="grow">好礼订单</div> ›</div>
+      <div class="menu-row" onclick="go('c5')"><div class="grow">我的券包</div><span class="badge">3</span> ›</div>
+      <div class="menu-row"><div class="grow">理疗档案</div><span class="hint">${state.bookings.length} 次记录</span> ›</div>
+      <div class="menu-row"><div class="grow">关于肌松大师</div> ›</div>
+    </div>
+    ${dockC('c6')}
+  </div>`
+}
+function viewC7(){
+  return `<div class="page">
+    <div class="card"><div class="sec">肌松礼卡</div>
+      <div style="height:150px;border-radius:12px;background:repeating-linear-gradient(45deg,#EDEAE4 0 8px,#F7F5F1 8px 16px);padding:16px;display:flex;flex-direction:column;justify-content:space-between;margin-top:12px">
+        <div><div class="sec" style="color:var(--jade);font-size:21px">项目礼卡</div><div class="hint">对症调理 · 健康守护</div></div>
+        <div class="price">¥119 起</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <div class="grow" style="background:#F8F7F4;border-radius:12px;padding:14px"><div class="sec" style="color:var(--jade);font-size:15px">电子礼卡</div><div class="hint">在线赠送 心意速达</div><div class="price" style="margin-top:24px;font-size:16px">¥200 起</div></div>
+        <div class="grow" style="background:#F8F7F4;border-radius:12px;padding:14px"><div class="sec" style="color:var(--jade);font-size:15px">实体礼卡</div><div class="hint">定制礼盒 独特心意</div><div class="price" style="margin-top:24px;font-size:16px">¥200 起</div></div>
+      </div>
+    </div>
+    <div class="card"><div class="row"><div class="sec">肌松周边</div><div class="more">全部 ›</div></div>
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <div class="grow"><div class="thumb" style="height:108px;width:100%;border-radius:10px">商品图</div><div style="margin-top:8px">护颈助眠小枕</div><div class="price" style="font-size:15px">¥299.00</div></div>
+        <div class="grow"><div class="thumb" style="height:108px;width:100%;border-radius:10px">商品图</div><div style="margin-top:8px">祛寒理疗包</div><div class="price" style="font-size:15px">¥199.00</div></div>
+      </div>
+    </div>
+    <div class="card row"><div class="grow"><div class="sec">储值有礼</div><div class="hint">充 1000 得 1100，赠金不可退</div></div><button class="btn" onclick="alert('演示：P0 不入账')">去充值</button></div>
+    ${dockC('c7')}
+  </div>`
+}
+function viewT1(){
+  const n = state.today && state.today.next
+  const rows = (state.today && state.today.rows) || []
+  return `<div class="deep-hero">
+    <div style="display:flex;align-items:center;gap:12px"><div class="avatar" style="background:rgba(255,255,255,.16);width:44px;height:44px"></div>
+      <div class="grow"><div style="font:600 17px/1 'Noto Serif SC',serif">${state.staffName||'技师'}</div><div style="opacity:.7;font-size:12px">资深技师 · 本店</div></div>
+      <span style="border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:8px 14px;font-size:13px">在岗 ●</span></div>
+    <div style="display:flex;margin-top:16px"><div class="kpi">今日已完成<b>${state.today&&state.today.done||0} 钟</b></div><div class="kpi">预估收入<b>—</b></div><div class="kpi">今日满班<b>${state.today&&state.today.rate||'—'}</b></div></div>
+  </div>
+  <div class="page">
+    ${n?`<div class="card next">
+      <div class="row"><b style="color:var(--jade)">下一单</b><b style="color:var(--copper)">${n.minutesToStart!=null?(n.minutesToStart+' 分钟后'):''}</b></div>
+      <div style="font:600 22px/1 'Noto Serif SC',serif;margin-top:10px">${n.customerName||'客人'}</div>
+      <div style="margin-top:8px;font-size:17px">${n.projectName||''}</div>
+      <div style="margin-top:8px"><b>${n.start||''}–${n.end||''}</b> <span style="background:var(--deep);color:#fff;border-radius:6px;padding:4px 8px;font-size:13px">${n.roomName||'待分房'}</span></div>
+      <div style="display:flex;gap:10px;margin-top:14px"><button class="btn block" style="flex:1" onclick="go('t2')">开始服务</button><button class="btn ghost" onclick="go('t2')">档案</button></div>
+    </div>`:'<div class="card hint">暂无下一单 · 可从空档发起特惠</div>'}
+    <div class="card"><div class="row"><div class="sec">今日时间轴</div><div class="hint">${state.date}</div></div>
+      ${rows.map(r=>`<div class="tl"><div class="tm">${r.time}</div><div class="d" style="background:${r.kind==='gap'?'#C0803A':r.kind==='next'?'#1E5C4A':'#C9CFCB'}"></div><div class="grow">${r.title}</div>${r.action?`<button class="btn ghost" onclick="go('t3')">${r.action}</button>`:`<span class="hint">${r.status||''}</span>`}</div>`).join('') || '<div class="hint">暂无排班片段</div>'}
+    </div>
+    ${state.err?`<div class="err">${state.err}</div>`:''}
+    ${dockT('t1')}
+  </div>`
+}
+function viewT2(){
+  const n = (state.today && state.today.next) || {}
+  return `<div class="deep-hero" style="text-align:center">
+    <div style="opacity:.75;letter-spacing:.1em;font-size:13px">服务进行中 · ${n.roomName||'待分房'}</div>
+    <div style="font:700 56px/1 ui-monospace,Menlo,monospace;margin:12px 0">28:15</div>
+    <div style="opacity:.75;font-size:13px">${n.customerName||'客人'} · ${n.projectName||''}</div>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="btn ghost" style="flex:1;color:#fff;border-color:rgba(255,255,255,.5)" onclick="alert('演示加钟')">申请加钟</button><button class="btn" style="flex:1;background:#fff;color:var(--deep)" onclick="alert('演示结单')">结束服务</button></div>
+  </div>
+  <div class="page" style="padding-bottom:90px">
+    <div class="card">
+      <div class="row"><div class="sec">理疗记录</div><div class="hint">提交后不可删除</div></div>
+      <div class="hint" style="margin:12px 0 6px">主诉</div>
+      <textarea rows="3">右侧颈肩僵硬，转头受限，久坐 2 小时后加重</textarea>
+      <div class="hint" style="margin:12px 0 6px">手法</div>
+      <div class="chips"><span class="chip-lg on" style="background:var(--jade);color:#fff">滚法</span><span class="chip-lg on" style="background:var(--jade);color:#fff">拿捏</span><span class="chip-lg">点按</span><span class="chip-lg">拔伸</span></div>
+      <div class="hint" style="margin:12px 0 6px">力度</div>
+      <div class="dates"><div class="date">轻</div><div class="date on">中</div><div class="date">重</div></div>
+    </div>
+  </div>
+  <div class="bar"><button class="btn block" onclick="alert('演示：记录已提交')">提交记录并结单</button></div>`
+}
+function viewT3(){
+  return `<div class="nav w"><span class="back" onclick="go('t1')">‹</span><span>填满我的空档</span><span></span></div>
+  <div class="page" style="padding-bottom:90px">
+    <div class="card"><div class="row"><div class="sec">明天的空档</div><div class="hint">08-16</div></div>
+      <div class="dates" style="margin-top:12px"><div class="date on">14:00<br><span class="hint">60 分钟</span></div><div class="date on">15:30<br><span class="hint">60 分钟</span></div><div class="date">17:00<br><span class="hint">90 分钟</span></div></div>
+    </div>
+    <div class="card"><div class="row"><div class="sec">折扣</div><div class="hint">总部允许 8.5–9.5 折</div></div>
+      <div class="dates" style="margin-top:12px"><div class="date">9.5</div><div class="date on">9.0</div><div class="date">8.8</div><div class="date">8.5</div></div>
+      <div style="background:#F8F7F4;border-radius:10px;padding:13px;margin-top:12px">
+        <div class="row"><span>客户实付</span><span class="price">¥188</span></div>
+        <div class="row" style="margin-top:8px"><span>你的提成（按实收）</span><span>¥62.0</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="bar"><button class="btn ghost">发给老客</button><button class="btn lg" onclick="alert('分享卡已生成')">生成分享卡</button></div>`
+}
+function viewT4(){
+  return `<div class="page">${''}
+    <div class="card">
+      <div class="dates"><div class="date">今日</div><div class="date">本周</div><div class="date on">本月</div></div>
+      <div class="row" style="align-items:flex-end;margin-top:16px"><div><div class="hint">8 月累计提成</div><div style="font:700 34px/1 ui-monospace,Menlo,monospace">¥8,240</div></div><div style="text-align:right"><div class="hint">钟数</div><div style="font:700 20px/1 ui-monospace,Menlo,monospace">112</div></div></div>
+      <div style="border-top:1px solid #F0EDE7;margin-top:14px;padding-top:12px">
+        <div class="row" style="padding:8px 0"><span>钟数提成</span><span>¥5,880</span></div>
+        <div class="row" style="padding:8px 0"><span>加钟提成</span><span>¥760</span></div>
+        <div class="row" style="padding:8px 0;color:var(--alert)"><span>退款回滚</span><span>-¥120</span></div>
+      </div>
+    </div>
+    ${dockT('t4')}
+  </div>`
+}
+function viewM1(){
+  const rate = state.util && state.util.rateX10000!=null ? (state.util.rateX10000/100).toFixed(1)+'%' : '—'
+  return `<div class="deep-hero">
+    <div class="sec" style="color:#fff">经营概览</div>
+    <div class="hint" style="color:rgba(255,255,255,.7);margin-top:6px">${state.mgrName||'店长'} · 本店 · 今日实时</div>
+    <div class="row" style="margin-top:16px;align-items:flex-end"><div><div style="opacity:.7;font-size:12px">今日满班率</div><div style="font:700 34px/1 ui-monospace,Menlo,monospace">${rate}</div></div></div>
+  </div>
+  <div class="page">
+    <div class="card"><div class="row"><div class="sec">待我审批</div>${state.tasks.length?`<span class="badge">${state.tasks.length}</span>`:''}</div>
+      ${state.tasks.length?state.tasks.map(t=>`<div style="padding:10px 0;border-top:1px solid #F4F2EE"><div class="name">${t.title}</div><div class="hint">${t.taskType}</div></div>`).join(''):'<div class="hint" style="padding:12px 0">队列已清空</div>'}
+    </div>
+    ${state.err?`<div class="err">${state.err}</div>`:''}
+    <div class="dock">
+      <i class="on"><img src="${ICO.ov[1]}">概览</i>
+      <i><img src="${ICO.ap[0]}">审批</i>
+      <i><img src="${ICO.sch[0]}">排班</i>
+      <i><img src="${ICO.me[0]}">我的</i>
+    </div>
+  </div>`
+}
+
+function paintTherapist(t, selected){
+  const startSet = {}; const startPrice = {}
+  ;(t.starts||[]).forEach(s=>{ startSet[s.slotNo]=true; startPrice[s.slotNo]=s.priceFen })
+  const slots = (t.blocks||[]).map(b=>{
+    let kind='busy'
+    if (selected && selected.therapistId===t.therapistId && selected.slotNo===b.slotNo) kind='sel'
+    else if (startSet[b.slotNo]) kind='free'
+    else if (b.state==='LOCKED') kind='locked'
+    else if (b.state==='BOOKED') kind='booked'
+    return { slotNo:b.slotNo, start:b.start, kind, bookable:!!startSet[b.slotNo], priceFen:startPrice[b.slotNo] }
+  })
+  return { ...t, rating: t.ratingX100? (t.ratingX100/100).toFixed(1): '4.9', levelLabel: ({SENIOR:'资深技师',MIDDLE:'中级技师',JUNIOR:'初级技师'})[t.level]||t.level, slots }
+}
+async function loadHome(){
+  try {
+    const [stores, therapists, projects] = await Promise.all([
+      api('/api/v1/c/stores'), api('/api/v1/c/therapists'), api('/api/v1/c/projects')
+    ])
+    state.stores = stores.items||[]
+    state.therapists = (therapists.items||[]).map(t=>({ ...t, rating:t.ratingX100?(t.ratingX100/100).toFixed(1):'4.9', levelLabel:({SENIOR:'资深技师',MIDDLE:'中级',JUNIOR:'初级'})[t.level]||t.level, tags:(t.symptomNames||['头颈肩痛','睡眠调理']).slice(0,2) }))
+    state.projects = projects.items||[]
+    const p = state.projects[0]
+    state.deal = p ? { ...p, therapistName: (state.therapists[0]&&state.therapists[0].name)||'推荐技师' } : null
+    state.err = ''
+  } catch(e){ state.err = e.message + ' · 请确认手机和电脑同一 Wi-Fi，API '+API }
+}
+async function loadSymptoms(){
+  try { const d = await api('/api/v1/c/symptoms'); state.symptoms = d.items||[] } catch(e){ state.err=e.message }
+}
+async function pickSymptom(id){
+  state.selectedSymptom = state.symptoms.find(s=>s.id===id)
+  try { const d = await api('/api/v1/c/symptoms/'+id+'/projects'); state.recs = d.items||[] } catch(e){ state.recs=[]; state.err=e.message }
+  render()
+}
+function openCal(store, project, therapist){
+  if (!store || !project){ go('c1'); return }
+  state.store = store; state.deal = project; state.filterTherapist = therapist
+  state.dates = [0,1,2,3,4].map(i=>{ const iso=addDays(state.date,i); return { iso, label:i===0?'今天':i===1?'明天':'周'+weekday(iso), left:'—', on:i===0 } })
+  state.date = state.dates[0].iso
+  state.selected = null
+  go('c3'); loadAvail()
+}
+async function loadAvail(){
+  if (!state.store || !state.deal) return
+  try {
+    let path = `/api/v1/c/availability?storeId=${state.store.storeId}&date=${state.date}&projectId=${state.deal.projectId}&includeBusy=1`
+    if (state.filterTherapist) path += '&therapistId='+state.filterTherapist.therapistId
+    const d = await api(path)
+    state.slotsTherapists = (d.therapists||[]).map(t=>paintTherapist(t, state.selected))
+    const left = state.slotsTherapists.reduce((n,t)=>n+((t.starts&&t.starts.length)||t.slots.filter(s=>s.bookable).length),0)
+    state.dates = state.dates.map(x=>x.iso===state.date?{...x,left}:x)
+    state.err=''
+  } catch(e){ state.err=e.message }
+  render()
+}
+function pickDate(iso){ state.date=iso; state.dates=state.dates.map(d=>({...d,on:d.iso===iso})); state.selected=null; loadAvail() }
+function pickSlot(tid,tname,slot,start,price,bookable){
+  if (!bookable) return
+  state.selected = { therapistId:tid, therapistName:tname, slotNo:slot, start, priceFen:price }
+  state.slotsTherapists = state.slotsTherapists.map(t=>paintTherapist(t, state.selected))
+  render()
+}
+function goConfirm(){ if(!state.selected) return; state.order=null; go('c4') }
+async function lockOrder(){
+  try {
+    await loginC()
+    const d = await api('/api/v1/c/bookings', { method:'POST', token:state.token, data:{
+      requestId:'phone-'+Date.now(), storeId:state.store.storeId, therapistId:state.selected.therapistId,
+      projectId:state.deal.projectId, date:state.date, startSlotNo:state.selected.slotNo
+    }})
+    state.order = d; state.notice='时段已锁定'; state.err=''
+  } catch(e){ state.err=e.message }
+  render()
+}
+async function payNow(){
+  try {
+    const pay = await api(`/api/v1/c/bookings/${state.order.orderId}/pay`, { method:'POST', token:state.token, data:{ requestId:'pay-'+Date.now() } })
+    await api('/api/v1/pay/wechat/notify', { method:'POST', data:{ out_trade_no:pay.paymentNo, transaction_id:'wx_mock_'+pay.paymentNo, amount_fen:pay.amountFen } })
+    state.order = { ...state.order, status:'BOOKED' }; state.notice='支付成功'; state.err=''
+  } catch(e){ state.err=e.message }
+  render()
+}
+function groupTimeline(timeline, next){
+  const rows=[]; let i=0
+  while(i<timeline.length){
+    const cur=timeline[i]; let j=i+1
+    while(j<timeline.length && timeline[j].state===cur.state && String(timeline[j].orderId||'')===String(cur.orderId||'')) j++
+    const minutes=(j-i)*15
+    const isNext = next && cur.orderId && String(cur.orderId)===String(next.orderId)
+    let kind='idle', title='空档 '+minutes+' 分钟', status='', action=''
+    if (['BOOKED','LOCKED','BUFFER'].includes(cur.state)){
+      kind=isNext?'next':'booked'; title=isNext?((next.customerName||'客人')+' · '+(next.projectName||'')):(cur.state==='LOCKED'?'锁定中':'已预约'); status=isNext?'待服务':(cur.state==='LOCKED'?'锁定中':'已预约')
+    } else if (cur.state==='REST'){ kind='rest'; title='休息'; status='休息' }
+    else if (cur.state==='FREE' && minutes>=60){ kind='gap'; title='空档 '+minutes+' 分钟'; action='填满它' }
+    else { i=j; continue }
+    const hour=Math.floor(cur.slotNo/4), minute=(cur.slotNo%4)*15
+    rows.push({ time:`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`, kind, title, status, action })
+    i=j
+  }
+  return rows
+}
+async function loadToday(){
+  try {
+    await loginT()
+    const d = await api('/api/v1/t/today', { token:state.staffToken })
+    const timeline=d.timeline||[]
+    const work=timeline.filter(s=>s.state!=='REST')
+    const busy=work.filter(s=>['BOOKED','BUFFER','LOCKED'].includes(s.state))
+    state.today = { next:d.next, rows:groupTimeline(timeline,d.next), done:0, rate: work.length?Math.round(busy.length/work.length*100)+'%':'—' }
+    state.err=''
+  } catch(e){ state.err=e.message }
+}
+async function loadMine(){
+  try { await loginC(); const d=await api('/api/v1/c/bookings',{token:state.token}); state.bookings=d.items||[]; state.err='' } catch(e){ state.err=e.message }
+}
+async function loadMgr(){
+  try {
+    await loginM()
+    const [u,t] = await Promise.all([
+      api('/api/v1/f/metrics/utilization',{token:state.mgrToken}),
+      api('/api/v1/f/human-tasks?status=OPEN',{token:state.mgrToken}).catch(()=>({items:[]}))
+    ])
+    state.util=u; state.tasks=t.items||[]; state.err=''
+  } catch(e){ state.err=e.message }
+}
+
+const views = { c1:viewC1,c2:viewC2,c3:viewC3,c4:viewC4,c5:viewC5,c6:viewC6,c7:viewC7,t1:viewT1,t2:viewT2,t3:viewT3,t4:viewT4,m1:viewM1 }
+function render(){ $('#screen').innerHTML = (views[state.screen]||viewC1)() }
+document.querySelector('.roles').addEventListener('click', e=>{
+  const b=e.target.closest('b'); if(!b) return
+  document.querySelectorAll('.roles b').forEach(x=>x.classList.remove('on')); b.classList.add('on')
+  state.role=b.dataset.role
+  if(state.role==='c') go('c1')
+  if(state.role==='t'){ state.screen='t1'; loadToday().then(render) }
+  if(state.role==='m'){ state.screen='m1'; loadMgr().then(render) }
+})
+window.addEventListener('hashchange', ()=>{
+  const h=(location.hash||'#c1').slice(1)
+  if(views[h]) { state.screen=h; if(h==='c6') loadMine().then(render); else if(h==='t1') loadToday().then(render); else if(h==='m1') loadMgr().then(render); else render() }
+})
+;(async function init(){
+  const h=(location.hash||'#c1').slice(1)
+  state.screen = views[h]?h:'c1'
+  await loadHome()
+  if (state.screen==='c2') await loadSymptoms()
+  if (state.screen==='c6') await loadMine()
+  if (state.screen==='t1'||state.screen==='t2') await loadToday()
+  if (state.screen==='m1') await loadMgr()
+  if (state.screen==='c2') { /* already */ }
+  else if (state.screen.startsWith('c')) { /* home loaded */ }
+  render()
+  if (state.screen==='c2' && !state.symptoms.length) loadSymptoms().then(render)
+})()
+window.go=go; window.pickSymptom=async (id)=>{ if(!state.symptoms.length) await loadSymptoms(); return pickSymptom(id) }
+window.openCal=openCal; window.pickDate=pickDate; window.pickSlot=pickSlot
+window.goConfirm=goConfirm; window.lockOrder=lockOrder; window.payNow=payNow
+window.state=state
+</script>
+</body>
+</html>

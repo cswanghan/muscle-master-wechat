@@ -6,13 +6,15 @@
     "pages/therapists/therapists",
     "pages/calendar/calendar",
     "pages/confirm/confirm",
-    "pages/mine/mine"
+    "pages/mine/mine",
+    "pages/coupon/coupon",
+    "pages/mall/mall"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#1E5C4A",
+    "navigationBarBackgroundColor": "#F4F2EE",
     "navigationBarTitleText": "肌松大师",
-    "navigationBarTextStyle": "white",
-    "backgroundColor": "#F4F1EA",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F4F2EE",
     "backgroundTextStyle": "light"
   },
   "style": "v2",

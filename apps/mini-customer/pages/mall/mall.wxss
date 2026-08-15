@@ -1,0 +1,141 @@
+.page {
+  padding-bottom: 180rpx;
+}
+
+.sec-card {
+  background: #fff;
+  border-radius: 28rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+}
+
+.sec-name {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.sec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20rpx;
+}
+
+.sec-more {
+  color: #8b948f;
+  font-size: 24rpx;
+}
+
+.hero-card {
+  margin-top: 24rpx;
+  height: 300rpx;
+  border-radius: 24rpx;
+  background: repeating-linear-gradient(45deg, #edeae4 0 16rpx, #f7f5f1 16rpx 32rpx);
+  padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.hero-title {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 42rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.hero-sub,
+.mini-sub {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #8b948f;
+}
+
+.hero-bot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.price {
+  color: #c0803a;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 40rpx;
+}
+
+.price.sm {
+  font-size: 32rpx;
+  margin-top: 36rpx;
+}
+
+.ph {
+  font-size: 18rpx;
+  color: #9aa39e;
+}
+
+.split {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 24rpx;
+}
+
+.mini {
+  flex: 1;
+  background: #f8f7f4;
+  border-radius: 24rpx;
+  padding: 28rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.mini-title {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 30rpx;
+  color: #1e5c4a;
+}
+
+.goods {
+  display: flex;
+  gap: 24rpx;
+}
+
+.good {
+  flex: 1;
+}
+
+.g-img {
+  height: 216rpx;
+  border-radius: 20rpx;
+  background: repeating-linear-gradient(45deg, #edeae4 0 12rpx, #f7f5f1 12rpx 24rpx);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10rpx;
+  color: #9aa39e;
+  font-size: 18rpx;
+}
+
+.g-name {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+}
+
+.recharge {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.grow {
+  flex: 1;
+}
+
+.btn.sm {
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 36rpx;
+  font-size: 26rpx;
+}

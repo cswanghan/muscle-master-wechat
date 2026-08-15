@@ -310,37 +310,7 @@
   min-width: 0;
 }
 
-.dock {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 120rpx;
-  background: #faf8f3;
-  border-top: 1rpx solid #d7e6df;
-  display: flex;
-  z-index: 20;
-}
-
-.dock-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #8b948f;
-  font-size: 22rpx;
-}
-
-.dock-item.on {
-  color: #1e5c4a;
-  font-weight: 600;
-}
-
-.dock-ico {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 50%;
-  border: 3rpx solid currentColor;
-  margin-bottom: 6rpx;
+.dock-svg {
+  width: 44rpx;
+  height: 44rpx;
 }

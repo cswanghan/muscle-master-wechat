@@ -86,6 +86,9 @@ Page({
   goManager() {
     wx.redirectTo({ url: '/pages/manager/manager' })
   },
+  goPerf() {
+    wx.navigateTo({ url: '/pages/performance/performance' })
+  },
   goMine() {
     wx.navigateTo({ url: '/pages/index/index' })
   },

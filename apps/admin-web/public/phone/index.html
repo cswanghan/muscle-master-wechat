@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>肌松大师 · 真机 Demo</title>
+  <style>
+    :root { --jade:#1E5C4A; --deep:#143F34; --copper:#C0803A; --sand:#F4F2EE; --ink:#17211D; --mute:#8B948F; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"Noto Sans SC","PingFang SC",sans-serif; background:var(--sand); color:var(--ink); }
+    .wrap { max-width:480px; margin:0 auto; padding:28px 20px 48px; }
+    .brand { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+    .mark { width:48px; height:48px; border-radius:50%; background:var(--jade); color:#fff; display:flex; align-items:center; justify-content:center; font:600 22px/1 "Noto Serif SC",serif; }
+    h1 { margin:0; font:600 26px/1.3 "Noto Serif SC",serif; }
+    .sub { color:var(--mute); font-size:13px; margin-top:4px; }
+    .card { background:#fff; border-radius:16px; padding:18px; margin-top:16px; border:1px solid #E7E3DC; }
+    .title { font:600 16px/1 "Noto Serif SC",serif; margin-bottom:10px; }
+    p { margin:0 0 10px; color:#4A544F; font-size:14px; line-height:1.7; }
+    .btns { display:flex; flex-direction:column; gap:10px; }
+    a.btn { display:block; text-align:center; text-decoration:none; border-radius:999px; padding:14px 18px; font-weight:600; }
+    a.jade { background:var(--jade); color:#fff; }
+    a.ghost { border:1px solid var(--jade); color:var(--jade); }
+    a.deep { background:var(--deep); color:#fff; }
+    .qr { display:flex; flex-direction:column; align-items:center; gap:8px; padding:8px 0; }
+    #qr { width:196px; height:196px; background:#fff; }
+    .url { font:400 12px/1.4 ui-monospace,Menlo,monospace; color:var(--mute); word-break:break-all; text-align:center; }
+    .warn { background:#FAF1E4; color:#8A5F24; border-radius:12px; padding:12px 14px; font-size:13px; line-height:1.6; }
+    ol { margin:8px 0 0; padding-left:18px; color:#4A544F; font-size:13px; line-height:1.8; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="mark">松</div>
+      <div>
+        <h1>肌松大师</h1>
+        <div class="sub">17 屏对齐交付包 · 真机 Demo</div>
+      </div>
+    </div>
+
+    <div class="card warn">
+      手机和这台电脑连同一 Wi-Fi。不要走代理。微信扫码后若打不开，用系统浏览器打开下方地址。
+    </div>
+
+    <div class="card">
+      <div class="title">扫码打开</div>
+      <div class="qr">
+        <img src="./qr.png" width="196" height="196" alt="扫码打开真机 Demo" />
+        <canvas id="qr" width="196" height="196" style="display:none"></canvas>
+        <div class="url" id="url"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title">直接进入</div>
+      <div class="btns">
+        <a class="btn jade" href="./app.html#c1">顾客端 · 预约到支付</a>
+        <a class="btn deep" href="./app.html#t1">技师端 · 工作台</a>
+        <a class="btn ghost" href="./app.html#m1">店长端 · 经营概览</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title">真机怎么测</div>
+      <ol>
+        <li>顾客端：首页 → 特惠抢约 / 按症状找 → 选时段 → 锁定 15 分钟 → 立即支付（演示回调）。</li>
+        <li>我的：看下一单、核销码、改约提示、券包 / 好礼。</li>
+        <li>技师端：下一单开始服务、空档「填满它」、业绩明细。</li>
+        <li>店长端：满班率 + 待审批。</li>
+        <li>原生微信小程序仍在开发者工具里，需正式 AppID 才能出微信预览码。</li>
+      </ol>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    const url = location.origin + '/phone/app.html#c1'
+    document.getElementById('url').textContent = url
+    if (window.QRCode) {
+      QRCode.toCanvas(document.getElementById('qr'), url, { width: 196, margin: 1, color: { dark: '#143F34', light: '#FFFFFF' } })
+    }
+  </script>
+</body>
+</html>

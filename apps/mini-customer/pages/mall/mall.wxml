@@ -1,0 +1,69 @@
+<view class="page" id="c7-mall">
+  <view class="sec-card">
+    <view class="sec-name">肌松礼卡</view>
+    <view class="hero-card" bindtap="soon">
+      <view>
+        <view class="hero-title">项目礼卡</view>
+        <view class="hero-sub">对症调理 · 健康守护</view>
+      </view>
+      <view class="hero-bot">
+        <view class="price">¥119 起</view>
+        <view class="ph">礼卡主视觉</view>
+      </view>
+    </view>
+    <view class="split">
+      <view class="mini" bindtap="soon">
+        <view class="mini-title">电子礼卡</view>
+        <view class="mini-sub">在线赠送 心意速达</view>
+        <view class="price sm">¥200 起</view>
+      </view>
+      <view class="mini" bindtap="soon">
+        <view class="mini-title">实体礼卡</view>
+        <view class="mini-sub">定制礼盒 独特心意</view>
+        <view class="price sm">¥200 起</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="sec-card">
+    <view class="sec-row">
+      <view class="sec-name">肌松周边</view>
+      <view class="sec-more">全部 ›</view>
+    </view>
+    <view class="goods">
+      <view class="good" bindtap="soon">
+        <view class="g-img">商品图</view>
+        <view class="g-name">护颈助眠小枕</view>
+        <view class="price sm">¥299.00</view>
+      </view>
+      <view class="good" bindtap="soon">
+        <view class="g-img">商品图</view>
+        <view class="g-name">祛寒理疗包</view>
+        <view class="price sm">¥199.00</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="sec-card recharge" bindtap="soon">
+    <view class="grow">
+      <view class="sec-name">储值有礼</view>
+      <view class="mini-sub">充 1000 得 1100，赠金不可退</view>
+    </view>
+    <view class="btn sm">去充值</view>
+  </view>
+
+  <view class="dock">
+    <view class="dock-item" bindtap="goHome">
+      <image class="dock-svg" src="/images/dock/booking.svg" />
+      <view>预约</view>
+    </view>
+    <view class="dock-item on">
+      <image class="dock-svg" src="/images/dock/gift-on.svg" />
+      <view>好礼</view>
+    </view>
+    <view class="dock-item" bindtap="goMine">
+      <image class="dock-svg" src="/images/dock/profile.svg" />
+      <view>我的</view>
+    </view>
+  </view>
+</view>

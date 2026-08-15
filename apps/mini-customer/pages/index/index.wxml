@@ -8,10 +8,10 @@
   <view class="sec-card">
     <view class="sec-row">
       <view class="sec-name">特惠预约</view>
-      <view class="sec-more">更多活动 ›</view>
+      <view class="sec-more" bindtap="goMall">更多活动 ›</view>
     </view>
     <view wx:if="{{deal}}" class="deal" bindtap="goDeal">
-      <view class="thumb">技师照</view>
+      <view class="thumb deal-thumb">技师照</view>
       <view class="grow">
         <view class="deal-top">
           <view class="deal-name">{{deal.name}}</view>
@@ -20,8 +20,8 @@
             <text class="strike">{{deal.strikeYuan}}</text>
           </view>
         </view>
-        <view class="meta">{{deal.therapistName}}  |  今天 19:30–20:30</view>
-        <view class="meta">4.0km · {{nearStore}}</view>
+        <view class="meta">{{deal.therapistName}} <text class="sep">|</text> 今天 19:30–20:30</view>
+        <view class="km-line">4.0km · {{nearStore}}</view>
         <view class="deal-bot">
           <text class="tag copper">9.5折 · 仅此1档</text>
           <view class="btn sm" id="entry-deal">立即抢约</view>
@@ -36,23 +36,25 @@
       <view class="sec-more" id="entry-store" bindtap="goStores">更多门店 ›</view>
     </view>
     <view wx:for="{{stores}}" wx:key="storeId" class="store" data-item="{{item}}" bindtap="goStore">
-      <view class="thumb">门店实拍</view>
+      <view class="thumb store-thumb">门店实拍</view>
       <view class="grow">
         <view class="deal-top">
           <view class="deal-name">{{item.name}}</view>
           <view class="km">{{index===0?'4.0km':'7.3km'}}</view>
         </view>
-        <view class="meta">10:00–22:00 <text wx:if="{{index===0}}" class="near">就近</text></view>
-        <view class="jade">{{index===0?'今晚余 6 档':'今晚已满 · 可约明天'}}</view>
+        <view class="meta">{{item.businessStart || '10:00'}}–{{item.businessEnd || '22:00'}} <text wx:if="{{index===0}}" class="near">就近</text></view>
+        <view class="store-bot">
+          <view class="jade">{{index===0?'今晚余 6 档':'今晚已满 · 可约明天'}}</view>
+          <view class="btn ghost sm">预约</view>
+        </view>
       </view>
-      <view class="btn ghost sm">预约</view>
     </view>
   </view>
 
   <view class="sec-card">
     <view class="sec-row">
       <view class="sec-name">推拿师预约</view>
-      <view class="sec-more" id="entry-therapist" bindtap="goTherapists">按症找找 ›</view>
+      <view class="sec-more" id="entry-therapist" bindtap="goSymptom">按症状找 ›</view>
     </view>
     <view wx:for="{{therapists}}" wx:key="therapistId" class="store th" data-item="{{item}}" bindtap="goTherapist">
       <view class="avatar"></view>
@@ -72,15 +74,15 @@
 
   <view class="dock">
     <view class="dock-item on">
-      <view class="dock-ring"></view>
+      <image class="dock-svg" src="/images/dock/booking-on.svg" />
       <view>预约</view>
     </view>
-    <view class="dock-item">
-      <view class="dock-dia"></view>
+    <view class="dock-item" bindtap="goMall">
+      <image class="dock-svg" src="/images/dock/gift.svg" />
       <view>好礼</view>
     </view>
     <view class="dock-item" bindtap="goMine">
-      <view class="dock-me"></view>
+      <image class="dock-svg" src="/images/dock/profile.svg" />
       <view>我的</view>
     </view>
   </view>

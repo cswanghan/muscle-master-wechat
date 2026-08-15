@@ -36,6 +36,7 @@ Page({
     pending: false,
     error: '',
     payParams: null,
+    discountYuan: '0',
   },
   timer: null,
   onLoad(query) {
@@ -51,6 +52,7 @@ Page({
       start: query.start || '',
       priceFen: Number(query.priceFen || 0),
       priceYuan: fenYuan(query.priceFen || 0),
+      discountYuan: fenYuan(Math.round(Number(query.priceFen || 0) * 0.05)),
       durationMinutes: Number(query.durationMinutes || 60),
       bufferMinutes: Number(query.bufferMinutes || 15),
       orderId: query.orderId || '',

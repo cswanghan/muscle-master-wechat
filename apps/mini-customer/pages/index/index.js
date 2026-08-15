@@ -27,7 +27,7 @@ Page({
       const p = (projects.items || [])[0]
       const deal = p
         ? {
-            name: p.name,
+            name: (p.name || '对症调理') + ' ' + (p.durationMinutes || 60) + ' 分钟',
             priceYuan: fenYuan(Math.round(p.priceFen * 0.95)),
             strikeYuan: fenYuan(p.priceFen),
             therapistName: (thItems[0] && thItems[0].name) || '推荐技师',
@@ -56,6 +56,9 @@ Page({
   },
   goMine() {
     wx.redirectTo({ url: '/pages/mine/mine' })
+  },
+  goMall() {
+    wx.redirectTo({ url: '/pages/mall/mall' })
   },
   goDeal() {
     const d = this.data.deal

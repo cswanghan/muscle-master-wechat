@@ -5,13 +5,15 @@
     "pages/frontdesk/frontdesk",
     "pages/manager/manager",
     "pages/schedule/schedule",
-    "pages/index/index"
+    "pages/index/index",
+    "pages/promotions/promotions",
+    "pages/performance/performance"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#1E5C4A",
+    "navigationBarBackgroundColor": "#143F34",
     "navigationBarTitleText": "肌松大师 · 员工端",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#F4F1EA",
+    "backgroundColor": "#F4F2EE",
     "backgroundTextStyle": "light"
   },
   "style": "v2",

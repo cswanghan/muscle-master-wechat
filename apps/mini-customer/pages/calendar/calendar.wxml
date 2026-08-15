@@ -19,9 +19,8 @@
       data-iso="{{item.iso}}"
       bindtap="pickDate"
     >
-      <view class="date-w">{{item.iso===date?'今天':'周'+item.week}}</view>
-      <view class="date-d">{{item.day}}</view>
-      <view class="date-n">余 {{item.left || 3}}</view>
+      <view class="date-w">{{item.label}}</view>
+      <view class="date-n">余 {{item.left}}</view>
     </view>
   </scroll-view>
 

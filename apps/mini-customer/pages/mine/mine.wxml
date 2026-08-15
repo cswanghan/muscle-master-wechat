@@ -14,7 +14,7 @@
       </view>
       <view class="wallet-col">
         <view class="wallet-cap">礼卡余额</view>
-        <view class="wallet-num">¥0.00</view>
+        <view class="wallet-num">¥200.00</view>
       </view>
       <view class="recharge" bindtap="onRecharge">充值</view>
     </view>
@@ -51,15 +51,15 @@
       <view class="menu-extra">{{orders.length}}</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row" bindtap="soon">
+    <view class="menu-row" bindtap="goMall">
       <view class="menu-ico"></view>
       <view class="grow">好礼订单</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row" bindtap="soon">
+    <view class="menu-row" bindtap="goCoupon">
       <view class="menu-ico"></view>
       <view class="grow">我的券包</view>
-      <view class="badge">0</view>
+      <view class="badge">3</view>
       <view class="chev">›</view>
     </view>
     <view class="menu-row" bindtap="openArchive">
@@ -73,9 +73,14 @@
       <view class="grow">邀请有奖</view>
       <view class="chev">›</view>
     </view>
-    <view class="menu-row last" bindtap="onService">
+    <view class="menu-row" bindtap="onService">
       <view class="menu-ico"></view>
       <view class="grow">联系客服</view>
+      <view class="chev">›</view>
+    </view>
+    <view class="menu-row last" bindtap="onAbout">
+      <view class="menu-ico"></view>
+      <view class="grow">关于肌松大师</view>
       <view class="chev">›</view>
     </view>
   </view>
@@ -101,15 +106,15 @@
 
   <view class="dock">
     <view class="dock-item" bindtap="goHome">
-      <view class="dock-ico">○</view>
+      <image class="dock-svg" src="/images/dock/booking.svg" />
       <view>预约</view>
     </view>
-    <view class="dock-item" bindtap="soon">
-      <view class="dock-ico">◇</view>
+    <view class="dock-item" bindtap="goMall">
+      <image class="dock-svg" src="/images/dock/gift.svg" />
       <view>好礼</view>
     </view>
     <view class="dock-item on">
-      <view class="dock-ico">我</view>
+      <image class="dock-svg" src="/images/dock/profile-on.svg" />
       <view>我的</view>
     </view>
   </view>

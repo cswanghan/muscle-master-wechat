@@ -76,23 +76,51 @@
 .jade { color: #1e5c4a; }
 
 .coupon {
-  padding: 20rpx;
-  border-radius: 16rpx;
-  border: 2rpx solid #e7e3dc;
-  margin-bottom: 12rpx;
+  padding: 22rpx 24rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid #edeae4;
+  margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
 }
 
 .coupon.on { border-color: #1e5c4a; }
-.coupon.off { color: #8b948f; }
-.warn { color: #b3452f; font-size: 22rpx; margin-left: 8rpx; }
+.coupon.off { color: #b6bdb8; background: #fbfaf8; }
+.warn { color: #b3452f; font-size: 22rpx; }
+.off-amt {
+  color: #c0803a;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.dot {
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  border: 3rpx solid #d8dcd8;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  color: #fff;
+}
+.dot.on {
+  background: #1e5c4a;
+  border-color: #1e5c4a;
+}
 
 .pay-row {
   padding: 18rpx 0;
-  border-top: 1rpx solid #eef2ef;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
 }
 
-.pay-row.on { color: #1e5c4a; font-weight: 600; }
+.pay-row.on { color: #17211d; font-weight: 500; }
 .pay-row.off { color: #8b948f; }
+.grow { flex: 1; min-width: 0; }
 
 .sec {
   font-weight: 700;

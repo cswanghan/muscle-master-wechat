@@ -171,6 +171,19 @@ Page({
   soon() {
     wx.showToast({ title: '该入口尚未开通', icon: 'none' })
   },
+  goCoupon() {
+    wx.navigateTo({ url: '/pages/coupon/coupon' })
+  },
+  goMall() {
+    wx.redirectTo({ url: '/pages/mall/mall' })
+  },
+  onAbout() {
+    wx.showModal({
+      title: '关于肌松大师',
+      content: '对症推拿连锁 · 满班率北极星\n客户 / 技师 / 前台 / 店长 四端\nP0 演示包 v1.0',
+      showCancel: false,
+    })
+  },
   onService() {
     wx.showModal({
       title: '联系客服',
