@@ -22,11 +22,19 @@ function request({ url, method = 'GET', data, token }) {
   })
 }
 
-function loginTherapist() {
+/**
+ * who is t1|t2|t3 -> demo.t1 林晓 / demo.t2 陈默 / demo.t3 周可. It used to be
+ * hardcoded to t1, so booking any other therapist left the board empty and the
+ * whole thing looked like it was not wired up. The server maps the code to a
+ * staff_user, and therapist.staff_user_id links that back to the therapist the
+ * customer actually picked.
+ */
+function loginTherapist(who) {
+  const role = ['t1', 't2', 't3'].indexOf(who) >= 0 ? who : 't1'
   return request({
     url: '/api/v1/staff/auth/wechat',
     method: 'POST',
-    data: { code: 'dev-staff-t1' },
+    data: { code: 'dev-staff-' + role },
   })
 }
 

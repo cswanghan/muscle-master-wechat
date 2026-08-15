@@ -14,6 +14,8 @@ public class MockWeChatClient implements WeChatClient {
     public static final String DEV_STAFF_MANAGER_CODE = "dev-staff-manager";
     public static final String DEV_STAFF_FRONT_CODE = "dev-staff-front";
     public static final String DEV_STAFF_T1_CODE = "dev-staff-t1";
+    public static final String DEV_STAFF_T2_CODE = "dev-staff-t2";
+    public static final String DEV_STAFF_T3_CODE = "dev-staff-t3";
     public static final String DEV_C2_CODE = "dev-c2";
     public static final String DEV_PHONE_CODE = "dev-phone";
     public static final String DEV_PHONE_CODE_2 = "dev-phone-2";
@@ -25,6 +27,8 @@ public class MockWeChatClient implements WeChatClient {
     public static final String DEV_MANAGER_OPENID = "oDEV_MANAGER";
     public static final String DEV_FRONT_OPENID = "oDEV_FRONT";
     public static final String DEV_T1_OPENID = "oDEV_T1";
+    public static final String DEV_T2_OPENID = "oDEV_T2";
+    public static final String DEV_T3_OPENID = "oDEV_T3";
     public static final String DEV_PHONE = "13800138000";
     public static final String DEV_PHONE_2 = "13900139000";
 
@@ -40,6 +44,8 @@ public class MockWeChatClient implements WeChatClient {
             case DEV_STAFF_MANAGER_CODE -> new WeChatSession(DEV_MANAGER_OPENID, "uDEV_MANAGER");
             case DEV_STAFF_FRONT_CODE -> new WeChatSession(DEV_FRONT_OPENID, "uDEV_FRONT");
             case DEV_STAFF_T1_CODE -> new WeChatSession(DEV_T1_OPENID, "uDEV_T1");
+            case DEV_STAFF_T2_CODE -> new WeChatSession(DEV_T2_OPENID, "uDEV_T2");
+            case DEV_STAFF_T3_CODE -> new WeChatSession(DEV_T3_OPENID, "uDEV_T3");
             default -> {
                 if (code.startsWith("mock:")) {
                     yield new WeChatSession(code.substring(5), null);

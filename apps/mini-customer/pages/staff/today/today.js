@@ -103,6 +103,19 @@ Page({
     rateText: '—',
     dateLabel: '',
     pendingCount: 0,
+    who: 't1',
+  },
+  onLoad(query) {
+    // Switching therapist must drop the old token, or the board keeps
+    // answering as whoever logged in first.
+    const who = (query && query.who) || 't1'
+    const app = getApp()
+    if (app.globalData.staffRole !== who) {
+      app.globalData.token = ''
+      app.globalData.staffName = ''
+      app.globalData.staffRole = who
+    }
+    this.setData({ who })
   },
   onShow() {
     const d = new Date()
@@ -117,7 +130,7 @@ Page({
       this.setData({ staffName: app.globalData.staffName || '技师' })
       return Promise.resolve(app.globalData.token)
     }
-    return api.loginTherapist().then((data) => {
+    return api.loginTherapist(app.globalData.staffRole || this.data.who).then((data) => {
       app.globalData.token = data.token
       app.globalData.staffName = data.name || '技师'
       this.setData({ staffName: app.globalData.staffName })

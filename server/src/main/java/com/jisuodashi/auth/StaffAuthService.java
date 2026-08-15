@@ -106,6 +106,8 @@ public class StaffAuthService {
             case MockWeChatClient.DEV_STAFF_MANAGER_CODE -> "demo.manager";
             case MockWeChatClient.DEV_STAFF_FRONT_CODE -> "demo.front";
             case MockWeChatClient.DEV_STAFF_T1_CODE -> "demo.t1";
+            case MockWeChatClient.DEV_STAFF_T2_CODE -> "demo.t2";
+            case MockWeChatClient.DEV_STAFF_T3_CODE -> "demo.t3";
             default -> null;
         };
     }
