@@ -1,0 +1,27 @@
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # API_UPSTREAM / API_HOST are substituted at container start (envsubst).
+    # compose: http://server:8080 ; WeChat CloudBase: the muscle-api public HTTPS domain.
+    location /actuator/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_set_header Host ${API_HOST};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_ssl_server_name on;
+    }
+
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_set_header Host ${API_HOST};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_ssl_server_name on;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

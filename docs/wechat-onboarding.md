@@ -56,23 +56,55 @@ JSAPI 授权目录：
 
 ## 微信云托管（远程体验）
 
-本机已安装 `@wxcloud/cli`（`wxcloud`）。部署前管理员在控制台完成：
+本机已安装 `@wxcloud/cli`（`wxcloud`）。
 
-1. 打开 [云托管控制台](https://cloud.weixin.qq.com/cloudrun)，用正式号 `wxf848c067f5807a75` 开通环境
-2. [设置 → CLI 密钥](https://cloud.weixin.qq.com/cloudrun/settings/other) 生成密钥（管理员扫码）
-3. 本机执行：`wxcloud login --appId wxf848c067f5807a75`，粘贴密钥
-4. 部署 API：`cd server && wxcloud service:create -s muscle-api --isPublic`  
-   然后 `wxcloud run:deploy . -s muscle-api --containerPort 8080 --noConfirm --remark p0-demo`
+正式号 `wxf848c067f5807a75` 已开通环境：
 
-`server/wxcloud.config.js` 已按 8080 / 现有 Dockerfile 配好。首次用 `dev` profile（H2），不必先挂 MySQL。
+- 环境 ID：`prod-d3gvc0fd30c1c760d`
+- 微信自带模板 `springboot-tm6p` 已于 2026-08-15 部署成功（计数器 Demo，不是本仓库）
+- 模板公网：`https://springboot-tm6p-297565-11-1469372614.sh.run.tcloudbase.com`（可留着对照，不要写进小程序 `apiBase`）
+
+### 已部署服务（2026-08-15）
+
+| 服务 | 公网地址 | 说明 |
+| --- | --- | --- |
+| `muscle-api` | `https://muscle-api-297565-11-1469372614.sh.run.tcloudbase.com` | 本仓库 `server/`，端口 8080，`dev` profile + H2 |
+| `muscle-admin` | `https://muscle-admin-297565-11-1469372614.sh.run.tcloudbase.com` | 本仓库 `apps/admin-web/`，nginx:80，`/api/` 反代到 `muscle-api` |
+| `springboot-tm6p` | — | 微信自带计数器模板，可随时删除 |
+
+已验证：`GET /`（探活）、`GET /actuator/health`、`GET /api/v1/c/stores`、`GET /api/v1/c/therapists` 均 200，演示种子数据在。
+
+重新部署（CLI 的 `--envParams` 报 `Conf.OperationMode` 不识别，别加这个参数）：
+
+```
+# API：跳过 target/，否则代码包超限
+cd server && wxcloud run:deploy . -e prod-d3gvc0fd30c1c760d -s muscle-api \
+  --containerPort 8080 --targetDir . --dockerfile Dockerfile --noConfirm --remark p0-demo
+
+# 管理后台：上传前先排除 node_modules/ 和 dist/（174M，CLI 不完全遵守 .dockerignore）
+cd apps/admin-web && wxcloud run:deploy . -e prod-d3gvc0fd30c1c760d -s muscle-admin \
+  --containerPort 80 --targetDir . --dockerfile Dockerfile --noConfirm --remark p0-admin-web
+```
+
+反代目标写死在 `apps/admin-web/Dockerfile` 的 `API_UPSTREAM` / `API_HOST`（envsubst 注入 nginx 模板），
+本地 `deploy/docker-compose.yml` 用 `environment` 覆盖回 `http://server:8080`。换 API 域名时改 Dockerfile。
+
+**H2 是内存库**：容器重启或扩容后订单数据清空、多实例之间不一致。仅够单次演示。
+微信会把云数据库账号发到管理员微信，切正式 MySQL 时用它填 `SPRING_DATASOURCE_*` 并把 profile 从 `dev` 换掉。
 
 ## 服务器域名（小程序后台）
 
+两个小程序的 `config.js` 已指向 `https://muscle-api-297565-11-1469372614.sh.run.tcloudbase.com`。
+真机体验前必须在 MP 后台「开发管理 → 开发设置 → 服务器域名」把该域名加进 request 合法域名；
+开发者工具里可临时勾「不校验合法域名」跳过。
+
 | 类型 | C 端 | 员工端 |
 | --- | --- | --- |
-| request 合法域名 | [ ] | [ ] |
+| request 合法域名 | [ ] `muscle-api-297565-11-1469372614.sh.run.tcloudbase.com` | [ ] 同左 |
 | uploadFile | P0 可不配 | [ ] 头像/封面如走 OSS |
 | downloadFile | [ ] | [ ] |
+
+员工端 `apps/mini-staff/project.config.json` 仍是 `touristappid`，只能在工具里跑，无法真机预览/上传，需要单独的小程序 AppID。
 
 ## 验收签字
 

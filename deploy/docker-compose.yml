@@ -65,6 +65,10 @@ services:
     build:
       context: ../apps/admin-web
       dockerfile: Dockerfile
+    environment:
+      # Image defaults point at WeChat CloudBase; locally proxy to the compose server.
+      API_UPSTREAM: "http://server:8080"
+      API_HOST: "server:8080"
     ports:
       - "8081:80"
     depends_on:
