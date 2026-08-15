@@ -1,5 +1,5 @@
 const { request, ensureLogin, rid } = require('../../utils/api.js')
-const { fenYuan, statusLabel, isOngoing, levelLabel } = require('../../utils/format.js')
+const { fenYuan, statusLabel, isOngoing, levelLabel, todayIso } = require('../../utils/format.js')
 const mock = require('../../utils/mock.js')
 const config = require('../../config.js')
 
@@ -11,7 +11,7 @@ function maskPhone(customerId) {
 function whenLabel(order) {
   const date = order.date || ''
   const start = order.start || ''
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayIso()
   const day = date === today ? '今天' : date.slice(5).replace('-', '-')
   return (day + ' ' + start).trim()
 }

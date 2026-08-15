@@ -1,6 +1,9 @@
 const { request } = require('../../utils/api.js')
-const { fenYuan, slotToTime } = require('../../utils/format.js')
+const { fenYuan, slotToTime, todayIso } = require('../../utils/format.js')
 const { demoDate, mockFallback } = require('../../config.js')
+
+// demoDate pins the calendar for a scripted demo; empty means the real today.
+const startDate = () => demoDate || todayIso()
 const mock = require('../../utils/mock.js')
 
 function addDays(iso, n) {
@@ -69,7 +72,7 @@ Page({
     priceYuan: '0',
     durationMinutes: 60,
     bufferMinutes: 15,
-    date: demoDate,
+    date: '',
     dates: [],
     therapists: [],
     selected: null,
@@ -77,9 +80,10 @@ Page({
     error: '',
   },
   onLoad(query) {
+    const base = startDate()
     const dates = []
     for (let i = 0; i < 5; i += 1) {
-      const iso = addDays(demoDate, i)
+      const iso = addDays(base, i)
       const label = i === 0 ? '今天' : i === 1 ? '明天' : '周' + weekday(iso)
       dates.push({ iso, day: iso.slice(8), week: weekday(iso), label, left: '—', on: i === 0 })
     }
@@ -94,6 +98,7 @@ Page({
       priceYuan: fenYuan(query.priceFen || 0),
       durationMinutes: Number(query.durationMinutes || 60),
       bufferMinutes: Number(query.bufferMinutes || 15),
+      date: query.date || base,
       dates,
     }, () => {
       this._ready = true
@@ -121,7 +126,9 @@ Page({
       const selected = this.data.selected
       let therapists = ((data && data.therapists) || []).map((t) => paintTherapist(t, selected))
       const bookable = therapists.some((t) => (t.slots || []).some((s) => s.bookable))
-      if (!therapists.length || !bookable) {
+      // "Fully booked" is a real answer. Papering over it with invented slots
+      // just moves the failure to the booking call.
+      if (mockFallback && (!therapists.length || !bookable)) {
         therapists = mock.mockAvailability({
           therapistId,
           priceFen: this.data.priceFen || 19800,
@@ -129,7 +136,12 @@ Page({
       }
       const left = therapists.reduce((n, t) => n + (t.slots || []).filter((s) => s.bookable).length, 0)
       const dates = this.data.dates.map((d) => (d.iso === this.data.date ? { ...d, left } : d))
-      this.setData({ therapists, dates, loading: false, error: '' })
+      this.setData({
+        therapists,
+        dates,
+        loading: false,
+        error: therapists.length && !left ? '这天已约满，换一天试试' : '',
+      })
     }
     let path = `/api/v1/c/availability?storeId=${storeId || mock.STORE_ID}&date=${date}&projectId=${projectId || mock.projects[0].projectId}&includeBusy=1`
     if (therapistId) {

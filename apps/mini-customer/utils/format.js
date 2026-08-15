@@ -57,7 +57,18 @@ function mmss(ms) {
   return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0')
 }
 
+/**
+ * Local calendar date, not UTC. toISOString() is UTC, so between 00:00 and
+ * 08:00 Beijing time it reports yesterday and "today" comparisons flip.
+ */
+function todayIso() {
+  const d = new Date()
+  const pad = (n) => (n < 10 ? '0' : '') + n
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+}
+
 module.exports = {
+  todayIso,
   fenYuan,
   slotToTime,
   rating,

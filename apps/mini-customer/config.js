@@ -1,7 +1,7 @@
 module.exports = {
   // Keep in step with the version typed into DevTools on upload, so the number
   // shown on 我的 tells you which build a tester is actually running.
-  version: '0.6.0',
+  version: '0.7.0',
 
   // 'container': wx.cloud.callContainer — reaches the CloudBase service over
   //   the WeChat gateway, so NO request 合法域名 entry is needed and changing
@@ -16,7 +16,10 @@ module.exports = {
   },
 
   apiBase: 'https://muscle-api-297565-11-1469372614.sh.run.tcloudbase.com',
-  demoDate: '2026-08-15',
+  // Empty = start the calendar on the real today. A pinned date silently rots:
+  // once it is in the past the picker offers dead slots, and 前台/技师端 only
+  // show today's orders, so a booking made against it is invisible to staff.
+  demoDate: '',
   // Off: a failed booking/login surfaces the error. On: it silently becomes a
   // local fake order, which looks identical to success and hides an outage —
   // that is how a demo produced an M-prefixed code the server had never seen.
