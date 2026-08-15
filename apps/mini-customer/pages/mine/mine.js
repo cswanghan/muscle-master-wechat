@@ -32,6 +32,7 @@ Page({
     loading: true,
     error: '',
     version: config.version,
+    transport: config.transport,
   },
   onShow() {
     this.reload()

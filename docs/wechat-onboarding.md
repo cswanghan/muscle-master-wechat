@@ -101,11 +101,28 @@ cd apps/admin-web && wxcloud run:deploy . -e <ENV_ID> -s muscle-admin \
 **H2 是内存库**：容器重启或扩容后订单数据清空、多实例之间不一致。仅够单次演示。
 微信会把云数据库账号发到管理员微信，切正式 MySQL 时用它填 `SPRING_DATASOURCE_*` 并把 profile 从 `dev` 换掉。
 
+## 请求通道（C 端）
+
+`apps/mini-customer/config.js` 的 `transport` 决定小程序怎么打到 API：
+
+| 值 | 走法 | 要不要配合法域名 |
+| --- | --- | --- |
+| `container`（当前默认） | `wx.cloud.callContainer`，经微信网关直达云托管服务 | **不要** |
+| `request` | `wx.request` 打 `apiBase` | 要，否则 `request:fail url not in domain list` |
+
+`container` 的前提是小程序和云托管服务在同一 AppID 下（都是 `wxf848c067f5807a75`），
+并由 `config.cloud.env` + `config.cloud.service` 指定环境和服务名，靠请求头 `X-WX-SERVICE` 路由。
+好处是换域名不用动 MP 后台，也不消耗**每月仅 5 次**的服务器域名修改额度。
+网关会额外注入 `X-WX-OPENID` / `X-WX-APPID` 等头，服务端忽略它们，已验证不影响任何接口。
+
+两条通道共用同一套 `request()`，页面代码无差别；出问题把 `transport` 改回 `request`
+再配上域名即可回退。当前走哪条，看「我的」页底部那行。
+
 ## 服务器域名（小程序后台）
 
-两个小程序的 `config.js` 已指向 `<API_HOST>`。
-真机体验前必须在 MP 后台「开发管理 → 开发设置 → 服务器域名」把该域名加进 request 合法域名；
-开发者工具里可临时勾「不校验合法域名」跳过。
+只有 `transport: 'request'` 才需要这一节。两个小程序的 `config.js` 里 `apiBase` 指向 `<API_HOST>`；
+员工端没有 callContainer 可用（还没有自己的 AppID），仍走 `wx.request`。
+配置位置：MP 后台「开发管理 → 开发设置 → 服务器域名」，开发者工具里可临时勾「不校验合法域名」跳过。
 
 | 类型 | C 端 | 员工端 |
 | --- | --- | --- |
@@ -127,6 +144,7 @@ cd apps/admin-web && wxcloud run:deploy . -e <ENV_ID> -s muscle-admin \
 | 0.2.0 | 2026-08-15 | 首个体验版。`apiBase` 还是局域网 IP，外部设备用不了 |
 | 0.3.0 | 2026-08-15 | `apiBase` 切云托管；「我的」页显示版本号 |
 | 0.4.0 | 2026-08-16 | 请求失败不再降级成本地假单，如实报错（`mockFallback` 默认关） |
+| 0.5.0 | 2026-08-16 | 改走 `wx.cloud.callContainer`，不再需要 request 合法域名 |
 
 发布顺序（第一步不做，后面两步白费）：
 
