@@ -1,6 +1,7 @@
 package com.jisuodashi.inventory;
 
 import com.jisuodashi.catalog.DemoCatalogIds;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
@@ -28,6 +29,21 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
     private final Map<String, TherapistSlotView> therapistSlots = new ConcurrentHashMap<>();
     private final Map<String, BedSlotView> bedSlots = new ConcurrentHashMap<>();
     private final Map<String, OccupancyView> occupancies = new ConcurrentHashMap<>();
+
+    /**
+     * Bookings write their occupancy into InMemorySlotOccupyStore, not here, so
+     * on dev the two held different pictures of the same day: lockNew correctly
+     * refused a taken slot while this store still reported it FREE, leaving the
+     * schedule board empty and the customer calendar offering slots that could
+     * not be booked. Under MySQL both read one slot_occupancy table, so this
+     * seam only exists for the in-memory pair. Null in unit tests.
+     */
+    private InMemorySlotOccupyStore liveOccupancy;
+
+    @Autowired(required = false)
+    public void setLiveOccupancy(InMemorySlotOccupyStore liveOccupancy) {
+        this.liveOccupancy = liveOccupancy;
+    }
 
     public InMemoryAvailabilityStore() {
         seedFourStatesDemo();
@@ -160,6 +176,14 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
                 out.add(e.getValue());
             }
         }
+        if (liveOccupancy != null) {
+            // Method call, not field access: liveOccupancy is a CGLIB proxy.
+            for (SlotOccupyStore.OccupancyInsert row : liveOccupancy.occupanciesOn(date)) {
+                out.add(new OccupancyView(row.resourceType(), row.resourceId(), row.slotNo()));
+            }
+        }
+        // AvailabilityDay keeps these in a Set, so overlap between the seed and
+        // the live rows is harmless.
         return out;
     }
 

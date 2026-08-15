@@ -57,6 +57,21 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     final Map<String, MutableSlot> bedSlots = new ConcurrentHashMap<>();
     public final Map<String, OccupancyInsert> occupancies = new ConcurrentHashMap<>();
 
+    /**
+     * Read through a method, never the field: this bean is wrapped in a CGLIB
+     * proxy whose fields are null, so a caller touching .occupancies directly
+     * gets an NPE.
+     */
+    public List<OccupancyInsert> occupanciesOn(LocalDate date) {
+        List<OccupancyInsert> out = new ArrayList<>();
+        for (OccupancyInsert row : occupancies.values()) {
+            if (date != null && date.equals(row.slotDate())) {
+                out.add(row);
+            }
+        }
+        return out;
+    }
+
     public int occupancyCount() {
         return occupancies.size();
     }
