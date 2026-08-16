@@ -3,6 +3,23 @@ const { fenYuan, remainMs, mmss } = require('../../utils/format.js')
 const mock = require('../../utils/mock.js')
 const config = require('../../config.js')
 
+/**
+ * calendar.js builds the query with encodeURIComponent, so "15:00" arrives as
+ * "15%3A00" and rendered literally — every text field has to come back through
+ * here. Guarded because 我的 passes some of the same values unencoded, and
+ * decoding a stray "%" would throw.
+ */
+function dec(v) {
+  if (!v) {
+    return ''
+  }
+  try {
+    return decodeURIComponent(v)
+  } catch (e) {
+    return v
+  }
+}
+
 function isPending(status) {
   return status === 'PENDING_PAY'
 }
@@ -45,23 +62,23 @@ Page({
   onLoad(query) {
     this.setData({
       storeId: query.storeId || '',
-      storeName: query.storeName ? decodeURIComponent(query.storeName) : '',
+      storeName: dec(query.storeName),
       therapistId: query.therapistId || '',
-      therapistName: query.therapistName ? decodeURIComponent(query.therapistName) : '',
+      therapistName: dec(query.therapistName),
       photo: mock.therapistPhoto(query.therapistId),
       projectId: query.projectId || '',
-      projectName: query.projectName ? decodeURIComponent(query.projectName) : '',
-      date: query.date || '',
+      projectName: dec(query.projectName),
+      date: dec(query.date),
       startSlotNo: Number(query.startSlotNo || 0),
-      start: query.start || '',
+      start: dec(query.start),
       priceFen: Number(query.priceFen || 0),
       priceYuan: fenYuan(query.priceFen || 0),
       discountYuan: fenYuan(Math.round(Number(query.priceFen || 0) * 0.05)),
       durationMinutes: Number(query.durationMinutes || 60),
       bufferMinutes: Number(query.bufferMinutes || 15),
       orderId: query.orderId || '',
-      orderNo: query.orderNo ? decodeURIComponent(query.orderNo) : '',
-      lockExpireAt: query.lockExpireAt ? decodeURIComponent(query.lockExpireAt) : '',
+      orderNo: dec(query.orderNo),
+      lockExpireAt: dec(query.lockExpireAt),
       status: query.status || (query.orderId ? 'PENDING_PAY' : ''),
     })
     this.syncFlags(this.data.status)
