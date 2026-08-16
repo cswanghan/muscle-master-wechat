@@ -1,22 +1,77 @@
 <view class="page staff-page">
   <view class="bar">
-    <view>
-      <view class="title">门店排班</view>
-      <view class="sub">{{date}} · 只读对照</view>
-    </view>
+    <view class="title">{{storeName}} · {{date}}</view>
+    <view class="onduty">{{onDuty}} 人在岗</view>
   </view>
+
+  <view class="days">
+    <view
+      wx:for="{{dates}}"
+      wx:key="iso"
+      class="day {{item.on ? 'on' : ''}}"
+      data-iso="{{item.iso}}"
+      bindtap="pickDate"
+    >{{item.label}}</view>
+  </view>
+
   <view wx:if="{{error}}" class="err">{{error}}</view>
   <view wx:if="{{loading}}" class="hint">加载中…</view>
-  <view wx:for="{{rows}}" wx:key="therapistId" class="card">
-    <view class="name">{{item.name}} <text class="lvl">{{item.level}}</text></view>
-    <view class="slots">
-      <view wx:for="{{item.chips}}" wx:for-item="c" wx:key="key" class="chip {{c.tone}}">
-        <view class="chip-t">{{c.time}}</view>
-        <view class="chip-s">{{c.label}}</view>
+
+  <view wx:if="{{!loading && rows.length}}" class="card">
+    <view class="sec">
+      <text>技师占用</text>
+      <text class="sec-hint">横向滑动查看全天 →</text>
+    </view>
+
+    <scroll-view scroll-x class="tl" enhanced show-scrollbar="{{false}}">
+      <view class="tl-inner">
+        <view class="ruler">
+          <view wx:for="{{hours}}" wx:key="slot" class="tick">{{item.label}}</view>
+        </view>
+        <view wx:for="{{rows}}" wx:key="therapistId" class="trow">
+          <view class="tname">
+            <view class="tn">{{item.name}}</view>
+            <view class="tl-lvl">{{item.level}}</view>
+          </view>
+          <view class="track">
+            <view
+              wx:for="{{item.spans}}"
+              wx:for-item="s"
+              wx:key="key"
+              class="span {{s.tone}}"
+              style="width:{{s.width}}rpx"
+            >{{s.label}}</view>
+          </view>
+          <view class="thours">{{item.hours}}</view>
+        </view>
       </view>
+    </scroll-view>
+
+    <view class="legend">
+      <view class="lg"><view class="dot booked"></view>已预约</view>
+      <view class="lg"><view class="dot locked"></view>锁定中</view>
+      <view class="lg"><view class="dot rest"></view>休息/请假</view>
+      <view class="lg"><view class="dot free"></view>空闲</view>
     </view>
   </view>
+
+  <view wx:if="{{!loading}}" class="card">
+    <view class="sec">
+      <text>今晚空档</text>
+      <text class="sec-slots">{{gapSlots}} 个 slot</text>
+    </view>
+    <view wx:if="{{!gaps.length}}" class="hint">今晚已排满</view>
+    <view wx:for="{{gaps}}" wx:key="key" class="gap">
+      <view class="grow">{{item.name}} {{item.range}} · {{item.level}}</view>
+      <view class="btn ghost" data-name="{{item.name}}" bindtap="notifyTherapist">通知技师</view>
+    </view>
+    <view class="note">
+      小程序端不提供改约、加钟、退款执行与任何配置操作，仅可查看与审批。需要动库存请回 PC 后台。
+    </view>
+  </view>
+
   <view wx:if="{{!loading && !rows.length}}" class="empty">今日暂无排班</view>
+
   <view class="dock">
     <view class="dock-item" bindtap="goToday">
       <view class="ico"></view>
@@ -26,9 +81,9 @@
       <view class="ico"></view>
       <view>排班</view>
     </view>
-    <view class="dock-item" bindtap="goPerf">
+    <view class="dock-item" bindtap="goManager">
       <view class="ico"></view>
-      <view>业绩</view>
+      <view>概览</view>
     </view>
     <view class="dock-item" bindtap="goMine">
       <view class="ico"></view>

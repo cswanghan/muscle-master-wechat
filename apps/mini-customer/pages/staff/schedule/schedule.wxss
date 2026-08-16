@@ -1,32 +1,239 @@
 .page {
-  min-height: 100vh;
-  background: #f4f2ee;
-  padding: 24rpx 24rpx 140rpx;
+  padding: 20rpx 0 170rpx;
+}
+
+.bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 8rpx 24rpx 16rpx;
+}
+
+.title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #17211d;
+}
+
+.onduty {
+  font-size: 24rpx;
+  color: #8b948f;
+}
+
+.days {
+  display: flex;
+  gap: 12rpx;
+  padding: 0 24rpx 16rpx;
+}
+
+.day {
+  padding: 10rpx 28rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  border: 1rpx solid #e7e3dc;
+  font-size: 26rpx;
+  color: #17211d;
+}
+
+.day.on {
+  background: #1e5c4a;
+  border-color: #1e5c4a;
+  color: #fff;
+}
+
+.card {
+  margin: 0 24rpx 20rpx;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 24rpx;
+}
+
+.sec {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 18rpx;
+}
+
+.sec-hint {
+  font-size: 22rpx;
+  font-weight: 400;
+  color: #8b948f;
+}
+
+.sec-slots {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #c0803a;
+}
+
+/* Timeline: rows scroll together horizontally, names stay readable at the left. */
+.tl {
+  width: 100%;
+}
+
+.tl-inner {
+  display: inline-block;
+  min-width: 100%;
+}
+
+.ruler {
+  display: flex;
+  margin-left: 150rpx;
+  margin-bottom: 8rpx;
+}
+
+.tick {
+  width: 112rpx;
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #b3bab6;
+}
+
+.trow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14rpx;
+}
+
+.tname {
+  width: 150rpx;
+  flex-shrink: 0;
+}
+
+.tn {
+  font-size: 26rpx;
+  color: #17211d;
+}
+
+.tl-lvl {
+  font-size: 20rpx;
+  color: #8b948f;
+}
+
+.track {
+  display: flex;
+  gap: 2rpx;
+  flex-shrink: 0;
+}
+
+.span {
+  height: 56rpx;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #fff;
+  line-height: 56rpx;
+  padding-left: 8rpx;
+  overflow: hidden;
+  white-space: nowrap;
   box-sizing: border-box;
 }
-.bar { margin-bottom: 16rpx; }
-.title { font-size: 40rpx; font-weight: 700; color: #143f34; }
-.sub, .hint { font-size: 26rpx; color: #6b7a74; }
-.err { color: #b3452f; margin-bottom: 12rpx; }
-.card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 24rpx;
-  margin-bottom: 16rpx;
+
+.span.booked {
+  background: #1e5c4a;
 }
-.name { font-size: 32rpx; font-weight: 700; margin-bottom: 12rpx; }
-.lvl { font-size: 22rpx; color: #8b948f; font-weight: 500; }
-.slots { display: flex; flex-wrap: wrap; gap: 8rpx; }
-.chip {
-  min-width: 120rpx;
-  padding: 8rpx 12rpx;
-  border-radius: 10rpx;
+
+.span.locked {
+  background: #f6e6cd;
+  color: #8a6a2f;
+}
+
+.span.rest {
+  background: #efece7;
+  color: #8b948f;
+}
+
+.span.free {
   background: #f4f2ee;
-  font-size: 22rpx;
+  border: 1rpx dashed #ddd8d0;
+  color: transparent;
 }
-.chip.booked { background: #1e5c4a; color: #f4f2ee; }
-.chip.locked { background: #faf1e4; color: #a9752f; }
-.chip.rest { background: #f4f2ee; color: #8b948f; }
-.chip.gap { background: #fff; border: 2rpx dashed #c9cfcb; color: #c0803a; }
-.empty { padding: 40rpx; text-align: center; color: #8b948f; }
-.dock-svg { width: 44rpx; height: 44rpx; }
+
+.thours {
+  width: 80rpx;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 26rpx;
+  color: #17211d;
+}
+
+.legend {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #8b948f;
+}
+
+.lg {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 4rpx;
+}
+
+.dot.booked { background: #1e5c4a; }
+.dot.locked { background: #f6e6cd; }
+.dot.rest { background: #efece7; }
+.dot.free { background: #f4f2ee; border: 1rpx dashed #ddd8d0; }
+
+.gap {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 0;
+  border-top: 1rpx solid #f0ede8;
+  font-size: 26rpx;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn.ghost {
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid #1e5c4a;
+  color: #1e5c4a;
+  font-size: 24rpx;
+}
+
+.note {
+  margin-top: 18rpx;
+  padding: 18rpx;
+  background: #f4f2ee;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  color: #8b948f;
+  line-height: 1.6;
+}
+
+.hint {
+  padding: 20rpx 0;
+  color: #8b948f;
+  font-size: 26rpx;
+}
+
+.err {
+  margin: 0 24rpx 16rpx;
+  padding: 16rpx;
+  background: #fdecea;
+  border-radius: 12rpx;
+  color: #b3261e;
+  font-size: 24rpx;
+}
+
+.empty {
+  text-align: center;
+  padding: 60rpx 0;
+  color: #8b948f;
+}
