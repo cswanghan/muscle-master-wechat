@@ -1,7 +1,7 @@
 module.exports = {
   // Keep in step with the version typed into DevTools on upload, so the number
   // shown on 我的 tells you which build a tester is actually running.
-  version: '0.9.0',
+  version: '0.10.0',
 
   // 'container': wx.cloud.callContainer — reaches the CloudBase service over
   //   the WeChat gateway, so NO request 合法域名 entry is needed and changing

@@ -5,9 +5,13 @@
     <view class="hint">技师工作台 / 前台收银 / 店长审批</view>
   </view>
   <view class="hint">按顾客预约的那位技师进，工作台只显示本人的单</view>
-  <navigator url="/pages/staff/today/today?who=t1" class="go">技师 · 林晓（资深）</navigator>
-  <navigator url="/pages/staff/today/today?who=t2" class="go">技师 · 陈默（中级）</navigator>
-  <navigator url="/pages/staff/today/today?who=t3" class="go">技师 · 周可（初级）</navigator>
+  <view wx:if="{{error}}" class="hint">{{error}}</view>
+  <navigator
+    wx:for="{{therapists}}"
+    wx:key="who"
+    url="/pages/staff/today/today?who={{item.who}}"
+    class="go"
+  >技师 · {{item.name}}（{{item.levelLabel}}）</navigator>
   <navigator url="/pages/staff/frontdesk/frontdesk" class="go">前台 · 核销与收银</navigator>
   <navigator url="/pages/staff/manager/manager" class="go">店长 · 经营概览</navigator>
   <navigator url="/pages/staff/schedule/schedule" class="go ghost">门店排班（只读）</navigator>
