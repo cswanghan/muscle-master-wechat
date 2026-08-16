@@ -1,5 +1,6 @@
 package com.jisuodashi.admin;
 
+import com.jisuodashi.catalog.DemoFixtures;
 import com.jisuodashi.auth.DemoStaffIds;
 import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.JwtService;
@@ -61,14 +62,15 @@ class AdminCatalogApiTest {
         assertThat(items(storesData)).extracting(i -> i.get("code")).containsExactly("DEMO01", "DEMO02");
 
         List<Map<String, Object>> therapists = items(data(get("/api/v1/a/therapists", admin())));
-        assertThat(therapists).extracting(i -> i.get("name")).containsExactly("林晓", "陈默", "周可");
+        assertThat(therapists).hasSize(DemoFixtures.therapists().size());
+        assertThat(therapists).extracting(i -> i.get("name")).startsWith("林晓", "陈默", "周可");
 
         List<Map<String, Object>> projects = items(data(get("/api/v1/a/projects", admin())));
         assertThat(projects).hasSize(3);
         assertThat(projects).extracting(i -> i.get("code")).contains("P60", "P45", "P90");
 
         List<Map<String, Object>> templates = items(data(get("/api/v1/a/schedule-templates", admin())));
-        assertThat(templates).hasSize(21);
+        assertThat(templates).hasSize(DemoFixtures.therapists().size() * 7);
         assertThat(templates.getFirst().get("templateId"))
                 .isEqualTo(String.valueOf(DemoCatalogIds.templateId(DemoCatalogIds.THERAPIST_LIN, 1)));
     }

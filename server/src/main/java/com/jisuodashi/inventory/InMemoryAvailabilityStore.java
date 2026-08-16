@@ -1,6 +1,7 @@
 package com.jisuodashi.inventory;
 
 import com.jisuodashi.catalog.DemoCatalogIds;
+import com.jisuodashi.catalog.DemoFixtures;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
@@ -104,51 +105,51 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         bedSlots.put(bkey(bedId, date, slotNo), new BedSlotView(bedId, slotNo, status));
     }
 
-    /** 林晓 REST+LOCKED, 周可 BOOKED+BUFFER, 陈默 FREE — starts only on FREE. */
+    /**
+     * 林晓 REST+LOCKED, 周可 BOOKED+BUFFER, 陈默 FREE on DEMO_DATE — starts only on
+     * FREE. Every therapist in DemoFixtures gets an open day, and so does every
+     * bed: a therapist whose store has no free bed can never be booked, so the
+     * two counts have to move together.
+     */
     public final void seedFourStatesDemo() {
         therapistSlots.clear();
         bedSlots.clear();
         occupancies.clear();
         long t1 = DemoCatalogIds.THERAPIST_LIN;
-        long t2 = DemoCatalogIds.THERAPIST_CHEN;
         long t3 = DemoCatalogIds.THERAPIST_ZHOU;
-        seedTherapistSlots(t1, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
+
+        for (int day = 0; day < 60; day++) {
+            LocalDate date = DEMO_DATE.plusDays(day);
+            for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
+                seedTherapistSlots(s.therapistId(), date, OPEN, CLOSE, SlotStatus.FREE);
+            }
+            for (DemoFixtures.BedSeed b : DemoFixtures.beds()) {
+                seedBedSlots(b.bedId(), date, OPEN, CLOSE, SlotStatus.FREE);
+            }
+        }
+
+        // The four-state picture the fixtures assert, on DEMO_DATE only.
         seedTherapistSlots(t1, DEMO_DATE, 56, 64, SlotStatus.REST);
         seedTherapistSlots(t1, DEMO_DATE, 78, 83, SlotStatus.LOCKED);
         seedOccupancy(ResourceType.THERAPIST, t1, DEMO_DATE, 78, 83);
 
-        seedTherapistSlots(t2, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
-
-        seedTherapistSlots(t3, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
         seedTherapistSlots(t3, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
         seedTherapistSlots(t3, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
         seedOccupancy(ResourceType.THERAPIST, t3, DEMO_DATE, 40, 45);
 
-        seedBedSlots(BED1, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
         seedBedSlots(BED1, DEMO_DATE, 78, 83, SlotStatus.LOCKED);
         seedOccupancy(ResourceType.BED, BED1, DEMO_DATE, 78, 83);
 
-        seedBedSlots(BED2, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
         seedBedSlots(BED2, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
         seedBedSlots(BED2, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
         seedOccupancy(ResourceType.BED, BED2, DEMO_DATE, 40, 45);
-
-        // 后续 14 天全空，方便真机按「今天」下单
-        for (int day = 1; day < 15; day++) {
-            LocalDate date = DEMO_DATE.plusDays(day);
-            seedTherapistSlots(t1, date, OPEN, CLOSE, SlotStatus.FREE);
-            seedTherapistSlots(t2, date, OPEN, CLOSE, SlotStatus.FREE);
-            seedTherapistSlots(t3, date, OPEN, CLOSE, SlotStatus.FREE);
-            seedBedSlots(BED1, date, OPEN, CLOSE, SlotStatus.FREE);
-            seedBedSlots(BED2, date, OPEN, CLOSE, SlotStatus.FREE);
-        }
     }
 
     @Override
     public List<TherapistSlotView> listTherapistSlots(long storeId, LocalDate date) {
         List<TherapistSlotView> out = new ArrayList<>();
         for (Map.Entry<String, TherapistSlotView> e : therapistSlots.entrySet()) {
-            if (e.getKey().contains("|" + date + "|")) {
+            if (e.getKey().contains("|" + date + "|") && ownsTherapist(storeId, e.getValue().therapistId())) {
                 out.add(e.getValue());
             }
         }
@@ -160,12 +161,37 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
     public List<BedSlotView> listBedSlots(long storeId, LocalDate date) {
         List<BedSlotView> out = new ArrayList<>();
         for (Map.Entry<String, BedSlotView> e : bedSlots.entrySet()) {
-            if (e.getKey().contains("|" + date + "|")) {
+            if (e.getKey().contains("|" + date + "|") && ownsBed(storeId, e.getValue().bedId())) {
                 out.add(e.getValue());
             }
         }
         out.sort(Comparator.comparingLong(BedSlotView::bedId).thenComparingInt(BedSlotView::slotNo));
         return out;
+    }
+
+
+    /**
+     * The slot keys carry no store, so these listings used to return every
+     * therapist and bed regardless of the store asked for. Harmless while only
+     * one store had staff; with two it made store 1's calendar show store 2's
+     * therapists. The JDBC implementations filter by store_id in SQL, so this
+     * keeps the in-memory pair honest. Anything not in the fixtures (tests
+     * seeding their own rows) is left visible.
+     */
+    private static boolean ownsTherapist(long storeId, long therapistId) {
+        return DemoFixtures.therapists().stream()
+                .filter(s -> s.therapistId() == therapistId)
+                .findFirst()
+                .map(s -> s.storeId() == storeId)
+                .orElse(true);
+    }
+
+    private static boolean ownsBed(long storeId, long bedId) {
+        return DemoFixtures.beds().stream()
+                .filter(b -> b.bedId() == bedId)
+                .findFirst()
+                .map(b -> b.storeId() == storeId)
+                .orElse(true);
     }
 
     @Override

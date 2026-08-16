@@ -1,5 +1,7 @@
 package com.jisuodashi.auth;
 
+import com.jisuodashi.catalog.DemoFixtures;
+
 import com.jisuodashi.rbac.PermissionCatalog;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
@@ -28,9 +30,10 @@ public class InMemoryStaffUserRepository implements StaffUserRepository {
                 List.of("STORE_MANAGER"), "STORE", List.of(DemoStaffIds.STORE));
         insertSeed(DemoStaffIds.FRONT, "demo.front", "演示前台",
                 List.of("FRONTDESK"), "STORE", List.of(DemoStaffIds.STORE));
-        insertSeed(DemoStaffIds.T1, "demo.t1", "林晓", List.of("THERAPIST"), "SELF", List.of(DemoStaffIds.STORE));
-        insertSeed(DemoStaffIds.T2, "demo.t2", "陈默", List.of("THERAPIST"), "SELF", List.of(DemoStaffIds.STORE));
-        insertSeed(DemoStaffIds.T3, "demo.t3", "周可", List.of("THERAPIST"), "SELF", List.of(DemoStaffIds.STORE));
+        for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
+            insertSeed(s.staffUserId(), s.username(), s.name(),
+                    List.of("THERAPIST"), "SELF", List.of(s.storeId()));
+        }
         byId.values().forEach(s -> {
             s.setCreatedAt(t);
             s.setUpdatedAt(t);

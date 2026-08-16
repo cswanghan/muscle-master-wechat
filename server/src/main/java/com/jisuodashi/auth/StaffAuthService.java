@@ -101,6 +101,9 @@ public class StaffAuthService {
         if (code == null) {
             return null;
         }
+        if (code.matches("dev-staff-[te]\\d+")) {
+            return "demo." + code.substring("dev-staff-".length());
+        }
         return switch (code) {
             case MockWeChatClient.DEV_STAFF_CODE -> properties.getWechat().getMockStaffUsername();
             case MockWeChatClient.DEV_STAFF_MANAGER_CODE -> "demo.manager";

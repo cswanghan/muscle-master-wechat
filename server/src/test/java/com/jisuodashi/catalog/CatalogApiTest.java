@@ -85,8 +85,9 @@ class CatalogApiTest {
     @Test
     void therapistsProjectsSymptomsUseV3Ids() {
         List<Map<String, Object>> therapists = items(get("/api/v1/c/therapists").getBody());
-        assertThat(therapists).hasSize(3);
-        assertThat(therapists).extracting(t -> t.get("name")).containsExactly("林晓", "陈默", "周可");
+        assertThat(therapists).hasSize(DemoFixtures.therapists().size());
+        // V3's three keep the lowest ids, so they stay at the front.
+        assertThat(therapists).extracting(t -> t.get("name")).startsWith("林晓", "陈默", "周可");
         assertThat(therapists).allSatisfy(t -> assertThat(t).doesNotContainKeys("phoneCipher", "phone"));
 
         List<Map<String, Object>> projects = items(get("/api/v1/c/projects").getBody());

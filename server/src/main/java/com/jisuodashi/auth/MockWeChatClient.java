@@ -47,6 +47,11 @@ public class MockWeChatClient implements WeChatClient {
             case DEV_STAFF_T2_CODE -> new WeChatSession(DEV_T2_OPENID, "uDEV_T2");
             case DEV_STAFF_T3_CODE -> new WeChatSession(DEV_T3_OPENID, "uDEV_T3");
             default -> {
+                // dev-staff-t<N> / dev-staff-e<N> cover the whole demo roster
+                // without a constant per therapist.
+                if (code.matches("dev-staff-[te]\\d+")) {
+                    yield new WeChatSession("oDEV_" + code.substring(10).toUpperCase(), null);
+                }
                 if (code.startsWith("mock:")) {
                     yield new WeChatSession(code.substring(5), null);
                 }

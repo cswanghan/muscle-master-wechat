@@ -76,19 +76,14 @@ public class InMemoryCatalogRepository implements CatalogRepository {
 
         List<Long> allProjects = List.of(
                 DemoCatalogIds.PROJECT_P60, DemoCatalogIds.PROJECT_P45, DemoCatalogIds.PROJECT_P90);
-        therapists.add(new CatalogModels.Therapist(
-                DemoCatalogIds.THERAPIST_LIN, DemoStaffIds.T1, "T001", "林晓",
-                DemoCatalogIds.STORE, "SENIOR", null, "首席技师，肩颈深层", 490, 1,
-                allProjects, List.of(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_SORE)));
-        therapists.add(new CatalogModels.Therapist(
-                DemoCatalogIds.THERAPIST_CHEN, DemoStaffIds.T2, "T002", "陈默",
-                DemoCatalogIds.STORE, "MIDDLE", null, "腰背理筋", 480, 1,
-                allProjects, List.of(DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.SYMPTOM_SORE)));
-        therapists.add(new CatalogModels.Therapist(
-                DemoCatalogIds.THERAPIST_ZHOU, DemoStaffIds.T3, "T003", "周可",
-                DemoCatalogIds.STORE, "JUNIOR", null, "全身放松", 470, 1,
-                allProjects, List.of(
-                        DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.SYMPTOM_SORE)));
+        List<Long> allSymptoms = List.of(
+                DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.SYMPTOM_SORE);
+        for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
+            therapists.add(new CatalogModels.Therapist(
+                    s.therapistId(), s.staffUserId(), s.employeeNo(), s.name(),
+                    s.storeId(), s.level(), null, intro(s.level()), s.ratingX100(), 1,
+                    allProjects, allSymptoms));
+        }
 
         projects.add(new CatalogModels.Project(
                 DemoCatalogIds.PROJECT_P60, "P60", "全身推拿放松", 60, 15, 19800,
@@ -136,23 +131,29 @@ public class InMemoryCatalogRepository implements CatalogRepository {
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P45));
         symptomProjects.add(new CatalogModels.SymptomProject(DemoCatalogIds.SYMPTOM_SORE, DemoCatalogIds.PROJECT_P90));
 
-        for (long therapistId : List.of(
-                DemoCatalogIds.THERAPIST_LIN, DemoCatalogIds.THERAPIST_CHEN, DemoCatalogIds.THERAPIST_ZHOU)) {
+        for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
             for (int weekday = 1; weekday <= 7; weekday++) {
                 templates.add(new CatalogModels.ScheduleTemplate(
-                        DemoCatalogIds.templateId(therapistId, weekday),
-                        therapistId, DemoCatalogIds.STORE, weekday, TEN, TWENTY_TWO, FROM, null, 1));
+                        DemoCatalogIds.templateId(s.therapistId(), weekday),
+                        s.therapistId(), s.storeId(), weekday, TEN, TWENTY_TWO, FROM, null, 1));
             }
         }
 
         rooms.add(new CatalogModels.Room(
-                3_100_000_000_000_000_101L, DemoCatalogIds.STORE, "一号房", 1, 1));
-        beds.add(new CatalogModels.Bed(
-                3_100_000_000_000_000_201L, DemoCatalogIds.STORE,
-                3_100_000_000_000_000_101L, "1号床", 1, 1));
-        beds.add(new CatalogModels.Bed(
-                3_100_000_000_000_000_202L, DemoCatalogIds.STORE,
-                3_100_000_000_000_000_101L, "2号床", 2, 1));
+                DemoFixtures.ROOM_MAIN, DemoCatalogIds.STORE, "一号房", 1, 1));
+        rooms.add(new CatalogModels.Room(
+                DemoFixtures.ROOM_EAST, DemoCatalogIds.STORE_EAST, "一号房", 1, 1));
+        for (DemoFixtures.BedSeed b : DemoFixtures.beds()) {
+            beds.add(new CatalogModels.Bed(b.bedId(), b.storeId(), b.roomId(), b.name(), b.sortNo(), 1));
+        }
+    }
+
+    private static String intro(String level) {
+        return switch (level) {
+            case "SENIOR" -> "资深技师，深层手法";
+            case "MIDDLE" -> "中级技师，肩颈腰背";
+            default -> "全身放松";
+        };
     }
 
     @Override

@@ -30,18 +30,13 @@ public final class DemoCatalogIds {
     private DemoCatalogIds() {
     }
 
-    /** V3 week templates: Lin 701–707, Chen 711–717, Zhou 721–727. */
+    /**
+     * V3 week templates: Lin 701–707, Chen 711–717, Zhou 721–727. Every therapist
+     * needs its own block — the old else-branch handed all unknown therapists the
+     * same offset, so a fourth one would have collided with a third's templates.
+     */
     public static long templateId(long therapistId, int weekday) {
-        long offset;
-        if (therapistId == THERAPIST_LIN) {
-            offset = 0;
-        } else if (therapistId == THERAPIST_CHEN) {
-            offset = 10;
-        } else if (therapistId == THERAPIST_ZHOU) {
-            offset = 20;
-        } else {
-            offset = 30;
-        }
+        long offset = (therapistId - THERAPIST_LIN) * 10;
         return TEMPLATE_BASE + offset + weekday;
     }
 }

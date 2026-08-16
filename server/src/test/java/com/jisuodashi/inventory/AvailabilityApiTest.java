@@ -1,6 +1,7 @@
 package com.jisuodashi.inventory;
 
 import com.jisuodashi.catalog.DemoCatalogIds;
+import com.jisuodashi.catalog.DemoFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -73,7 +74,8 @@ class AvailabilityApiTest {
                         + "&includeBusy=1");
         Map<String, Object> data = data(res);
         List<Map<String, Object>> therapists = therapists(data);
-        assertThat(therapists).hasSize(3);
+        // One store's roster, not every therapist in the fixtures.
+        assertThat(therapists).hasSize(DemoFixtures.therapistsOf(DemoCatalogIds.STORE).size());
 
         Map<String, Object> lin = therapists.stream()
                 .filter(t -> DemoCatalogIds.THERAPIST_LIN == Long.parseLong((String) t.get("therapistId")))

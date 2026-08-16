@@ -1,6 +1,7 @@
 package com.jisuodashi.inventory;
 
 import com.jisuodashi.catalog.DemoCatalogIds;
+import com.jisuodashi.catalog.DemoFixtures;
 import com.jisuodashi.inventory.DelayedJobStore.DelayedJobRow;
 import com.jisuodashi.inventory.SlotOccupyStore.BedRef;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderInsert;
@@ -133,22 +134,29 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P60, "全身推拿放松", 60, 15, 19800, 4900L));
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P45, "肩颈专项疏通", 45, 15, 12800, 4200L));
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P90, "腰背深层理筋", 90, 15, 26800, 4400L));
-        seedTherapist(new TherapistRef(DemoCatalogIds.THERAPIST_LIN, DemoCatalogIds.STORE));
-        seedTherapist(new TherapistRef(DemoCatalogIds.THERAPIST_CHEN, DemoCatalogIds.STORE));
-        seedTherapist(new TherapistRef(DemoCatalogIds.THERAPIST_ZHOU, DemoCatalogIds.STORE));
-        seedBed(new BedRef(BED1, DemoCatalogIds.STORE, ROOM, 1));
-        seedBed(new BedRef(BED2, DemoCatalogIds.STORE, ROOM, 2));
+        for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
+            seedTherapist(new TherapistRef(s.therapistId(), s.storeId()));
+        }
+        for (DemoFixtures.BedSeed b : DemoFixtures.beds()) {
+            seedBed(new BedRef(b.bedId(), b.storeId(), b.roomId(), b.sortNo()));
+        }
     }
 
+    /**
+     * Booking reads this store, not the availability one, so every therapist and
+     * bed in the fixtures needs rows here too — otherwise lockNew answers
+     * "技师不存在" or runs out of beds while the calendar shows a full roster.
+     * 60 days so a demo does not fall off the end of the seeded window.
+     */
     void seedDemoCalendar() {
-        for (int day = 0; day < 15; day++) {
+        for (int day = 0; day < 60; day++) {
             LocalDate date = DEMO_DATE.plusDays(day);
-            for (long therapist : new long[] {
-                    DemoCatalogIds.THERAPIST_LIN, DemoCatalogIds.THERAPIST_CHEN, DemoCatalogIds.THERAPIST_ZHOU}) {
-                seedTherapistSlots(therapist, DemoCatalogIds.STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+            for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
+                seedTherapistSlots(s.therapistId(), s.storeId(), date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
             }
-            seedBedSlots(BED1, DemoCatalogIds.STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
-            seedBedSlots(BED2, DemoCatalogIds.STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+            for (DemoFixtures.BedSeed b : DemoFixtures.beds()) {
+                seedBedSlots(b.bedId(), b.storeId(), date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
+            }
         }
     }
 

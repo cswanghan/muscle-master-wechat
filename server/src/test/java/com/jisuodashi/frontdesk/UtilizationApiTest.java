@@ -5,6 +5,7 @@ import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.JwtService;
 import com.jisuodashi.auth.TokenType;
 import com.jisuodashi.catalog.DemoCatalogIds;
+import com.jisuodashi.catalog.DemoFixtures;
 import com.jisuodashi.inventory.InMemorySlotOccupyStore;
 import com.jisuodashi.inventory.SlotStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +68,8 @@ class UtilizationApiTest {
         assertThat(byHour).extracting(h -> h.get("hour")).contains(10, 11, 21);
         assertThat(byHour).allSatisfy(h -> assertThat(h).containsKeys("hour", "rateX10000"));
         int occupied = 3;
-        int denom = 3 * 48 - 1;
+        // Denominator is the store's whole roster of 48-slot days, less the one REST slot.
+        int denom = DemoFixtures.therapistsOf(DemoCatalogIds.STORE).size() * 48 - 1;
         assertThat(((Number) data.get("rateX10000")).intValue()).isEqualTo(occupied * 10_000 / denom);
     }
 
