@@ -190,3 +190,33 @@ page {
   justify-content: center;
   font-size: 22rpx;
 }
+
+/*
+ * Staff screens were a separate mini program with its own app.wxss. Merging
+ * them in meant they inherited the customer definitions of .ico, .dock,
+ * .dock-item and the base font size — and the customer .ico is only a
+ * positioning box whose glyph comes from .ico-book/.ico-gift/.ico-me, so every
+ * staff dock icon rendered blank. These restore what the staff app had, scoped
+ * to .staff-page on the page root so the customer screens are untouched.
+ */
+.staff-page {
+  font-size: 30rpx;
+}
+
+.staff-page .ico {
+  width: 40rpx;
+  height: 40rpx;
+  border: 3rpx solid currentColor;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.staff-page .dock {
+  padding: 20rpx 0 44rpx;
+}
+
+.staff-page .dock-item {
+  font-size: 24rpx;
+}

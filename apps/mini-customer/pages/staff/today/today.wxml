@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page staff-page">
   <view class="hero">
     <view class="hero-row">
       <image class="avatar" src="/images/lin.jpg" mode="aspectFill" />
