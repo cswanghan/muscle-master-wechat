@@ -150,7 +150,13 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         List<TherapistSlotView> out = new ArrayList<>();
         for (Map.Entry<String, TherapistSlotView> e : therapistSlots.entrySet()) {
             if (e.getKey().contains("|" + date + "|") && ownsTherapist(storeId, e.getValue().therapistId())) {
-                out.add(e.getValue());
+                TherapistSlotView v = e.getValue();
+                String live = liveOccupancy == null
+                        ? null
+                        : liveOccupancy.therapistSlotStatus(v.therapistId(), date, v.slotNo());
+                out.add(isBusy(live)
+                        ? new TherapistSlotView(v.therapistId(), v.slotNo(), live, v.priceOverrideFen())
+                        : v);
             }
         }
         out.sort(Comparator.comparingLong(TherapistSlotView::therapistId).thenComparingInt(TherapistSlotView::slotNo));
@@ -162,7 +168,11 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         List<BedSlotView> out = new ArrayList<>();
         for (Map.Entry<String, BedSlotView> e : bedSlots.entrySet()) {
             if (e.getKey().contains("|" + date + "|") && ownsBed(storeId, e.getValue().bedId())) {
-                out.add(e.getValue());
+                BedSlotView v = e.getValue();
+                String live = liveOccupancy == null
+                        ? null
+                        : liveOccupancy.bedSlotStatus(v.bedId(), date, v.slotNo());
+                out.add(isBusy(live) ? new BedSlotView(v.bedId(), v.slotNo(), live) : v);
             }
         }
         out.sort(Comparator.comparingLong(BedSlotView::bedId).thenComparingInt(BedSlotView::slotNo));
@@ -178,6 +188,18 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
      * keeps the in-memory pair honest. Anything not in the fixtures (tests
      * seeding their own rows) is left visible.
      */
+
+    /**
+     * Only a non-FREE live status overrides the seed. confirmPaidSlots promotes
+     * LOCKED to BOOKED in the occupancy store, and without this the schedule
+     * showed a paid booking as still merely locked. Leaving FREE alone keeps the
+     * seeded four-state day on DEMO_DATE intact, since the live rows there are
+     * all FREE.
+     */
+    private static boolean isBusy(String status) {
+        return status != null && !SlotStatus.FREE.equals(status);
+    }
+
     private static boolean ownsTherapist(long storeId, long therapistId) {
         return DemoFixtures.therapists().stream()
                 .filter(s -> s.therapistId() == therapistId)

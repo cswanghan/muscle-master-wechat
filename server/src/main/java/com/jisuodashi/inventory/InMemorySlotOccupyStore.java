@@ -1355,6 +1355,20 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         }
     }
 
+    /**
+     * Live status, or null when this store has no row. Method, not field access:
+     * the bean is behind a CGLIB proxy.
+     */
+    public String therapistSlotStatus(long therapistId, LocalDate date, int slotNo) {
+        MutableSlot s = therapistSlots.get(tkey(therapistId, date, slotNo));
+        return s == null ? null : s.status;
+    }
+
+    public String bedSlotStatus(long bedId, LocalDate date, int slotNo) {
+        MutableSlot s = bedSlots.get(bkey(bedId, date, slotNo));
+        return s == null ? null : s.status;
+    }
+
     public MutableSlot therapistSlot(long therapistId, LocalDate date, int slotNo) {
         return therapistSlots.get(tkey(therapistId, date, slotNo));
     }
