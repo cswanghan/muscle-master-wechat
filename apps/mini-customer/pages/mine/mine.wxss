@@ -263,3 +263,23 @@
   color: #C0803A;
   font-size: 24rpx;
 }
+
+.order-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8rpx;
+}
+
+.rate-btn {
+  padding: 8rpx 24rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid #C0803A;
+  color: #C0803A;
+  font-size: 24rpx;
+}
+
+.rated {
+  font-size: 24rpx;
+  color: #8b948f;
+}

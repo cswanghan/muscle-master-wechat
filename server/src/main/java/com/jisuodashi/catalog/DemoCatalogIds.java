@@ -13,6 +13,8 @@ public final class DemoCatalogIds {
     public static final long PROJECT_P60 = 3_100_000_000_000_000_501L;
     public static final long PROJECT_P45 = 3_100_000_000_000_000_502L;
     public static final long PROJECT_P90 = 3_100_000_000_000_000_503L;
+    /** ¥688: above PaymentService.APPROVAL_THRESHOLD_FEN, so refunding it needs approval. */
+    public static final long PROJECT_P120 = 3_100_000_000_000_000_504L;
     public static final long SYMPTOM_NECK = 3_100_000_000_000_000_601L;
     public static final long SYMPTOM_BACK = 3_100_000_000_000_000_602L;
     public static final long SYMPTOM_SORE = 3_100_000_000_000_000_603L;

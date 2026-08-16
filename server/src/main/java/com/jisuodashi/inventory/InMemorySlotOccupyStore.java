@@ -134,6 +134,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P60, "全身推拿放松", 60, 15, 19800, 4900L));
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P45, "肩颈专项疏通", 45, 15, 12800, 4200L));
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P90, "腰背深层理筋", 90, 15, 26800, 4400L));
+        seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P120, "尊享全身深度调理", 120, 15, 68800, 9800L));
         for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
             seedTherapist(new TherapistRef(s.therapistId(), s.storeId()));
         }

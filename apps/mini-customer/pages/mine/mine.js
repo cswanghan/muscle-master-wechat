@@ -50,12 +50,13 @@ Page({
         })
         return Promise.all([
           request({ path: '/api/v1/c/bookings', auth: true }),
+          request({ path: '/api/v1/c/reviews', auth: true }).catch(() => ({ items: [] })),
           request({ path: '/api/v1/c/therapists' }),
           request({ path: '/api/v1/c/stores' }),
           request({ path: '/api/v1/c/projects' }).catch(() => ({ items: [] })),
         ])
       })
-      .then(([page, tPage, sPage, pPage]) => {
+      .then(([page, reviewPage, tPage, sPage, pPage]) => {
         const therapistNames = {}
         ;((tPage && tPage.items) || []).forEach((t) => {
           therapistNames[t.therapistId] = t.name
@@ -67,6 +68,11 @@ Page({
         const projects = {}
         ;((pPage && pPage.items) || []).forEach((p) => {
           projects[p.projectId] = p.name
+        })
+        // orderId -> score, so a finished order shows either 去评价 or 已评 N 星
+        const reviewed = {}
+        ;(((reviewPage && reviewPage.items) || [])).forEach((r) => {
+          reviewed[String(r.orderId)] = r.score
         })
         const freq = {}
         const remote = ((page && page.items) || [])
@@ -86,6 +92,9 @@ Page({
             storeLabel: o.storeName || stores[o.storeId] || o.storeId,
             projectLabel: o.projectName || projects[o.projectId] || projectLabel(o),
             whenLabel: whenLabel(o),
+            reviewed: reviewed[String(o.orderId)] != null,
+            reviewScore: reviewed[String(o.orderId)],
+            canReview: o.status === 'COMPLETED' && reviewed[String(o.orderId)] == null,
           }
         })
         let favTherapist = '暂无'
@@ -152,6 +161,27 @@ Page({
   },
   goStaff() {
     wx.navigateTo({ url: '/pages/staff/home/home' })
+  },
+  openReview(e) {
+    const orderId = e.currentTarget.dataset.id
+    const name = e.currentTarget.dataset.name || '技师'
+    wx.showActionSheet({
+      itemList: ['5 星 非常满意', '4 星 满意', '3 星 一般', '2 星 不太满意', '1 星 不满意'],
+      success: (res) => this.submitReview(orderId, 5 - res.tapIndex, name),
+    })
+  },
+  submitReview(orderId, score, name) {
+    request({
+      path: `/api/v1/c/bookings/${orderId}/review`,
+      method: 'POST',
+      auth: true,
+      data: { requestId: rid('review'), score, tags: score >= 4 ? ['手法专业'] : [], content: '' },
+    }).then(() => {
+      wx.showToast({ title: `已评价 ${name} ${score} 星`, icon: 'none' })
+      this.reload()
+    }).catch((err) => {
+      wx.showToast({ title: err.message || '评价失败', icon: 'none' })
+    })
   },
   findOrder(id) {
     return (this.data.orders || []).find((x) => String(x.orderId) === String(id))

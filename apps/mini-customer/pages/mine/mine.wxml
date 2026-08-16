@@ -101,7 +101,17 @@
         <view class="st muted">{{item.statusLabel}}</view>
       </view>
       <view class="meta">{{item.whenLabel}} · {{item.therapistName}}</view>
-      <view class="price">¥{{item.priceYuan}}</view>
+      <view class="order-bottom">
+        <view class="price">¥{{item.priceYuan}}</view>
+        <view
+          wx:if="{{item.canReview}}"
+          class="rate-btn"
+          catchtap="openReview"
+          data-id="{{item.orderId}}"
+          data-name="{{item.therapistName}}"
+        >去评价</view>
+        <view wx:elif="{{item.reviewed}}" class="rated">已评 {{item.reviewScore}} 星</view>
+      </view>
     </view>
   </view>
 

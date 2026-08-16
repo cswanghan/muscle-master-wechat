@@ -68,7 +68,7 @@ class CatalogApiTest {
         assertThat(data.get("address")).isNull();
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> projects = (List<Map<String, Object>>) data.get("projects");
-        assertThat(projects).hasSize(3);
+        assertThat(projects).hasSize(4); // P60 / P45 / P90 / P120
         assertThat(projects).allSatisfy(p -> {
             assertThat(p.get("durationMinutes")).isNotNull();
             assertThat(p.get("bufferMinutes")).isEqualTo(15);
@@ -92,7 +92,7 @@ class CatalogApiTest {
         assertThat(therapists).allSatisfy(t -> assertThat(t).doesNotContainKeys("phoneCipher", "phone"));
 
         List<Map<String, Object>> projects = items(get("/api/v1/c/projects").getBody());
-        assertThat(projects).hasSize(3);
+        assertThat(projects).hasSize(4); // P60 / P45 / P90 / P120
         assertThat(projects).extracting(p -> p.get("priceFen")).contains(19800, 12800, 26800);
 
         List<Map<String, Object>> symptoms = items(get("/api/v1/c/symptoms").getBody());

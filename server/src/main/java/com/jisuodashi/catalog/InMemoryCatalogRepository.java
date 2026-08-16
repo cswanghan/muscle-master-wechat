@@ -88,7 +88,8 @@ public class InMemoryCatalogRepository implements CatalogRepository {
                 1));
 
         List<Long> allProjects = List.of(
-                DemoCatalogIds.PROJECT_P60, DemoCatalogIds.PROJECT_P45, DemoCatalogIds.PROJECT_P90);
+                DemoCatalogIds.PROJECT_P60, DemoCatalogIds.PROJECT_P45,
+                DemoCatalogIds.PROJECT_P90, DemoCatalogIds.PROJECT_P120);
         List<Long> allSymptoms = List.of(
                 DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_BACK, DemoCatalogIds.SYMPTOM_SORE);
         for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
@@ -108,6 +109,13 @@ public class InMemoryCatalogRepository implements CatalogRepository {
                 DemoCatalogIds.PROJECT_P90, "P90", "腰背深层理筋", 90, 15, 26800,
                 "腰背理筋 90 分钟，缓冲 15 分钟", null, 1));
 
+        projects.add(new CatalogModels.Project(
+                DemoCatalogIds.PROJECT_P120, "P120", "尊享全身深度调理", 120, 15, 68800,
+                "全身深度 120 分钟，缓冲 15 分钟", null, 1));
+
+        storeProjects.add(new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P120, null, 1));
+        storeProjects.add(new CatalogModels.StoreProject(
+                DemoCatalogIds.STORE_EAST, DemoCatalogIds.PROJECT_P120, null, 1));
         storeProjects.add(new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P60, null, 1));
         storeProjects.add(new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P45, null, 1));
         storeProjects.add(new CatalogModels.StoreProject(DemoCatalogIds.STORE, DemoCatalogIds.PROJECT_P90, null, 1));

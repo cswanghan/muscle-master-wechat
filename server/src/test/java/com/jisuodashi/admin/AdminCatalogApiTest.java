@@ -66,7 +66,7 @@ class AdminCatalogApiTest {
         assertThat(therapists).extracting(i -> i.get("name")).startsWith("林晓", "陈默", "周可");
 
         List<Map<String, Object>> projects = items(data(get("/api/v1/a/projects", admin())));
-        assertThat(projects).hasSize(3);
+        assertThat(projects).hasSize(4); // P60 / P45 / P90 / P120
         assertThat(projects).extracting(i -> i.get("code")).contains("P60", "P45", "P90");
 
         List<Map<String, Object>> templates = items(data(get("/api/v1/a/schedule-templates", admin())));
