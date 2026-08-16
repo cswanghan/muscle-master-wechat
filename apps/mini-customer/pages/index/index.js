@@ -1,6 +1,7 @@
 const { request } = require('../../utils/api.js')
 const { fenYuan } = require('../../utils/format.js')
 const mock = require('../../utils/mock.js')
+const config = require('../../config.js')
 
 Page({
   data: {
@@ -15,18 +16,18 @@ Page({
   },
   load() {
     Promise.all([
-      request({ path: '/api/v1/c/stores' }).catch(() => ({ items: [] })),
-      request({ path: '/api/v1/c/therapists' }).catch(() => ({ items: [] })),
-      request({ path: '/api/v1/c/projects' }).catch(() => ({ items: [] })),
+      // Swallowing these turned an outage into a page that merely looked
+      // sparse; let them reject so the catch below can say what happened.
+      request({ path: '/api/v1/c/stores' }),
+      request({ path: '/api/v1/c/therapists' }),
+      request({ path: '/api/v1/c/projects' }),
     ]).then(([stores, therapists, projects]) => {
-      const storeItems = mock.first(
-        (stores.items || []).slice(0, 2).map((s) => mock.decorateStore(s)),
-        mock.stores,
-      )
-      const thItems = mock.first(
-        (therapists.items || []).slice(0, 3).map((t) => mock.decorateTherapist(t)),
-        mock.therapists,
-      )
+      const realStores = (stores.items || []).slice(0, 2).map((s) => mock.decorateStore(s))
+      const realTherapists = (therapists.items || []).slice(0, 3).map((t) => mock.decorateTherapist(t))
+      // mock.stores carries a 城西银泰店 the server does not have, so silently
+      // substituting it made a thin response look like a full one.
+      const storeItems = config.mockFallback ? mock.first(realStores, mock.stores) : realStores
+      const thItems = config.mockFallback ? mock.first(realTherapists, mock.therapists) : realTherapists
       const p = (projects.items || [])[0] || mock.projects[0]
       const deal = p
         ? {
@@ -48,7 +49,17 @@ Page({
         nearStore: storeItems[0] ? `${storeItems[0].name}` : '',
         error: storeItems.length || deal ? '' : '列表为空，点下方入口仍可进入',
       })
-    }).catch(() => {
+    }).catch((err) => {
+      if (!config.mockFallback) {
+        this.setData({
+          stores: [],
+          therapists: [],
+          deal: null,
+          nearStore: '',
+          error: err.message || '门店和技师加载失败，请检查网络',
+        })
+        return
+      }
       const p = mock.projects[0]
       this.setData({
         stores: mock.stores,

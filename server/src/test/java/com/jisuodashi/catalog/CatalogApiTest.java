@@ -33,7 +33,8 @@ class CatalogApiTest {
         assertThat(body).isNotNull();
         assertThat(body.get("code")).isEqualTo(0);
         List<Map<String, Object>> items = items(body);
-        assertThat(items).hasSize(1);
+        // Both gray stores; the third is outside gray.store-ids.
+        assertThat(items).hasSize(2);
         Map<String, Object> store = items.getFirst();
         assertThat(store.get("storeId")).isEqualTo(String.valueOf(DemoCatalogIds.STORE));
         assertThat(store.get("name")).isEqualTo("肌松大师·演示旗舰店");

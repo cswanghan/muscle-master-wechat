@@ -121,22 +121,22 @@ class ObservabilityMetricsTest {
                 new AvailabilityCache(Duration.ofSeconds(30), clock.clock()),
                 new ReleaseScanHeartbeat(clock), clock, meters);
 
-        // 两家演示门店都开着门且一单未出 → 全静默。
+        // 三家演示门店都开着门且一单未出 → 全静默（旗舰店 / 二分店 / 未开放门店）。
         business.scrapeAll();
-        assertThat(business.silentStores()).isEqualTo(2.0d);
+        assertThat(business.silentStores()).isEqualTo(3.0d);
         assertThat(business.staleLocks()).isEqualTo(0.0d);
         assertThat(business.manualOpenTasks()).isEqualTo(2.0d);
 
-        // 旗舰店出一单，静默数降到 1；把 hold 过期 40 分钟，卡死锁被刮出来。
+        // 旗舰店出一单，静默数降到 2；把 hold 过期 40 分钟，卡死锁被刮出来。
         var locked = occupy.lockNew(OccupyFixtures.cmd("obs-1", OccupyFixtures.T1, OccupyFixtures.START_1930));
         slots.expireHold(locked.holdId(), TODAY.atTime(18, 20));
 
         business.scrapeAll();
-        assertThat(business.silentStores()).isEqualTo(1.0d);
+        assertThat(business.silentStores()).isEqualTo(2.0d);
         assertThat(business.staleLocks()).isEqualTo(10.0d);
 
         assertThat(meters.get(BusinessMetrics.SLOT_LOCKED_STALE).gauge().value()).isEqualTo(10.0d);
-        assertThat(meters.get(BusinessMetrics.STORE_ORDER_SILENCE).gauge().value()).isEqualTo(1.0d);
+        assertThat(meters.get(BusinessMetrics.STORE_ORDER_SILENCE).gauge().value()).isEqualTo(2.0d);
         assertThat(meters.get(BusinessMetrics.WORKFLOW_MANUAL_OPEN).gauge().value()).isEqualTo(2.0d);
     }
 

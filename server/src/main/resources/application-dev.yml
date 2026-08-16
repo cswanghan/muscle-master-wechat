@@ -55,7 +55,7 @@ app:
       enabled: false
       token:
   gray:
-    store-ids: 3100000000000000001
+    store-ids: 3100000000000000001,3100000000000000002
   flags:
     booking:
       enabled: true

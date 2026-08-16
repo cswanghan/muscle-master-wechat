@@ -5,6 +5,8 @@ public final class DemoCatalogIds {
 
     public static final long STORE = 3_100_000_000_000_000_001L;
     public static final long STORE_EAST = 3_100_000_000_000_000_002L;
+    /** Deliberately outside gray.store-ids: the fixture GrayApiTest hides behind. */
+    public static final long STORE_DARK = 3_100_000_000_000_000_003L;
     public static final long THERAPIST_LIN = 3_100_000_000_000_000_401L;
     public static final long THERAPIST_CHEN = 3_100_000_000_000_000_402L;
     public static final long THERAPIST_ZHOU = 3_100_000_000_000_000_403L;

@@ -45,13 +45,15 @@ class GrayApiTest {
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<Map<String, Object>> items = items(res.getBody());
         assertThat(items).extracting(i -> i.get("storeId"))
-                .containsExactly(String.valueOf(DemoCatalogIds.STORE))
-                .doesNotContain(String.valueOf(DemoCatalogIds.STORE_EAST));
+                .containsExactly(
+                        String.valueOf(DemoCatalogIds.STORE),
+                        String.valueOf(DemoCatalogIds.STORE_EAST))
+                .doesNotContain(String.valueOf(DemoCatalogIds.STORE_DARK));
     }
 
     @Test
     void getNonGrayStoreIs40401() {
-        ResponseEntity<Map<String, Object>> res = get("/api/v1/c/stores/" + DemoCatalogIds.STORE_EAST);
+        ResponseEntity<Map<String, Object>> res = get("/api/v1/c/stores/" + DemoCatalogIds.STORE_DARK);
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(res.getBody()).isNotNull();
         assertThat(res.getBody().get("code")).isEqualTo(40401);
@@ -60,7 +62,7 @@ class GrayApiTest {
     @Test
     void availabilityOnNonGrayStoreIs40401() {
         ResponseEntity<Map<String, Object>> res = get(
-                "/api/v1/c/stores/" + DemoCatalogIds.STORE_EAST
+                "/api/v1/c/stores/" + DemoCatalogIds.STORE_DARK
                         + "/availability?date=2026-08-14&projectId=" + DemoCatalogIds.PROJECT_P60);
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(res.getBody()).isNotNull();
@@ -72,7 +74,7 @@ class GrayApiTest {
         InMemoryCatalogRepository catalog = new InMemoryCatalogRepository();
         catalog.putTherapist(new CatalogModels.Therapist(
                 VISITOR, VISITOR, "T099", "支援技师",
-                DemoCatalogIds.STORE_EAST, "MIDDLE", null, "跨店支援", 450, 1,
+                DemoCatalogIds.STORE_DARK, "MIDDLE", null, "跨店支援", 450, 1,
                 List.of(DemoCatalogIds.PROJECT_P60), List.of()));
         InMemoryAvailabilityStore avail = InMemoryAvailabilityStore.blank();
         LocalDate day = LocalDate.of(2026, 8, 14);
@@ -90,7 +92,7 @@ class GrayApiTest {
                 .contains(String.valueOf(VISITOR));
 
         assertThatThrownBy(() -> svc.query(
-                DemoCatalogIds.STORE_EAST, day, DemoCatalogIds.PROJECT_P60, null, true))
+                DemoCatalogIds.STORE_DARK, day, DemoCatalogIds.PROJECT_P60, null, true))
                 .isInstanceOf(ApiException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
                 .isEqualTo(ErrorCodes.NOT_FOUND);

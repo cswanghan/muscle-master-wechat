@@ -74,6 +74,19 @@ public class InMemoryCatalogRepository implements CatalogRepository {
                 "Asia/Shanghai",
                 1));
 
+        stores.add(new CatalogModels.Store(
+                DemoCatalogIds.STORE_DARK,
+                "DEMO03",
+                "肌松大师·未开放门店",
+                null,
+                null,
+                new BigDecimal("121.5000000"),
+                new BigDecimal("31.2400000"),
+                TEN,
+                TWENTY_TWO,
+                "Asia/Shanghai",
+                1));
+
         List<Long> allProjects = List.of(
                 DemoCatalogIds.PROJECT_P60, DemoCatalogIds.PROJECT_P45, DemoCatalogIds.PROJECT_P90);
         List<Long> allSymptoms = List.of(
