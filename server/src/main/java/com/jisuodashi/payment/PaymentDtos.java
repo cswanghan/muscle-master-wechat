@@ -16,12 +16,19 @@ public final class PaymentDtos {
     ) {
     }
 
+    /**
+     * {@code mock} tells the caller the prepay params came from
+     * {@link MockWeChatPayClient} and cannot be charged, so a client may drive the notify
+     * callback itself instead of calling {@code wx.requestPayment}. A real channel never sets
+     * it, which is what keeps that shortcut out of production.
+     */
     public record PayResponse(
             String orderId,
             String paymentNo,
             String status,
             long amountFen,
             boolean reused,
+            boolean mock,
             Map<String, String> payParams
     ) {
     }

@@ -203,9 +203,22 @@ Page({
     }).then((pay) => this.completePay(pay))
   },
   completePay(pay) {
-    const canWxPay = typeof wx.requestPayment === 'function'
-    if (!canWxPay) {
+    // The server says so when the prepay params came from the mock channel — nothing can
+    // charge them, so drive the notify callback ourselves. This used to probe
+    // `typeof wx.requestPayment`, which is a function in the devtools simulator too, so the
+    // branch never ran where it was needed and the flow stalled at PENDING_PAY. A real
+    // channel never sets the flag, so this cannot mark an order paid in production.
+    if (pay.mock) {
       return this.mockNotify(pay)
+    }
+    if (typeof wx.requestPayment !== 'function') {
+      this.setData({
+        paying: false,
+        pending: true,
+        status: 'PENDING_PAY',
+        error: '当前基础库不支持微信支付',
+      })
+      return Promise.resolve()
     }
     return new Promise((resolve, reject) => {
       wx.requestPayment({

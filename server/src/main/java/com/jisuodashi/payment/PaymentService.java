@@ -591,6 +591,10 @@ public class PaymentService {
                 payment.status(),
                 payment.amountFen(),
                 reused,
+                // Read off the client in use rather than re-reading app.wechat.mock:
+                // WeChatPayClientConfig picks the implementation from that same flag, so the
+                // two cannot drift apart the way two independent reads could.
+                wechat instanceof MockWeChatPayClient,
                 params);
     }
 
