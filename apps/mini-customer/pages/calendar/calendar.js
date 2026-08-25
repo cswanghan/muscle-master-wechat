@@ -1,5 +1,7 @@
 const { request } = require('../../utils/api.js')
-const { fenYuan, rating, levelLabel, slotToTime } = require('../../utils/format.js')
+const {
+  fenYuan, rating, levelLabel, levelClass, positiveRate, slotToTime,
+} = require('../../utils/format.js')
 const { demoDate } = require('../../config.js')
 const { qs, decodeQuery } = require('../../utils/query.js')
 
@@ -50,12 +52,31 @@ function paintTherapist(t, selected) {
       priceFen: startPrice[b.slotNo],
     }
   })
+  const stats = t.stats || {}
   return {
     ...t,
     rating: rating(t.ratingX100),
     levelLabel: levelLabel(t.level),
+    levelClass: levelClass(t.level),
+    newcomer: !!stats.newcomer,
+    statLine: statLine(stats),
     slots,
   }
+}
+
+// 一行讲完：有率就「好评率 · 回头」，没率就退回条数，两个都没有就不占位。
+function statLine(stats) {
+  const parts = []
+  const rate = positiveRate(stats.positiveRateX100)
+  if (rate) {
+    parts.push('好评 ' + rate)
+  } else if (stats.reviewCount) {
+    parts.push(stats.reviewCount + ' 条评价')
+  }
+  if (stats.repeatCount) {
+    parts.push('回头 ' + stats.repeatCount)
+  }
+  return parts.join(' · ')
 }
 
 Page({

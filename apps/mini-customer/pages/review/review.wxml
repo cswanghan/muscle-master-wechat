@@ -1,0 +1,81 @@
+<view class="page rv-page" id="c7-review">
+  <view class="card rv-order">
+    <view class="rv-th">{{therapistName}}</view>
+    <view class="hint">{{date}} {{start}} · {{orderNo}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint">加载中…</view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+
+  <block wx:if="{{!loading}}">
+    <view class="card rv-block">
+      <view class="rv-q">{{view ? '你的评分' : '这次服务怎么样？'}}</view>
+      <view class="stars">
+        <view
+          wx:for="{{stars}}"
+          wx:key="*this"
+          class="star {{item<=score?'on':''}} {{view?'ro':''}}"
+          data-score="{{item}}"
+          bindtap="pickScore"
+        >★</view>
+        <text class="score-hint">{{scoreHint}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{score>0 && !view}}" class="card rv-block">
+      <view class="rv-q">{{score>=4 ? '好在哪里？' : '哪里不满意？'}}</view>
+      <view class="hint">选填，最多 5 个</view>
+      <view class="tags">
+        <view
+          wx:for="{{tagOptions}}"
+          wx:key="code"
+          class="tag {{item.on?'on':''}}"
+          data-code="{{item.code}}"
+          bindtap="toggleTag"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{view && pickedLabels.length>0}}" class="card rv-block">
+      <view class="rv-q">标签</view>
+      <view class="tags">
+        <view wx:for="{{pickedLabels}}" wx:key="*this" class="tag on ro">{{item}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{!view}}" class="card rv-block">
+      <view class="rv-q">想说点什么</view>
+      <textarea
+        class="rv-text"
+        placeholder="选填。写下感受，会帮到后面选技师的人"
+        placeholder-class="rv-ph"
+        maxlength="500"
+        value="{{content}}"
+        bindinput="onContent"
+      />
+      <view class="rv-count">{{contentLeft}}</view>
+    </view>
+
+    <view wx:if="{{view && content}}" class="card rv-block">
+      <view class="rv-q">评价内容</view>
+      <view class="rv-said">{{content}}</view>
+    </view>
+
+    <view wx:if="{{!view}}" class="card rv-row">
+      <view>
+        <view>匿名评价</view>
+        <view class="hint">技师端只看到「匿名用户」</view>
+      </view>
+      <switch checked="{{anonymous}}" color="#1e5c4a" bindchange="onAnonymous" />
+    </view>
+
+    <view wx:if="{{view}}" class="rv-done">
+      <view class="hint">已于 {{createdAt}} 提交{{anonymous ? ' · 匿名' : ''}}</view>
+    </view>
+
+    <view wx:if="{{!view}}" class="rv-dock">
+      <view class="btn" bindtap="submit">{{submitting ? '提交中…' : '提交评价'}}</view>
+      <view class="hint rv-tip">提交后不可修改</view>
+    </view>
+  </block>
+</view>

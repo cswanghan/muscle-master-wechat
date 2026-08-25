@@ -6,7 +6,8 @@
     "pages/therapists/therapists",
     "pages/calendar/calendar",
     "pages/confirm/confirm",
-    "pages/mine/mine"
+    "pages/mine/mine",
+    "pages/review/review"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1E5C4A",

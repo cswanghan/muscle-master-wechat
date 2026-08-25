@@ -1,5 +1,7 @@
 const { request } = require('../../utils/api.js')
-const { fenYuan, rating, levelLabel } = require('../../utils/format.js')
+const {
+  fenYuan, rating, levelLabel, levelClass, positiveRate, repeatLine, reviewLine,
+} = require('../../utils/format.js')
 const { qs, decodeQuery } = require('../../utils/query.js')
 
 Page({
@@ -31,11 +33,20 @@ Page({
       this.data.storeId ? Promise.resolve({ items: [] }) : request({ path: '/api/v1/c/stores' }),
     ])
       .then(([tPage, sPage]) => {
-        const therapists = ((tPage && tPage.items) || []).map((t) => ({
-          ...t,
-          rating: rating(t.ratingX100),
-          levelLabel: levelLabel(t.level),
-        }))
+        const therapists = ((tPage && tPage.items) || []).map((t) => {
+          const stats = t.stats || {}
+          return {
+            ...t,
+            rating: rating(t.ratingX100),
+            levelLabel: levelLabel(t.level),
+            levelClass: levelClass(t.level),
+            // 样本不足时后端不下发 positiveRateX100，这里跟着留空，由 wx:else 走「N 条评价」那支。
+            rateText: positiveRate(stats.positiveRateX100),
+            reviewText: reviewLine(stats),
+            repeatText: repeatLine(stats),
+            newcomer: !!stats.newcomer,
+          }
+        })
         const stores = (sPage && sPage.items) || []
         const storeName = this.data.storeName
           || (stores[0] && stores[0].name)

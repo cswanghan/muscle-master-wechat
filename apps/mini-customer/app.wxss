@@ -98,3 +98,74 @@ page {
   background: #1e5c4a;
   color: #f4f1ea;
 }
+
+/* 等级徽章：只用主色的明度分档，不引第二个色相 —— 四档要能一眼排序，不能变成四种彩色标签。 */
+.lv {
+  display: inline-block;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  font-weight: 600;
+  letter-spacing: 1rpx;
+}
+
+.lv-junior {
+  color: #6b7a74;
+  border: 1rpx solid #d7e6df;
+  background: transparent;
+}
+
+.lv-middle {
+  color: #2f6b58;
+  background: #e8f0ec;
+}
+
+.lv-senior {
+  color: #f4f1ea;
+  background: #2f6b58;
+}
+
+.lv-chief {
+  color: #f4f1ea;
+  background: #1e5c4a;
+  box-shadow: inset 0 0 0 2rpx #c8a24a;
+}
+
+/* 新技师：把「没有数据」说清楚，别让空白被读成差。 */
+.lv-new {
+  display: inline-block;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  color: #8a6d1f;
+  background: #f7f0dc;
+}
+
+/* 技师统计：好评率是选择时的主信号，放大；回头是佐证，压小。 */
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-top: 10rpx;
+}
+
+.stat-key {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1e5c4a;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-sub {
+  font-size: 22rpx;
+  color: #6b7a74;
+}
+
+.stat-repeat {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #6b7a74;
+  font-variant-numeric: tabular-nums;
+}

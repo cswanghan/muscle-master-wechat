@@ -36,6 +36,14 @@
       <view class="st muted">{{item.statusLabel}}</view>
     </view>
     <view class="hint">{{item.date}} {{item.start}} · ¥{{item.priceYuan}}</view>
+    <!-- catchtap 而不是 bindtap：卡片本身可能挂 openOrder，冒泡上去会顺手把详情页也推开 -->
+    <view wx:if="{{item.reviewCta}}" class="ord-foot">
+      <view
+        class="ord-btn {{item.reviewDone?'done':''}}"
+        data-item="{{item}}"
+        catchtap="openReview"
+      >{{item.reviewCta}}</view>
+    </view>
   </view>
 
   <view class="no-wallet" id="no-wallet">P0 无资金总览 · 无储值 / 礼卡 / 券</view>

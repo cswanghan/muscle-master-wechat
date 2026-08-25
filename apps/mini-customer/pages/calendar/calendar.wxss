@@ -85,6 +85,13 @@
   margin-bottom: 12rpx;
 }
 
+.th-stat {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: #6b7a74;
+  font-variant-numeric: tabular-nums;
+}
+
 .th-name {
   font-size: 30rpx;
   font-weight: 600;

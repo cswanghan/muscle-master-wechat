@@ -80,3 +80,28 @@
   font-size: 22rpx;
   color: #8b948f;
 }
+
+.ord-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16rpx;
+}
+
+.ord-btn {
+  padding: 0 28rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  border-radius: 28rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  background: #1e5c4a;
+  color: #f4f1ea;
+}
+
+/* 已评价是回看入口，不该和「去评价」抢同一份视觉权重 */
+.ord-btn.done {
+  background: #fff;
+  color: #6b7a74;
+  border: 1rpx solid #d7e6df;
+  font-weight: 400;
+}

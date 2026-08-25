@@ -9,8 +9,20 @@
       data-item="{{item}}"
       bindtap="pickTherapist"
     >
-      <view class="th-name">{{item.name}}</view>
-      <view class="hint">{{item.levelLabel}} · {{item.rating}} · {{item.intro}}</view>
+      <view class="th-head">
+        <text class="th-name">{{item.name}}</text>
+        <text class="{{item.levelClass}}">{{item.levelLabel}}</text>
+        <text wx:if="{{item.newcomer}}" class="lv-new">新技师</text>
+      </view>
+      <view class="hint">{{item.rating}} · {{item.intro}}</view>
+      <view wx:if="{{item.rateText}}" class="stat-row">
+        <text class="stat-key">{{item.rateText}}</text>
+        <text class="stat-sub">好评率 · {{item.reviewText}}</text>
+      </view>
+      <view wx:else class="stat-row">
+        <text class="stat-sub">{{item.reviewText}}</text>
+      </view>
+      <view wx:if="{{item.repeatText}}" class="stat-repeat">{{item.repeatText}}</view>
     </view>
   </view>
   <view wx:if="{{picked}}" class="sec">选择项目</view>
