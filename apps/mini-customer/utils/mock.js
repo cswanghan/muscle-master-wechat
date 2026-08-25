@@ -1,4 +1,4 @@
-const { fenYuan, slotToTime, rating, levelLabel, statusLabel } = require('./format.js')
+const { fenYuan, slotToTime, rating, levelLabel, statusLabel, positiveRate, repeatLine, reviewLine } = require('./format.js')
 
 const STORE_ID = '3100000000000000001'
 const STORE2_ID = '3100000000000000002'
@@ -129,12 +129,20 @@ const projects = [
 ]
 
 function decorateTherapist(t) {
+  // 统计走这一个收口点，技师列表和日历两页就不会各算各的。
+  // stats 缺席（后端未接 / mock 数据）时下面三个都是空串，卡片自然退回原样。
+  const stats = t.stats || null
   return {
     ...t,
     rating: t.rating || rating(t.ratingX100),
     levelLabel: t.levelLabel || levelLabel(t.level) || '技师',
     tags: (t.symptomNames || t.tags || ['头颈肩痛', '睡眠调理']).slice(0, 2),
     photo: t.photo || therapistPhoto(t.therapistId),
+    stats,
+    rateLabel: stats ? positiveRate(stats.positiveRateX100) : '',
+    reviewLabel: stats ? reviewLine(stats) : '',
+    repeatLabel: stats ? repeatLine(stats) : '',
+    newcomer: !!(stats && stats.newcomer),
   }
 }
 

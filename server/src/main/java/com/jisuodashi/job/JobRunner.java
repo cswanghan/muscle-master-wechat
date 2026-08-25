@@ -11,6 +11,7 @@ import com.jisuodashi.inventory.SlotOccupyStore;
 import com.jisuodashi.order.FireContext;
 import com.jisuodashi.order.OrderEvent;
 import com.jisuodashi.order.OrderStateMachine;
+import com.jisuodashi.review.TherapistStatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,7 @@ public class JobRunner {
     private final String instanceId;
     private final TransactionTemplate tx;
     private final OrderStateMachine machine;
+    private final TherapistStatService therapistStats;
 
     public JobRunner(
             SlotGenerateJob slotGenerateJob,
@@ -60,12 +62,14 @@ public class JobRunner {
             AppClock clock,
             AppProperties properties,
             PlatformTransactionManager txManager,
-            @Autowired(required = false) OrderStateMachine machine
+            @Autowired(required = false) OrderStateMachine machine,
+            @Autowired(required = false) TherapistStatService therapistStats
     ) {
         this(slotGenerateJob, slotScanJob, delayedJobs, clock,
                 "w" + properties.getSnowflake().getWorkerId(),
                 new TransactionTemplate(txManager),
-                machine);
+                machine,
+                therapistStats);
     }
 
     public JobRunner(
@@ -76,9 +80,10 @@ public class JobRunner {
             String instanceId,
             TransactionTemplate tx
     ) {
-        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, null);
+        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, null, null);
     }
 
+    /** 统计缺席的重载：排班/清算类用例只关心 drain，不需要背上评价统计。 */
     public JobRunner(
             SlotGenerateJob slotGenerateJob,
             SlotScanJob slotScanJob,
@@ -88,6 +93,19 @@ public class JobRunner {
             TransactionTemplate tx,
             OrderStateMachine machine
     ) {
+        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, machine, null);
+    }
+
+    public JobRunner(
+            SlotGenerateJob slotGenerateJob,
+            SlotScanJob slotScanJob,
+            DelayedJobStore delayedJobs,
+            AppClock clock,
+            String instanceId,
+            TransactionTemplate tx,
+            OrderStateMachine machine,
+            TherapistStatService therapistStats
+    ) {
         this.slotGenerateJob = slotGenerateJob;
         this.slotScanJob = slotScanJob;
         this.delayedJobs = delayedJobs;
@@ -95,6 +113,7 @@ public class JobRunner {
         this.instanceId = instanceId;
         this.tx = tx;
         this.machine = machine;
+        this.therapistStats = therapistStats;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -106,6 +125,27 @@ public class JobRunner {
     @Scheduled(cron = "0 15 2 * * *", zone = "Asia/Shanghai")
     public void dailyGenerateAt0215Shanghai() {
         slotGenerateJob.run();
+    }
+
+    /**
+     * 30 天统计全量重算。放在 02:40，排在 02:15 的 slot 生成之后，两者不抢同一批表。
+     * 评价写入时已经增量刷过评价那半边，这里补的是「服务/回头」以及窗口滚出的旧数据。
+     */
+    @Scheduled(cron = "0 40 2 * * *", zone = "Asia/Shanghai")
+    public void recomputeTherapistStatsAt0240Shanghai() {
+        recomputeTherapistStats();
+    }
+
+    public int recomputeTherapistStats() {
+        if (therapistStats == null) {
+            return 0;
+        }
+        try {
+            return therapistStats.recomputeAll();
+        } catch (RuntimeException e) {
+            log.warn("therapist_stat_30d recompute failed", e);
+            return 0;
+        }
     }
 
     @Scheduled(cron = "0 */5 * * * *", zone = "Asia/Shanghai")

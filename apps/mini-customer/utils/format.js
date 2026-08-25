@@ -67,12 +67,43 @@ function todayIso() {
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 }
 
+// 好评率样本不足时后端整个字段不下发，这里也必须返回空串而不是「0%」——
+// 把缺省渲染成 0，新技师看起来就是差评缠身。
+function positiveRate(x100) {
+  if (x100 === null || x100 === undefined) {
+    return ''
+  }
+  return Math.floor(Number(x100) / 100) + '%'
+}
+
+// 「28 次回头 · 19 位老客」：次数说粘性强度，人数说粘性宽度。
+// 只报次数会被一个高频客人撑起来，只报人数看不出复购深度，两个一起才读得准。
+function repeatLine(stats) {
+  if (!stats || !stats.servedCount) {
+    return ''
+  }
+  if (!stats.repeatCount) {
+    return '30 天服务 ' + stats.servedCount + ' 次'
+  }
+  return '30 天回头 ' + stats.repeatCount + ' 次 · ' + stats.repeatCustomerCount + ' 位老客'
+}
+
+function reviewLine(stats) {
+  if (!stats || !stats.reviewCount) {
+    return '暂无评价'
+  }
+  return stats.reviewCount + ' 条评价'
+}
+
 module.exports = {
   todayIso,
   fenYuan,
   slotToTime,
   rating,
   levelLabel,
+  positiveRate,
+  repeatLine,
+  reviewLine,
   statusLabel,
   isOngoing,
   remainMs,

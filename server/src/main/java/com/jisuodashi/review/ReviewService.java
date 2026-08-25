@@ -9,6 +9,7 @@ import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.SnowflakeIdGenerator;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -29,6 +30,7 @@ public class ReviewService {
     private final CatalogRepository catalog;
     private final SnowflakeIdGenerator ids;
     private final AppClock clock;
+    private TherapistStatService therapistStats;
 
     public ReviewService(
             ReviewRepository reviews,
@@ -41,6 +43,15 @@ public class ReviewService {
         this.catalog = catalog;
         this.ids = ids;
         this.clock = clock;
+    }
+
+    /**
+     * setter 注入而非构造器：{@link TherapistStatService} 反过来依赖 {@link ReviewRepository}，
+     * 构造器注入会绕成环。
+     */
+    @Autowired(required = false)
+    public void setTherapistStats(TherapistStatService therapistStats) {
+        this.therapistStats = therapistStats;
     }
 
     /**
@@ -75,6 +86,11 @@ public class ReviewService {
                 joinTags(request.tags()),
                 trim(request.content()),
                 Instant.now(clock.clock())));
+        // 新评价要当场出现在技师卡上，等不到日更。失败只记日志，不回滚已落库的评价。
+        if (therapistStats != null) {
+            therapistStats.onReviewed(
+                    saved.therapistId(), saved.score(), ReviewPolicy.positive(saved.score()));
+        }
         return view(saved);
     }
 

@@ -1,6 +1,7 @@
 package com.jisuodashi.inventory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.jisuodashi.common.TherapistStatsView;
 
 import java.util.List;
 
@@ -24,6 +25,7 @@ public final class AvailabilityDtos {
             String name,
             String level,
             int ratingX100,
+            TherapistStatsView stats,
             List<Start> starts,
             @JsonInclude(JsonInclude.Include.NON_NULL) List<Block> blocks
     ) {

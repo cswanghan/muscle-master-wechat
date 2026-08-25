@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,6 +56,13 @@ public class JdbcReviewRepository implements ReviewRepository {
                 "SELECT " + COLS + " FROM review WHERE customer_id = ? AND deleted_at IS NULL"
                         + " ORDER BY created_at DESC",
                 ROW, customerId);
+    }
+
+    @Override
+    public List<Review> listSince(Instant startAt) {
+        return jdbc.query(
+                "SELECT " + COLS + " FROM review WHERE created_at >= ? AND deleted_at IS NULL",
+                ROW, Timestamp.from(startAt));
     }
 
     @Override

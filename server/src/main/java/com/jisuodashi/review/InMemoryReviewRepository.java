@@ -3,6 +3,7 @@ package com.jisuodashi.review;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +34,13 @@ public class InMemoryReviewRepository implements ReviewRepository {
         return rows.stream()
                 .filter(r -> r.customerId() == customerId)
                 .sorted(Comparator.comparing(Review::createdAt).reversed())
+                .toList();
+    }
+
+    @Override
+    public List<Review> listSince(Instant startAt) {
+        return rows.stream()
+                .filter(r -> r.createdAt() != null && !r.createdAt().isBefore(startAt))
                 .toList();
     }
 

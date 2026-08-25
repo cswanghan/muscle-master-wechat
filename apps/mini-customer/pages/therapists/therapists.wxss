@@ -70,3 +70,33 @@
   border: 2rpx solid #1e5c4a;
   color: #1e5c4a;
 }
+
+/* 好评率是选技师时最先扫到的数，给它铜色 + 等宽，和下面的灰字拉开层级 */
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  margin-top: 6rpx;
+}
+
+.stat-key {
+  color: #c0803a;
+  font-size: 28rpx;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.stat-sub { color: #8b948f; font-size: 24rpx; }
+
+.stat-repeat {
+  color: #1e5c4a;
+  font-size: 24rpx;
+  margin-top: 4rpx;
+}
+
+/* 「新技师」不是负面标签，用中性灰而不是警示色 —— 样本不足是事实，不是扣分 */
+.lvl.new {
+  background: #f0efec;
+  color: #8b948f;
+  margin-left: 6rpx;
+}

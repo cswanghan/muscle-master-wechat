@@ -14,8 +14,20 @@
   >
     <image class="avatar" src="{{item.photo}}" mode="aspectFill" />
     <view class="grow">
-      <view class="th-name">{{item.name}} <text class="lvl">{{item.levelLabel}}</text></view>
-      <view class="copper">{{item.rating}} 分</view>
+      <view class="th-name">
+        {{item.name}} <text class="lvl">{{item.levelLabel}}</text>
+        <text wx:if="{{item.newcomer}}" class="lvl new">新技师</text>
+      </view>
+      <!-- 样本够才给好评率；不够只报条数，绝不把缺省渲染成 0% -->
+      <view wx:if="{{item.rateLabel}}" class="stat-row">
+        <text class="stat-key">{{item.rateLabel}}</text>
+        <text class="stat-sub">好评率 · {{item.reviewLabel}}</text>
+      </view>
+      <view wx:elif="{{item.stats}}" class="stat-row">
+        <text class="stat-sub">{{item.reviewLabel}}</text>
+      </view>
+      <view wx:else class="copper">{{item.rating}} 分</view>
+      <view wx:if="{{item.repeatLabel}}" class="stat-repeat">{{item.repeatLabel}}</view>
       <view class="meta">{{item.intro || '手法稳、力度可调'}}</view>
     </view>
     <view class="btn ghost sm">预约</view>
