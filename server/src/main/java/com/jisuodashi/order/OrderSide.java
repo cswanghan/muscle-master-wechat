@@ -14,5 +14,6 @@ public enum OrderSide {
     NO_SHOW_COUNT,
     REFUND,
     RESCHEDULE,
-    SWAP_THERAPIST
+    SWAP_THERAPIST,
+    REVIEW_RECORD
 }

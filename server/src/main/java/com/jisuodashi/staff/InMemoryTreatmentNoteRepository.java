@@ -29,6 +29,13 @@ public class InMemoryTreatmentNoteRepository implements TreatmentNoteRepository 
     private final ConcurrentHashMap<Long, ServiceRecord> records = new ConcurrentHashMap<>();
 
     @Override
+    public List<ServiceRecord> listAllServiceRecords() {
+        return records.values().stream()
+                .sorted(Comparator.comparingLong(ServiceRecord::id))
+                .toList();
+    }
+
+    @Override
     public List<TreatmentNote> findByOrderId(long orderId) {
         return notes.stream()
                 .filter(n -> n.orderId() == orderId)

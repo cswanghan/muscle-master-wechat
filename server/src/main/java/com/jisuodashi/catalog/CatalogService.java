@@ -6,6 +6,8 @@ import com.jisuodashi.common.ClockConfig;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.GrayStores;
 import com.jisuodashi.common.PhoneCrypto;
+import com.jisuodashi.common.TherapistStatsPort;
+import com.jisuodashi.common.TherapistStatsView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -33,6 +36,7 @@ public class CatalogService {
     private final int nearMeters;
     private final TtlCache<String, List<CatalogModels.Store>> storeCache;
     private GrayStores gray;
+    private TherapistStatsPort therapistStats;
 
     public CatalogService(
             CatalogRepository catalog,
@@ -49,6 +53,12 @@ public class CatalogService {
     @Autowired(required = false)
     public void setGrayStores(GrayStores gray) {
         this.gray = gray;
+    }
+
+    /** 上层的 review 模块实现；缺席时技师卡照常渲染，只是没有统计数字。 */
+    @Autowired(required = false)
+    public void setTherapistStats(TherapistStatsPort therapistStats) {
+        this.therapistStats = therapistStats;
     }
 
     public CatalogDtos.Page<CatalogDtos.StoreListItem> listStores(
@@ -117,7 +127,7 @@ public class CatalogService {
         Set<Long> onDuty = catalog.hasSlotsOn(today)
                 ? new HashSet<>(catalog.therapistIdsOnDutySlots(storeId, today))
                 : onDutyTherapistIds(storeId, today, weekday);
-        List<CatalogDtos.TherapistItem> items = new ArrayList<>();
+        List<CatalogModels.Therapist> picked = new ArrayList<>();
         String next = null;
         boolean skipping = afterId != null;
         for (CatalogModels.Therapist t : catalog.listTherapists().stream()
@@ -139,20 +149,28 @@ public class CatalogService {
                 }
                 continue;
             }
-            if (items.size() == size) {
+            if (picked.size() == size) {
                 next = String.valueOf(t.id());
                 break;
             }
-            items.add(new CatalogDtos.TherapistItem(
-                    String.valueOf(t.id()),
-                    t.name(),
-                    t.employeeNo(),
-                    t.level(),
-                    t.ratingX100(),
-                    t.intro(),
-                    t.avatarUrl(),
-                    String.valueOf(t.homeStoreId())));
+            picked.add(t);
         }
+        // 统计在分页收口之后一次批量取：翻一页 = 一次查询，而不是一人一次。
+        Map<Long, TherapistStatsView> stats = therapistStats == null
+                ? Map.of()
+                : therapistStats.statsFor(picked.stream().map(CatalogModels.Therapist::id).toList());
+        List<CatalogDtos.TherapistItem> items = picked.stream()
+                .map(t -> new CatalogDtos.TherapistItem(
+                        String.valueOf(t.id()),
+                        t.name(),
+                        t.employeeNo(),
+                        t.level(),
+                        t.ratingX100(),
+                        t.intro(),
+                        t.avatarUrl(),
+                        String.valueOf(t.homeStoreId()),
+                        stats.getOrDefault(t.id(), TherapistStatsView.NONE)))
+                .toList();
         return new CatalogDtos.Page<>(items, next);
     }
 

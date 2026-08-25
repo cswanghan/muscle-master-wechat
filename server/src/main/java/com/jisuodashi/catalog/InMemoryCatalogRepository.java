@@ -78,7 +78,9 @@ public class InMemoryCatalogRepository implements CatalogRepository {
                 DemoCatalogIds.PROJECT_P60, DemoCatalogIds.PROJECT_P45, DemoCatalogIds.PROJECT_P90);
         therapists.add(new CatalogModels.Therapist(
                 DemoCatalogIds.THERAPIST_LIN, DemoStaffIds.T1, "T001", "林晓",
-                DemoCatalogIds.STORE, "SENIOR", null, "首席技师，肩颈深层", 490, 1,
+                // 等级四档后 SENIOR 显示为「资深」，简介跟着改口，别在同一张卡上出现两个档位说法。
+                // V3__demo_store.sql 的同名文案不动 —— 已应用的 migration 改了会破 checksum。
+                DemoCatalogIds.STORE, "SENIOR", null, "资深技师，肩颈深层", 490, 1,
                 allProjects, List.of(DemoCatalogIds.SYMPTOM_NECK, DemoCatalogIds.SYMPTOM_SORE)));
         therapists.add(new CatalogModels.Therapist(
                 DemoCatalogIds.THERAPIST_CHEN, DemoStaffIds.T2, "T002", "陈默",

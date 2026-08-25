@@ -36,7 +36,7 @@ class OrderStateMachineTableTest {
         assertPair(OrderStatus.IN_SERVICE, OrderEvent.REFUND, OrderStatus.CANCELLED, OrderSide.RELEASE_UNCONSUMED_NOW);
         assertPair(OrderStatus.ABNORMAL, OrderEvent.RESOLVE_COMPLETE, OrderStatus.COMPLETED, OrderSide.NONE);
         assertPair(OrderStatus.ABNORMAL, OrderEvent.RESOLVE_CANCEL, OrderStatus.CANCELLED, OrderSide.RELEASE_UNCONSUMED_NOW);
-        assertPair(OrderStatus.COMPLETED, OrderEvent.REVIEW, OrderStatus.REVIEWED, OrderSide.NONE);
+        assertPair(OrderStatus.COMPLETED, OrderEvent.REVIEW, OrderStatus.REVIEWED, OrderSide.REVIEW_RECORD);
         assertPair(OrderStatus.COMPLETED, OrderEvent.REFUND, OrderStatus.COMPLETED, OrderSide.REFUND);
         assertPair(OrderStatus.CANCELLED, OrderEvent.MARK_NO_SHOW, OrderStatus.NO_SHOW, OrderSide.NO_SHOW_COUNT);
     }

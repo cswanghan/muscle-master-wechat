@@ -22,6 +22,14 @@ public interface TreatmentNoteRepository {
 
     List<ServiceRecord> listServiceRecords(long orderId);
 
+    /**
+     * 全历史服务段，回头统计用（见 {@code ServedVisitSource}）。
+     * 只有 dev 侧走这条 —— 生产在 SQL 里聚合，不把全表拉进内存。
+     */
+    default List<ServiceRecord> listAllServiceRecords() {
+        return List.of();
+    }
+
     void insertSystemNote(
             long id, long orderId, long storeId, long therapistId, long authorStaffId, String content, Instant now);
 }

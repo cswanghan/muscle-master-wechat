@@ -115,7 +115,7 @@
 <tr class='ok'><td>TABLE</td><td>IN_SERVICE + REFUND → CANCELLED</td><td>[REFUND, RELEASE_UNCONSUMED_NOW]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>ABNORMAL + RESOLVE_COMPLETE → COMPLETED</td><td>[NONE]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>ABNORMAL + RESOLVE_CANCEL → CANCELLED</td><td>[RELEASE_UNCONSUMED_NOW]</td><td>PASS</td></tr>
-<tr class='ok'><td>TABLE</td><td>COMPLETED + REVIEW → REVIEWED</td><td>[NONE]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>COMPLETED + REVIEW → REVIEWED</td><td>[REVIEW_RECORD]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>COMPLETED + REFUND → COMPLETED</td><td>[REFUND]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>CANCELLED + MARK_NO_SHOW → NO_SHOW</td><td>[NO_SHOW_COUNT]</td><td>PASS</td></tr>
 <tr class='ok'><td>CLOSED</td><td>未列出 (from,event) 全部 40904</td><td>illegal=148 40904=148</td><td>PASS</td></tr>

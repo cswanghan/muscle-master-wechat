@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * V1–V4 source-of-truth contract. H2 cannot execute the MySQL DDL
+ * V1–V6 source-of-truth contract. H2 cannot execute the MySQL DDL
  * (VARBINARY, DATETIME(3), JSON, comments); Flyway stays off on {@code dev}.
  * Apply against compose MySQL with {@code scripts/verify-schema.sh}.
  */
@@ -57,6 +57,7 @@ class SchemaContractTest {
     private static String v3;
     private static String v4;
     private static String v5;
+    private static String v6;
     private static final List<Check> CHECKS = new ArrayList<>();
 
     @BeforeAll
@@ -66,6 +67,7 @@ class SchemaContractTest {
         v3 = readMigration("V3__demo_store.sql");
         v4 = readMigration("V4__locknew_free_indexes.sql");
         v5 = readMigration("V5__order_resolve_perm.sql");
+        v6 = readMigration("V6__order_review.sql");
     }
 
     @Test
@@ -75,6 +77,7 @@ class SchemaContractTest {
         tc203NoBalanceFen();
         tc204DemoStore();
         tc205RbacSeed();
+        tc206ReviewSchema();
         extraInvariants();
 
         writeReports();
@@ -161,6 +164,38 @@ class SchemaContractTest {
                 countInsertRows(v5, "role_permission") == 3);
         check("TC-2-05", "order:resolve not granted in V2 (front desk excluded)",
                 !v2.contains("'order:resolve'"));
+    }
+
+    /** V6 评价 + 30 天统计。读侧是 GET /c/availability 的热路径，索引形状比列本身更要紧。 */
+    private static void tc206ReviewSchema() {
+        check("TC-2-06", "V6 CREATE TABLE order_review", hasCreateTable(v6, "order_review"));
+        check("TC-2-06", "V6 CREATE TABLE therapist_stat_30d", hasCreateTable(v6, "therapist_stat_30d"));
+        check("TC-2-06", "uk_review_order exact (order_id) —— 重复提交的幂等靠它兜底",
+                uniqueKeyColumns(v6, "order_review", "uk_review_order").equals(List.of("order_id")));
+        check("TC-2-06", "idx_review_therapist (therapist_id, created_at) —— 统计重算按技师+窗口扫",
+                v6.contains("KEY idx_review_therapist (therapist_id, created_at)"));
+        check("TC-2-06", "order_review.positive 落库定格，不是查询时按阈值现算",
+                tableHasColumn(v6, "order_review", "positive"));
+        check("TC-2-06", "order_review.score / anonymous / status",
+                tableHasColumn(v6, "order_review", "score")
+                        && tableHasColumn(v6, "order_review", "anonymous")
+                        && tableHasColumn(v6, "order_review", "status"));
+        check("TC-2-06", "therapist_stat_30d 主键就是 therapist_id，读侧才能主键批量 IN",
+                tableBody(v6, "therapist_stat_30d")
+                        .matches("(?s).*therapist_id\\s+BIGINT\\s+NOT NULL\\s+PRIMARY KEY.*"));
+        check("TC-2-06", "回头两个口径都落表（次数 + 去重人数）",
+                tableHasColumn(v6, "therapist_stat_30d", "repeat_count")
+                        && tableHasColumn(v6, "therapist_stat_30d", "repeat_customer_count"));
+        check("TC-2-06", "好评两个口径都落表（条数 + 率）",
+                tableHasColumn(v6, "therapist_stat_30d", "review_count")
+                        && tableHasColumn(v6, "therapist_stat_30d", "positive_count")
+                        && tableHasColumn(v6, "therapist_stat_30d", "positive_rate_x100"));
+        check("TC-2-06", "窗口边界随统计一起落表，滚动窗口才可复算",
+                tableHasColumn(v6, "therapist_stat_30d", "window_start")
+                        && tableHasColumn(v6, "therapist_stat_30d", "window_end"));
+        check("D10", "V6 比率整数 x100，无 DECIMAL",
+                !v6.matches("(?is).*\\bDECIMAL\\s*\\(.*"));
+        check("D10", "V6 DATETIME(3) 与 V1 同精度", v6.contains("DATETIME(3)"));
     }
 
     private static void extraInvariants() {

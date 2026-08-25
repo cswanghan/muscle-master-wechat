@@ -1,5 +1,7 @@
 package com.jisuodashi.catalog;
 
+import com.jisuodashi.common.TherapistStatsView;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -52,7 +54,8 @@ public final class CatalogDtos {
             int ratingX100,
             String intro,
             String avatarUrl,
-            String homeStoreId
+            String homeStoreId,
+            TherapistStatsView stats
     ) {
     }
 
