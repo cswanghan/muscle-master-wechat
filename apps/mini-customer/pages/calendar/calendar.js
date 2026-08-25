@@ -2,6 +2,13 @@ const { request } = require('../../utils/api.js')
 const { fenYuan, rating, levelLabel, slotToTime } = require('../../utils/format.js')
 const { demoDate } = require('../../config.js')
 
+function todayIso() {
+  const dt = new Date()
+  const mm = String(dt.getMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getDate()).padStart(2, '0')
+  return `${dt.getFullYear()}-${mm}-${dd}`
+}
+
 function addDays(iso, n) {
   const [y, m, d] = iso.split('-').map(Number)
   const dt = new Date(y, m - 1, d + n)
@@ -69,7 +76,7 @@ Page({
     priceYuan: '0',
     durationMinutes: 60,
     bufferMinutes: 15,
-    date: demoDate,
+    date: demoDate || todayIso(),
     dates: [],
     therapists: [],
     selected: null,
@@ -79,7 +86,7 @@ Page({
   onLoad(query) {
     const dates = []
     for (let i = 0; i < 7; i += 1) {
-      const iso = addDays(demoDate, i)
+      const iso = addDays(this.data.date, i)
       dates.push({ iso, day: iso.slice(8), week: weekday(iso), on: i === 0 })
     }
     this.setData({

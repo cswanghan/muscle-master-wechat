@@ -86,9 +86,18 @@ const checkInResult = ref<CheckInData | null>(null)
 const lookupLoading = ref(false)
 const checkInLoading = ref(false)
 
+// The dev server seeds its demo calendar on today, so these have to open on
+// today too — a pinned date lands on a day with no slots at all.
+function todayIso() {
+  const dt = new Date()
+  const mm = String(dt.getMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getDate()).padStart(2, '0')
+  return `${dt.getFullYear()}-${mm}-${dd}`
+}
+
 const phone = ref('18600001111')
 const customerName = ref('王先生')
-const date = ref('2026-08-14')
+const date = ref(todayIso())
 const startSlotNo = ref(64)
 const alreadyInStore = ref(true)
 const payChannel = ref<'CASH' | 'WECHAT'>('WECHAT')
@@ -110,7 +119,7 @@ const swapLoading = ref(false)
 const swapResult = ref<SwapData | null>(null)
 
 const rescheduleOrderId = ref('')
-const rescheduleDate = ref('2026-08-14')
+const rescheduleDate = ref(todayIso())
 const rescheduleStart = ref(80)
 const rescheduleTherapistId = ref(THERAPIST)
 const rescheduleLoading = ref(false)

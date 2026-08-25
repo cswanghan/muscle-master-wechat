@@ -14,3 +14,6 @@ server/.mvn/wrapper/maven-wrapper.jar
 
 # Design material lives in docs/; binaries are un-reviewable in diffs.
 *.zip
+
+# WeChat DevTools per-developer overrides (urlCheck off for the local http backend).
+project.private.config.json
