@@ -1,0 +1,37 @@
+# Testcontainers MySQL 8 profile. The dev profile runs the in-memory stores; this one runs the
+# @Profile("!dev") MyBatis stores against real InnoDB, so ordered FOR UPDATE, the occupancy
+# unique key and deadlock retry are exercised by the same SlotOccupyService the app ships.
+# Datasource URL/credentials come from @DynamicPropertySource. Flyway V1-V5 builds the schema.
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  health:
+    redis:
+      enabled: false
+
+app:
+  jobs:
+    enabled: false
+  jwt:
+    secret: mysqlit-jwt-hs256-secret-key-32by
+  wechat:
+    mock: true
+    mock-staff-username: demo.admin
+    mchid: mock-mchid
+    prepay-ttl: 2h
+  crypto:
+    phone-pepper: mysqlit-phone-pepper
+    dek-base64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  booking:
+    cancel-free-minutes: 120
+    lock:
+      enabled: true
+  gray:
+    store-ids: 3100000000000000001
