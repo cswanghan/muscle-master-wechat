@@ -1,12 +1,6 @@
 const { request } = require('../../utils/api.js')
 const { fenYuan } = require('../../utils/format.js')
-
-function qs(obj) {
-  return Object.keys(obj)
-    .filter((k) => obj[k] !== undefined && obj[k] !== '')
-    .map((k) => `${k}=${encodeURIComponent(obj[k])}`)
-    .join('&')
-}
+const { qs, decodeQuery } = require('../../utils/query.js')
 
 Page({
   data: {
@@ -21,10 +15,11 @@ Page({
     loading: true,
     error: '',
   },
-  onLoad(query) {
+  onLoad(rawQuery) {
+    const query = decodeQuery(rawQuery)
     this.setData({
       projectId: query.projectId || '',
-      projectName: query.projectName ? decodeURIComponent(query.projectName) : '',
+      projectName: query.projectName || '',
       priceFen: query.priceFen || '',
       durationMinutes: query.durationMinutes || '',
       bufferMinutes: query.bufferMinutes || '',

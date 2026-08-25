@@ -1,5 +1,6 @@
 const { request, ensureLogin, rid } = require('../../utils/api.js')
 const { fenYuan, remainMs, mmss } = require('../../utils/format.js')
+const { decodeQuery } = require('../../utils/query.js')
 
 function isPending(status) {
   return status === 'PENDING_PAY'
@@ -38,14 +39,15 @@ Page({
     payParams: null,
   },
   timer: null,
-  onLoad(query) {
+  onLoad(rawQuery) {
+    const query = decodeQuery(rawQuery)
     this.setData({
       storeId: query.storeId || '',
-      storeName: query.storeName ? decodeURIComponent(query.storeName) : '',
+      storeName: query.storeName || '',
       therapistId: query.therapistId || '',
-      therapistName: query.therapistName ? decodeURIComponent(query.therapistName) : '',
+      therapistName: query.therapistName || '',
       projectId: query.projectId || '',
-      projectName: query.projectName ? decodeURIComponent(query.projectName) : '',
+      projectName: query.projectName || '',
       date: query.date || '',
       startSlotNo: Number(query.startSlotNo || 0),
       start: query.start || '',
@@ -54,8 +56,8 @@ Page({
       durationMinutes: Number(query.durationMinutes || 60),
       bufferMinutes: Number(query.bufferMinutes || 15),
       orderId: query.orderId || '',
-      orderNo: query.orderNo ? decodeURIComponent(query.orderNo) : '',
-      lockExpireAt: query.lockExpireAt ? decodeURIComponent(query.lockExpireAt) : '',
+      orderNo: query.orderNo || '',
+      lockExpireAt: query.lockExpireAt || '',
       status: query.status || (query.orderId ? 'PENDING_PAY' : ''),
     })
     this.syncFlags(this.data.status)

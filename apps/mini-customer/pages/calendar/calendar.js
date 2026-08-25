@@ -1,6 +1,7 @@
 const { request } = require('../../utils/api.js')
 const { fenYuan, rating, levelLabel, slotToTime } = require('../../utils/format.js')
 const { demoDate } = require('../../config.js')
+const { qs, decodeQuery } = require('../../utils/query.js')
 
 function todayIso() {
   const dt = new Date()
@@ -20,13 +21,6 @@ function addDays(iso, n) {
 function weekday(iso) {
   const [y, m, d] = iso.split('-').map(Number)
   return '日一二三四五六'[new Date(y, m - 1, d).getDay()]
-}
-
-function qs(obj) {
-  return Object.keys(obj)
-    .filter((k) => obj[k] !== undefined && obj[k] !== '')
-    .map((k) => `${k}=${encodeURIComponent(obj[k])}`)
-    .join('&')
 }
 
 function paintTherapist(t, selected) {
@@ -83,7 +77,8 @@ Page({
     loading: true,
     error: '',
   },
-  onLoad(query) {
+  onLoad(rawQuery) {
+    const query = decodeQuery(rawQuery)
     const dates = []
     for (let i = 0; i < 7; i += 1) {
       const iso = addDays(this.data.date, i)
@@ -91,11 +86,11 @@ Page({
     }
     this.setData({
       storeId: query.storeId || '',
-      storeName: query.storeName ? decodeURIComponent(query.storeName) : '',
+      storeName: query.storeName || '',
       projectId: query.projectId || '',
-      projectName: query.projectName ? decodeURIComponent(query.projectName) : '',
+      projectName: query.projectName || '',
       therapistId: query.therapistId || '',
-      therapistName: query.therapistName ? decodeURIComponent(query.therapistName) : '',
+      therapistName: query.therapistName || '',
       priceFen: Number(query.priceFen || 0),
       priceYuan: fenYuan(query.priceFen || 0),
       durationMinutes: Number(query.durationMinutes || 60),

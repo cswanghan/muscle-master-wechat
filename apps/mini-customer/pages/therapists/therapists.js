@@ -1,12 +1,6 @@
 const { request } = require('../../utils/api.js')
 const { fenYuan, rating, levelLabel } = require('../../utils/format.js')
-
-function qs(obj) {
-  return Object.keys(obj)
-    .filter((k) => obj[k] !== undefined && obj[k] !== '')
-    .map((k) => `${k}=${encodeURIComponent(obj[k])}`)
-    .join('&')
-}
+const { qs, decodeQuery } = require('../../utils/query.js')
 
 Page({
   data: {
@@ -19,10 +13,11 @@ Page({
     loading: true,
     error: '',
   },
-  onLoad(query) {
+  onLoad(rawQuery) {
+    const query = decodeQuery(rawQuery)
     this.setData({
       storeId: query.storeId || '',
-      storeName: query.storeName ? decodeURIComponent(query.storeName) : '',
+      storeName: query.storeName || '',
     })
     this.bootstrap()
   },
