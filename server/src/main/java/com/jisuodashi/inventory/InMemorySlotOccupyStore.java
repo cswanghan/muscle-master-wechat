@@ -19,7 +19,9 @@ import com.jisuodashi.inventory.SlotOccupyStore.OwnedSlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
+import com.jisuodashi.common.AppClock;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
@@ -43,7 +45,8 @@ import java.util.concurrent.locks.ReentrantLock;
 @Profile("dev")
 public class InMemorySlotOccupyStore implements SlotOccupyStore {
 
-    static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
+    /** Anchor for hand-built stores in unit tests; the Spring bean follows the clock instead. */
+    public static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
     static final int OPEN_SLOT = 40;
     static final int CLOSE_SLOT = 88;
     static final long ROOM = 3_100_000_000_000_000_101L;
@@ -86,6 +89,26 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     private final ConcurrentHashMap<String, ReentrantLock> rowLocks = new ConcurrentHashMap<>();
     private final ThreadLocal<Work> work = new ThreadLocal<>();
 
+    private final LocalDate anchor;
+
+    public InMemorySlotOccupyStore() {
+        this.anchor = DEMO_DATE;
+    }
+
+    /**
+     * Seeds the 15-day demo calendar from whatever "today" the clock reports, so a dev run is
+     * bookable on any date instead of rotting the day after a hard-coded anchor.
+     */
+    @Autowired
+    public InMemorySlotOccupyStore(AppClock clock) {
+        this.anchor = clock.today();
+    }
+
+    /** The first day {@link #seedDemoCalendar()} wrote to. */
+    public LocalDate anchor() {
+        return anchor;
+    }
+
     @PostConstruct
     void initDemo() {
         seedDemoCatalog();
@@ -127,7 +150,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
 
     void seedDemoCalendar() {
         for (int day = 0; day < 15; day++) {
-            LocalDate date = DEMO_DATE.plusDays(day);
+            LocalDate date = anchor.plusDays(day);
             for (long therapist : new long[] {
                     DemoCatalogIds.THERAPIST_LIN, DemoCatalogIds.THERAPIST_CHEN, DemoCatalogIds.THERAPIST_ZHOU}) {
                 seedTherapistSlots(therapist, DemoCatalogIds.STORE, date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);

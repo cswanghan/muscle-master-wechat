@@ -1,6 +1,8 @@
 package com.jisuodashi.inventory;
 
 import com.jisuodashi.catalog.DemoCatalogIds;
+import com.jisuodashi.common.AppClock;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
@@ -19,7 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Profile("dev")
 public class InMemoryAvailabilityStore implements AvailabilityStore {
 
-    static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
+    /** Anchor for hand-built stores in unit tests; the Spring bean follows the clock instead. */
+    public static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
     static final int OPEN = 40;
     static final int CLOSE = 88;
     static final long BED1 = 3_100_000_000_000_000_201L;
@@ -29,16 +32,38 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
     private final Map<String, BedSlotView> bedSlots = new ConcurrentHashMap<>();
     private final Map<String, OccupancyView> occupancies = new ConcurrentHashMap<>();
 
+    private final LocalDate anchor;
+
     public InMemoryAvailabilityStore() {
+        this(DEMO_DATE);
+    }
+
+    /**
+     * Seeds the demo day on whatever "today" the clock reports, so a dev run is bookable on
+     * any date instead of rotting the day after a hard-coded anchor.
+     */
+    @Autowired
+    public InMemoryAvailabilityStore(AppClock clock) {
+        this(clock.today());
+    }
+
+    private InMemoryAvailabilityStore(LocalDate anchor) {
+        this.anchor = anchor;
         seedFourStatesDemo();
     }
 
     /** Tests that want an empty calendar. */
     public static InMemoryAvailabilityStore blank() {
-        return new InMemoryAvailabilityStore(false);
+        return new InMemoryAvailabilityStore(DEMO_DATE, false);
     }
 
-    private InMemoryAvailabilityStore(boolean unused) {
+    private InMemoryAvailabilityStore(LocalDate anchor, boolean unused) {
+        this.anchor = anchor;
+    }
+
+    /** The day {@link #seedFourStatesDemo()} wrote to. */
+    public LocalDate anchor() {
+        return anchor;
     }
 
     public void seedTherapistSlots(long therapistId, LocalDate date, int from, int toExclusive, String status) {
@@ -96,26 +121,26 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         long t1 = DemoCatalogIds.THERAPIST_LIN;
         long t2 = DemoCatalogIds.THERAPIST_CHEN;
         long t3 = DemoCatalogIds.THERAPIST_ZHOU;
-        seedTherapistSlots(t1, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
-        seedTherapistSlots(t1, DEMO_DATE, 56, 64, SlotStatus.REST);
-        seedTherapistSlots(t1, DEMO_DATE, 78, 83, SlotStatus.LOCKED);
-        seedOccupancy(ResourceType.THERAPIST, t1, DEMO_DATE, 78, 83);
+        seedTherapistSlots(t1, anchor, OPEN, CLOSE, SlotStatus.FREE);
+        seedTherapistSlots(t1, anchor, 56, 64, SlotStatus.REST);
+        seedTherapistSlots(t1, anchor, 78, 83, SlotStatus.LOCKED);
+        seedOccupancy(ResourceType.THERAPIST, t1, anchor, 78, 83);
 
-        seedTherapistSlots(t2, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
+        seedTherapistSlots(t2, anchor, OPEN, CLOSE, SlotStatus.FREE);
 
-        seedTherapistSlots(t3, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
-        seedTherapistSlots(t3, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
-        seedTherapistSlots(t3, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
-        seedOccupancy(ResourceType.THERAPIST, t3, DEMO_DATE, 40, 45);
+        seedTherapistSlots(t3, anchor, OPEN, CLOSE, SlotStatus.FREE);
+        seedTherapistSlots(t3, anchor, 40, 44, SlotStatus.BOOKED);
+        seedTherapistSlots(t3, anchor, 44, 45, SlotStatus.BUFFER);
+        seedOccupancy(ResourceType.THERAPIST, t3, anchor, 40, 45);
 
-        seedBedSlots(BED1, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
-        seedBedSlots(BED1, DEMO_DATE, 78, 83, SlotStatus.LOCKED);
-        seedOccupancy(ResourceType.BED, BED1, DEMO_DATE, 78, 83);
+        seedBedSlots(BED1, anchor, OPEN, CLOSE, SlotStatus.FREE);
+        seedBedSlots(BED1, anchor, 78, 83, SlotStatus.LOCKED);
+        seedOccupancy(ResourceType.BED, BED1, anchor, 78, 83);
 
-        seedBedSlots(BED2, DEMO_DATE, OPEN, CLOSE, SlotStatus.FREE);
-        seedBedSlots(BED2, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
-        seedBedSlots(BED2, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
-        seedOccupancy(ResourceType.BED, BED2, DEMO_DATE, 40, 45);
+        seedBedSlots(BED2, anchor, OPEN, CLOSE, SlotStatus.FREE);
+        seedBedSlots(BED2, anchor, 40, 44, SlotStatus.BOOKED);
+        seedBedSlots(BED2, anchor, 44, 45, SlotStatus.BUFFER);
+        seedOccupancy(ResourceType.BED, BED2, anchor, 40, 45);
     }
 
     @Override

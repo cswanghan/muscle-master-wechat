@@ -1,5 +1,6 @@
 package com.jisuodashi.frontdesk;
 
+import com.jisuodashi.DevApiTest;
 import com.jisuodashi.auth.CustomerRepository;
 import com.jisuodashi.auth.DemoStaffIds;
 import com.jisuodashi.auth.HumanTask;
@@ -15,7 +16,6 @@ import com.jisuodashi.payment.InMemoryPaymentStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -24,7 +24,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,8 +32,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** §3 {@code IN_SERVICE → ABNORMAL → COMPLETED/CANCELLED} 闭环：前台中止，店长出度。 */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("dev")
+@DevApiTest
 class FrontDeskAbortResolveApiTest {
 
     private static final ParameterizedTypeReference<Map<String, Object>> MAP = new ParameterizedTypeReference<>() {

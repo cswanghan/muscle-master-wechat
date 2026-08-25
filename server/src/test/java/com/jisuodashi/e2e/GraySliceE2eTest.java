@@ -1,5 +1,6 @@
 package com.jisuodashi.e2e;
 
+import com.jisuodashi.DevApiTest;
 import com.jisuodashi.auth.CustomerRepository;
 import com.jisuodashi.auth.DemoStaffIds;
 import com.jisuodashi.auth.JwtPrincipal;
@@ -13,7 +14,6 @@ import com.jisuodashi.payment.InMemoryPaymentStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -22,7 +22,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
@@ -35,8 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Gray slice = PR7+PR8+PR9+PR11: login, browse, book+pay, check-in,
  * cash walk-in, unpaid cancel / PAY_TIMEOUT ReleaseLock.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("dev")
+@DevApiTest
 class GraySliceE2eTest {
 
     private static final ParameterizedTypeReference<Map<String, Object>> MAP = new ParameterizedTypeReference<>() {
