@@ -64,7 +64,7 @@ class FrontDeskServiceTest {
                 TODAY.atTime(LocalTime.of(19, 0)).atZone(AppClock.SHANGHAI).toInstant(),
                 AppClock.SHANGHAI));
         AppProperties props = new AppProperties();
-        SnowflakeIdGenerator ids = new SnowflakeIdGenerator(props);
+        SnowflakeIdGenerator ids = new SnowflakeIdGenerator(props, clock.clock());
         OrderStateMachine machine = new OrderStateMachine(store, occupy, clock);
         payments = new InMemoryPaymentStore();
         pay = new PaymentService(payments, store, machine, new MockWeChatPayClient(clock), ids, clock);

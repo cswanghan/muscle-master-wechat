@@ -49,12 +49,12 @@
 <tr class='ok'><td>M1</td><td>落单后满班率上升（分母不含 REST）</td><td>0 → 347</td><td>PASS</td></tr>
 <tr class='ok'><td>M1</td><td>分时满班率有峰值，可定位忙闲</td><td>peak=3333 fullDay=347</td><td>PASS</td></tr>
 <tr class='ok'><td>QUEUE</td><td>OPEN 队列同时含请假 / 退款 / 异常单</td><td>leave=1 refund=1 abnormal=1 queue=0</td><td>PASS</td></tr>
-<tr class='ok'><td>QUEUE</td><td>未知类型兜底进人工队列，不丢单</td><td>bizKey=leave:81753521241722880</td><td>PASS</td></tr>
+<tr class='ok'><td>QUEUE</td><td>未知类型兜底进人工队列，不丢单</td><td>bizKey=leave:81824160153604132</td><td>PASS</td></tr>
 <tr class='ok'><td>RBAC</td><td>前台无 schedule:approve → 40301</td><td>40301</td><td>PASS</td></tr>
 <tr class='ok'><td>M1</td><td>通过请假 → FREE 翻 REST，任务关闭</td><td>status=APPROVED restSlots=8</td><td>PASS</td></tr>
 <tr class='ok'><td>M1</td><td>异常单按完成结单 → COMPLETED + DONE</td><td>order=COMPLETED task=DONE</td><td>PASS</td></tr>
 <tr class='ok'><td>M1</td><td>≥¥500 退款审批通过 → 微信退款真调用</td><td>wf=SUCCESS refundCalls=2</td><td>PASS</td></tr>
-<tr class='ok'><td>QUEUE</td><td>处理完队列清空，店长台回到 0 待办</td><td>open=0 refundOrder=81753521396912129</td><td>PASS</td></tr>
+<tr class='ok'><td>QUEUE</td><td>处理完队列清空，店长台回到 0 待办</td><td>open=0 refundOrder=81824160153604157</td><td>PASS</td></tr>
 <tr class='ok'><td>A11Y</td><td>正文最小字号 ≥ 30rpx(15px)</td><td>min=30rpx</td><td>PASS</td></tr>
 <tr class='ok'><td>A11Y</td><td>主操作 ≥ 96rpx(48px) tap target</td><td>btn 96rpx / tag 96rpx</td><td>PASS</td></tr>
 <tr class='ok'><td>A11Y</td><td>分组 key 语义化，无数字编号</td><td>leave / refund / abnormal / queue</td><td>PASS</td></tr>

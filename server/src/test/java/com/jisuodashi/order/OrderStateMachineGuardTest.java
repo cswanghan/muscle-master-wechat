@@ -136,7 +136,7 @@ class OrderStateMachineGuardTest {
         InMemoryAuditLogRepository audits = new InMemoryAuditLogRepository();
         AppProperties props = new AppProperties();
         OrderStateMachine machine = new OrderStateMachine(
-                store, occupy, clock, props, audits, new SnowflakeIdGenerator(props));
+                store, occupy, clock, props, audits, new SnowflakeIdGenerator(props, clock.clock()));
         LockNewResult locked = occupy.lockNew(OccupyFixtures.cmd(requestId, OccupyFixtures.T1, OccupyFixtures.START_1930));
         return new Fixture(store, occupy, machine, locked, audits);
     }

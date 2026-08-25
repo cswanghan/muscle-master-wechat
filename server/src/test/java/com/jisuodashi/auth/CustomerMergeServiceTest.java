@@ -25,7 +25,7 @@ class CustomerMergeServiceTest {
     void setUp() {
         AppProperties props = new AppProperties();
         Clock clock = Clock.fixed(Instant.parse("2026-08-14T04:00:00Z"), ZoneOffset.UTC);
-        SnowflakeIdGenerator ids = new SnowflakeIdGenerator(props);
+        SnowflakeIdGenerator ids = new SnowflakeIdGenerator(props, clock);
         customers = new InMemoryCustomerRepository();
         related = new InMemoryRelatedRecordsRepository(ids, clock);
         sessions = new InMemoryAuthSessionRepository();

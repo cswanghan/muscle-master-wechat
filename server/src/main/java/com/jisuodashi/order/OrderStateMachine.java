@@ -20,6 +20,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -372,7 +373,10 @@ public class OrderStateMachine {
         for (OrderTransition row : rows) {
             table.put(new Key(row.from(), row.event()), row);
         }
-        return Map.copyOf(table);
+        // Not Map.copyOf: its iteration order is salted per JVM, so transfers() came back shuffled
+        // on every run. The declaration order above groups transitions by from-state, which is the
+        // order a reader of the table — or of the generated pr-6 report — expects to see.
+        return Collections.unmodifiableMap(table);
     }
 
     private record Key(OrderStatus from, OrderEvent event) {

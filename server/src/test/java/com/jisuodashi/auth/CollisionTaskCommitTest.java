@@ -71,7 +71,8 @@ class CollisionTaskCommitTest {
 
         @Bean
         SnowflakeIdGenerator ids() {
-            return new SnowflakeIdGenerator(new AppProperties());
+            // Slice context, no ClockConfig; this test asserts transaction commit, not id values.
+            return new SnowflakeIdGenerator(new AppProperties(), Clock.systemDefaultZone());
         }
 
         @Bean

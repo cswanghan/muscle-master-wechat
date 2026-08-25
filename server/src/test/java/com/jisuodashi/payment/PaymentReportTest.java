@@ -123,7 +123,7 @@ class PaymentReportTest {
                 AppClock.SHANGHAI));
         OrderStateMachine machine = new OrderStateMachine(store, occupy, clock);
         InMemoryPaymentStore payments = new InMemoryPaymentStore();
-        SnowflakeIdGenerator ids = new SnowflakeIdGenerator(new AppProperties());
+        SnowflakeIdGenerator ids = new SnowflakeIdGenerator(new AppProperties(), clock.clock());
         MockWeChatPayClient wechat = new MockWeChatPayClient(clock);
         PaymentService svc = new PaymentService(payments, store, machine, wechat, ids, clock);
         LockNewResult locked = occupy.lockNew(

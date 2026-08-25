@@ -142,7 +142,7 @@ class FrontDeskAddOnReportTest {
                 TODAY.atTime(LocalTime.of(19, 0)).atZone(AppClock.SHANGHAI).toInstant(),
                 AppClock.SHANGHAI));
         AppProperties props = new AppProperties();
-        SnowflakeIdGenerator ids = new SnowflakeIdGenerator(props);
+        SnowflakeIdGenerator ids = new SnowflakeIdGenerator(props, clock.clock());
         OrderStateMachine machine = new OrderStateMachine(store, occupy, clock);
         InMemoryPaymentStore payments = new InMemoryPaymentStore();
         PaymentService pay = new PaymentService(
