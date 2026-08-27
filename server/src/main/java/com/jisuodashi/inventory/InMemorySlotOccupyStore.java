@@ -553,6 +553,18 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public List<BookingOrderRef> listOrdersByTherapist(long therapistId, LocalDate from, LocalDate to) {
+        return orders.values().stream()
+                .filter(row -> row.therapistId() == therapistId)
+                .filter(row -> !row.serviceDate().isBefore(from) && !row.serviceDate().isAfter(to))
+                .sorted(Comparator
+                        .comparing(BookingOrderInsert::serviceDate).reversed()
+                        .thenComparingInt(BookingOrderInsert::startSlotNo))
+                .map(this::toRef)
+                .toList();
+    }
+
+    @Override
     public List<BookingOrderRef> listOrdersByCustomerId(long customerId) {
         return orders.values().stream()
                 .filter(row -> row.customerId() == customerId)

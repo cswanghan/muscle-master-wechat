@@ -87,6 +87,9 @@ public interface SlotOccupyStore extends DelayedJobStore {
 
     List<BookingOrderRef> listOrdersByCustomerId(long customerId);
 
+    /** 技师某段服务日内的订单，业绩结算用。含全部状态，提成口径由上层按状态取舍。 */
+    List<BookingOrderRef> listOrdersByTherapist(long therapistId, LocalDate from, LocalDate to);
+
     /** Occupancy whose slot row is still LOCKED for this hold. */
     int deleteOccupancyForLockedHold(long holdId);
 

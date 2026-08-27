@@ -219,6 +219,11 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     }
 
     @Override
+    public List<BookingOrderRef> listOrdersByTherapist(long therapistId, LocalDate from, LocalDate to) {
+        return mapper.listOrdersByTherapist(therapistId, from, to);
+    }
+
+    @Override
     public int deleteOccupancyForLockedHold(long holdId) {
         return mapper.deleteOccupancyForLockedTherapist(holdId) + mapper.deleteOccupancyForLockedBed(holdId);
     }

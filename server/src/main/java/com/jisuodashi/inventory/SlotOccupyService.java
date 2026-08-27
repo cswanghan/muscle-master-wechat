@@ -313,6 +313,12 @@ public class SlotOccupyService {
         return store.findOrderByAddOnHoldId(holdId);
     }
 
+    /** 技师业绩用：某技师一段服务日内的订单，只读，不进事务。 */
+    public List<SlotOccupyStore.BookingOrderRef> listOrdersByTherapist(
+            long therapistId, java.time.LocalDate from, java.time.LocalDate to) {
+        return store.listOrdersByTherapist(therapistId, from, to);
+    }
+
     public SlotOccupyStore.BookingOrderRef findOrderById(long orderId) {
         return store.findOrderById(orderId);
     }
