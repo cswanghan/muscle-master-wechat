@@ -24,6 +24,7 @@ public final class PermissionCatalog {
             "refund:after_start",
             "refund:approve",
             "inventory:force_release",
+            "staff:manage",
             "staff:self");
 
     private PermissionCatalog() {
@@ -52,16 +53,19 @@ public final class PermissionCatalog {
             case "OPS" -> List.of(
                     "catalog:store", "catalog:therapist", "catalog:project", "catalog:write",
                     "schedule:write", "schedule:approve",
-                    "order:list", "order:view", "inventory:force_release");
+                    "order:list", "order:view", "inventory:force_release",
+                    "staff:manage");
             case "REGION_MANAGER" -> List.of(
                     "catalog:store", "catalog:therapist", "catalog:project", "catalog:write",
                     "schedule:write", "schedule:approve",
-                    "order:list", "order:view", "order:resolve", "refund:approve");
+                    "order:list", "order:view", "order:resolve", "refund:approve",
+                    "staff:manage");
             case "STORE_MANAGER" -> List.of(
                     "catalog:therapist", "catalog:project",
                     "schedule:write", "schedule:approve",
                     "order:list", "order:view", "order:refund", "order:resolve",
-                    "frontdesk:order:*", "refund:create", "refund:approve");
+                    "frontdesk:order:*", "refund:create", "refund:approve",
+                    "staff:manage");
             case "FRONTDESK" -> List.of(
                     "order:list", "order:view", "frontdesk:order:*", "refund:create");
             case "THERAPIST" -> List.of("staff:self");

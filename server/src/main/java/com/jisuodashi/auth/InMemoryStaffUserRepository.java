@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,6 +53,13 @@ public class InMemoryStaffUserRepository implements StaffUserRepository {
         s.setScopeType(scope);
         s.setStoreIds(List.copyOf(stores));
         byId.put(id, s);
+    }
+
+    @Override
+    public List<StaffUser> listAll() {
+        return byId.values().stream()
+                .sorted(Comparator.comparingLong(StaffUser::getId))
+                .toList();
     }
 
     @Override

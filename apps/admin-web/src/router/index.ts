@@ -7,6 +7,7 @@ import Orders from '../views/Orders.vue'
 import Frontdesk from '../views/Frontdesk.vue'
 import MiniPreview from '../views/MiniPreview.vue'
 import Levels from '../views/Levels.vue'
+import Employment from '../views/Employment.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,6 +19,7 @@ const router = createRouter({
     { path: '/orders', name: 'orders', component: Orders },
     { path: '/frontdesk', name: 'frontdesk', component: Frontdesk },
     { path: '/levels', name: 'levels', component: Levels },
+    { path: '/employment', name: 'employment', component: Employment },
     { path: '/mini', name: 'mini', component: MiniPreview },
   ],
 })
