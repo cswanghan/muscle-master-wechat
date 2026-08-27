@@ -63,17 +63,23 @@ public class BookingService {
                 LockNewCommand.SOURCE_MINI_C,
                 Boolean.TRUE.equals(req.designated())));
         Map<String, String> payParams = null;
+        String status = locked.status();
         if (payments != null) {
             PaymentDtos.PayResponse prepay = payments.tryPrepayAfterLock(
                     customerId, locked.orderId(), req.requestId() + ":prepay");
             if (prepay != null) {
                 payParams = prepay.payParams();
+                // 储值卡够付时这一步就把单子结清了。locked.status() 是下单那一刻的快照，
+                // 照抄会让客户端拿到一个"待支付"的已付单，用户再点一次支付就是 409。
+                if (PaymentDtos.PayResponse.PAID.equals(prepay.status())) {
+                    status = OrderStatus.BOOKED.name();
+                }
             }
         }
         return new BookingDtos.CreateBookingResponse(
                 String.valueOf(locked.orderId()),
                 locked.orderNo(),
-                locked.status(),
+                status,
                 locked.lockExpireAt(),
                 locked.payableFen(),
                 payParams);

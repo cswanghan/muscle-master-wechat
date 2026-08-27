@@ -1,9 +1,13 @@
 package com.jisuodashi.performance;
 
 import com.jisuodashi.auth.AuthContext;
+import com.jisuodashi.card.CardModels;
+import com.jisuodashi.card.CardPolicy;
+import com.jisuodashi.card.CardStore;
 import com.jisuodashi.catalog.CatalogModels;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
+import com.jisuodashi.common.ClockConfig;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
@@ -33,12 +37,17 @@ public class PerformanceService {
 
     private final SlotOccupyService occupy;
     private final StaffTherapistLookup therapists;
+    private final CardStore cards;
     private final AppClock clock;
 
     public PerformanceService(
-            SlotOccupyService occupy, StaffTherapistLookup therapists, AppClock clock) {
+            SlotOccupyService occupy,
+            StaffTherapistLookup therapists,
+            CardStore cards,
+            AppClock clock) {
         this.occupy = occupy;
         this.therapists = therapists;
+        this.cards = cards;
         this.clock = clock;
     }
 
@@ -85,7 +94,27 @@ public class PerformanceService {
             }
         }
 
-        long total = service + addOn + designated - refund;
+        long card = 0;
+        for (CardModels.Txn sale : cards.listSalesByTherapist(me.id(), from, today)) {
+            // 只认本金：赠送额是营销成本，给提成等于倒贴。
+            long commission = CardPolicy.saleCommissionFen(sale.principalDeltaFen());
+            if (commission <= 0) {
+                continue;
+            }
+            card += commission;
+            entries.add(new PerformanceDtos.Entry(
+                    null,
+                    "卡" + sale.id(),
+                    "CARD_SALE",
+                    "售卡提成",
+                    sale.createdAt().atZone(ClockConfig.SHANGHAI).toLocalDate().toString(),
+                    sale.createdAt().atZone(ClockConfig.SHANGHAI).toLocalTime().format(HM),
+                    sale.principalDeltaFen(),
+                    commission,
+                    false));
+        }
+
+        long total = service + addOn + designated + card - refund;
         return new PerformanceDtos.Summary(
                 range,
                 from.toString(),
@@ -94,7 +123,7 @@ public class PerformanceService {
                 CommissionPolicy.rateX100(me.level()),
                 clocks,
                 total,
-                new PerformanceDtos.Breakdown(service, addOn, designated, refund, 0L),
+                new PerformanceDtos.Breakdown(service, addOn, designated, refund, card),
                 entries);
     }
 

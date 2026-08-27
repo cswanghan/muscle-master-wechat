@@ -139,6 +139,78 @@ const utilization = ref<{
 
 const action = ref<'addon' | 'swap' | 'reschedule' | 'refund'>('addon')
 
+type WalletData = {
+  cardNo: string | null
+  principalFen: number
+  bonusFen: number
+  balanceFen: number
+  txns: { txnId: string; title: string; deltaFen: number; createdAt: string }[]
+}
+
+type TopUpData = {
+  cardNo: string
+  customerId: string
+  principalFen: number
+  bonusFen: number
+  balanceFen: number
+  saleCommissionFen: number
+}
+
+const cardPhone = ref('18600001111')
+const cardPrincipalYuan = ref(500)
+const cardBonusYuan = ref(50)
+const cardSeller = ref('')
+const cardLoading = ref(false)
+const wallet = ref<WalletData | null>(null)
+const topUpResult = ref<TopUpData | null>(null)
+
+function yuan(fen: number | undefined) {
+  return ((fen ?? 0) / 100).toFixed(2)
+}
+
+async function lookupCard() {
+  cardLoading.value = true
+  error.value = ''
+  topUpResult.value = null
+  try {
+    const res = await fetch(`/api/v1/f/cards/lookup?phone=${encodeURIComponent(cardPhone.value)}`, {
+      method: 'POST',
+      headers: authHeaders(),
+    })
+    wallet.value = await readEnvelope<WalletData>(res)
+  } catch (e) {
+    wallet.value = null
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    cardLoading.value = false
+  }
+}
+
+// 收钱走线下（现金 / 扫码），这里只记账。充完立刻可用，下单时自动抵扣。
+async function submitTopUp() {
+  cardLoading.value = true
+  error.value = ''
+  try {
+    const res = await fetch('/api/v1/f/cards/topup', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        requestId: `tp-${Date.now()}`,
+        phone: cardPhone.value.trim(),
+        principalFen: Math.round(cardPrincipalYuan.value * 100),
+        bonusFen: Math.round(cardBonusYuan.value * 100),
+        sellerTherapistId: cardSeller.value.trim() || null,
+      }),
+    })
+    topUpResult.value = await readEnvelope<TopUpData>(res)
+    await lookupCard()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    cardLoading.value = false
+  }
+}
+
 const loggedIn = computed(() => token.value.length > 0)
 const qrText = computed(() => addOn.value?.codeUrl || walkIn.value?.codeUrl || '')
 const qrMarkup = computed(() => (qrText.value ? qrSvg(qrText.value) : ''))
@@ -554,6 +626,58 @@ onUnmounted(stopPoll)
         </div>
       </section>
     </div>
+
+    <section class="desk-card" id="card-panel">
+      <h2>储值充值</h2>
+      <p class="hint">
+        收钱走现金或扫码，这里只记账。本金可退、赠送不可退，所以分开记；
+        顾客下单时先扣赠送再扣本金，不够的部分走微信。
+      </p>
+      <div class="form">
+        <label>手机（顾客需先在小程序登录过）</label>
+        <div class="row">
+          <el-input id="card-phone" v-model="cardPhone" size="large" maxlength="11" />
+          <el-button size="large" :loading="cardLoading" @click="lookupCard">查余额</el-button>
+        </div>
+        <label>充值本金 ¥ / 赠送 ¥</label>
+        <div class="row">
+          <el-input-number id="card-principal" v-model="cardPrincipalYuan" :min="1" :step="100" size="large" />
+          <el-input-number v-model="cardBonusYuan" :min="0" :step="10" size="large" />
+        </div>
+        <label>卡销归属技师 ID（前台自己卖的留空）</label>
+        <el-input v-model="cardSeller" size="large" placeholder="留空即不计卡销提成" />
+        <el-button
+          id="card-topup"
+          type="primary"
+          size="large"
+          :loading="cardLoading"
+          @click="submitTopUp"
+        >
+          确认充值
+        </el-button>
+      </div>
+
+      <p v-if="topUpResult" class="ok">
+        充值成功 · 卡号 {{ topUpResult.cardNo }} · 余额 ¥{{ yuan(topUpResult.balanceFen) }}
+        <span v-if="topUpResult.saleCommissionFen">
+          · 卡销提成 ¥{{ yuan(topUpResult.saleCommissionFen) }}
+        </span>
+      </p>
+
+      <div v-if="wallet" class="wallet-view">
+        <p class="hint">
+          本金 ¥{{ yuan(wallet.principalFen) }} · 赠送 ¥{{ yuan(wallet.bonusFen) }}
+          · 合计 <strong>¥{{ yuan(wallet.balanceFen) }}</strong>
+          <span v-if="!wallet.cardNo">（还没开卡）</span>
+        </p>
+        <ul v-if="wallet.txns.length" class="txns">
+          <li v-for="t in wallet.txns" :key="t.txnId">
+            <span>{{ t.title }}</span>
+            <span class="mono">{{ t.deltaFen > 0 ? '+' : '' }}¥{{ yuan(t.deltaFen) }}</span>
+          </li>
+        </ul>
+      </div>
+    </section>
 
     <section class="desk-card">
       <h2>本单操作</h2>

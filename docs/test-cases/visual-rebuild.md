@@ -1,6 +1,6 @@
 # 视觉还原里程碑 — 对齐 17 屏设计稿（P0 范围内）
 
-对照 `docs/design-refs/`（来自《肌松大师小程序设计方案-含图》）。P0 做完可验收的是 **C1–C4 / C6、T1–T2、A1–A3、M1**。设计已定但 P0 不做：C5 券包、C7 好礼、A4 券规则、T3 空档营销、T4 业绩、M2 只读排班、储值。
+对照 `docs/design-refs/`（来自《肌松大师小程序设计方案-含图》）。P0 做完可验收的是 **C1–C4 / C6、T1–T2、A1–A3、M1**。设计已定但 P0 不做：C5 券包、C7 好礼、A4 券规则、T3 空档营销。T4 业绩、M2 排班、储值已在 P1 补上。
 
 环境：macOS，`JAVA_HOME=/opt/homebrew/opt/openjdk@21`，后端 `dev` H2 `:8080`，Vite `0.0.0.0:5173`。本机 Surge 会劫持 `127.0.0.1`，验收请用 `--no-proxy-server` 的 Chrome，或系统代理加 `<-loopback>`。
 
@@ -37,7 +37,7 @@
   - C1 `#c1-home`、`#entry-symptom` / `#entry-store` / `#entry-therapist`
   - C3 `#c3-calendar`、`#go-confirm`，四态 slot
   - C4 `#c4-confirm`、`#countdown`、`#lock-btn`、`#pay-btn`
-  - C6 `#c6-mine`、`#no-wallet`；储值展示 ¥0，充值 toast「P0 未开通储值」；改约 toast「请联系前台改约」
+  - C6 `#c6-mine`；储值余额来自 `/api/v1/c/card`（本金 / 赠送分列 + 流水），充值 modal 指向前台；改约 toast「请联系前台改约」
 - **实际结果**：PASS（结构/ID/接口核对）。C 端无法在 Chrome 截微信原生页。
 
 ## TC-V-06 T1 / T2 / M1

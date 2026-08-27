@@ -7,6 +7,8 @@ import com.jisuodashi.auth.HumanTask;
 import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.StaffUser;
 import com.jisuodashi.auth.StaffUserRepository;
+import com.jisuodashi.card.CardModels;
+import com.jisuodashi.card.CardService;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.AppProperties;
@@ -84,6 +86,14 @@ public class PaymentService {
     @Autowired(required = false)
     public void setFeatureFlags(FeatureFlags flags) {
         this.flags = flags;
+    }
+
+    private CardService cards;
+
+    /** 储值卡；setter 注入是为了不再动本类那四个构造器（单测直接 new 时可以不给）。 */
+    @Autowired(required = false)
+    public void setCards(CardService cards) {
+        this.cards = cards;
     }
 
     private PayOutcomeMetrics payOutcome;
@@ -321,7 +331,13 @@ public class PaymentService {
      * Payment then order. Channel HTTP is outside the DB TX.
      */
     private PaymentDtos.PayResponse doRepay(long customerId, long orderId) {
-        RepayPlan plan = inBothTx(() -> decideRepay(customerId, orderId));
+        // 先扣卡再走微信：微信预支付的金额必须是"卡扣完还差的那部分"，
+        // 所以这一步不能挪到后面去。卡扣了但微信没付成的窗口由 RETURN_CARD 侧兜。
+        CardSettlement card = inBothTx(() -> applyCard(customerId, orderId));
+        if (card.settled != null) {
+            return toPayResponse(card.settled, false);
+        }
+        RepayPlan plan = inBothTx(() -> decideRepay(customerId, orderId, card.remainingFen));
         if (plan.reuse != null) {
             return toPayResponse(plan.reuse, true);
         }
@@ -331,7 +347,57 @@ public class PaymentService {
         return toPayResponse(saved.payment, saved.reused);
     }
 
-    private RepayPlan decideRepay(long customerId, long orderId) {
+    /**
+     * 储值先行。卡够就当场 {@code PAY_SUCCESS}，没有微信这条腿；不够就扣掉能扣的，
+     * 把差额交给微信 —— 混合支付。卡里没钱、没接卡模块都走原路，与改造前无差别。
+     *
+     * <p>已经有 CARD 收款的订单不再扣第二次：重复调 pay（超时重试、用户连点）
+     * 必须落在同一个拆分上，否则第二次会把卡再扣一遍。
+     */
+    private CardSettlement applyCard(long customerId, long orderId) {
+        BookingOrderRef order = requirePayableOrder(customerId, orderId);
+        long want = order.payableFen() - paidFen(orderId);
+        if (want <= 0) {
+            return CardSettlement.wechat(0);
+        }
+        if (cards == null || hasCardPayment(orderId)) {
+            return CardSettlement.wechat(want);
+        }
+        CardModels.Deduction d = cards.deduct(customerId, orderId, want, "card-pay:" + orderId);
+        if (d.totalFen() <= 0) {
+            return CardSettlement.wechat(want);
+        }
+        LocalDateTime now = clock.now();
+        long id = ids.nextId();
+        Payment row = new Payment(
+                id, "P" + id, orderId, Payment.CHANNEL_CARD, d.totalFen(),
+                Payment.SUCCESS, null, "CARD", now, null, null, now, now);
+        payments.insert(row);
+        if (d.totalFen() < want) {
+            return CardSettlement.wechat(want - d.totalFen());
+        }
+        Payment pending = payments.lockPendingByOrderId(orderId);
+        if (pending != null && pending.pending()) {
+            payments.update(pending.closed(now));
+        }
+        machine.fire(orderId, OrderEvent.PAY_SUCCESS, FireContext.system().withPaymentMatched(true));
+        notePaySuccess();
+        return CardSettlement.settled(row);
+    }
+
+    private long paidFen(long orderId) {
+        return payments.listByOrderId(orderId).stream()
+                .filter(Payment::success)
+                .mapToLong(Payment::amountFen)
+                .sum();
+    }
+
+    private boolean hasCardPayment(long orderId) {
+        return payments.listByOrderId(orderId).stream()
+                .anyMatch(p -> Payment.CHANNEL_CARD.equals(p.channel()) && p.success());
+    }
+
+    private RepayPlan decideRepay(long customerId, long orderId, long amountFen) {
         Payment pending = payments.lockPendingByOrderId(orderId);
         BookingOrderRef order = requirePayableOrder(customerId, orderId);
         LocalDateTime now = clock.now();
@@ -342,7 +408,8 @@ public class PaymentService {
             payments.update(pending.closed(now));
         }
         long id = ids.nextId();
-        return RepayPlan.create("P" + id, id, order.payableFen(), "booking-" + order.orderNo());
+        long amount = amountFen > 0 ? amountFen : order.payableFen();
+        return RepayPlan.create("P" + id, id, amount, "booking-" + order.orderNo());
     }
 
     private PersistResult persistNewPrepay(
@@ -584,7 +651,12 @@ public class PaymentService {
     }
 
     private PaymentDtos.PayResponse toPayResponse(Payment payment, boolean reused) {
-        Map<String, String> params = wechat.resign(payment.wxPrepayId());
+        // 只有微信那条腿才有可签的 prepayId。卡付 / 现金也去 resign 的话，
+        // mock 渠道会照样吐一组 prepay_id=null 的参数，客户端拿着它去 requestPayment
+        // 只会得到一个看不懂的失败。
+        Map<String, String> params = Payment.CHANNEL_WECHAT.equals(payment.channel())
+                ? wechat.resign(payment.wxPrepayId())
+                : null;
         return new PaymentDtos.PayResponse(
                 String.valueOf(payment.orderId()),
                 payment.paymentNo(),
@@ -705,6 +777,18 @@ public class PaymentService {
     }
 
     private record PersistResult(Payment payment, boolean reused) {
+    }
+
+    /** 卡这一步的结果：要么整单结清（{@code settled}），要么剩下这么多交给微信。 */
+    private record CardSettlement(Payment settled, long remainingFen) {
+
+        static CardSettlement settled(Payment payment) {
+            return new CardSettlement(payment, 0);
+        }
+
+        static CardSettlement wechat(long remainingFen) {
+            return new CardSettlement(null, remainingFen);
+        }
     }
 
 
@@ -965,6 +1049,14 @@ public class PaymentService {
             }
             if (Payment.CHANNEL_CASH.equals(pay.channel())) {
                 markRefundSuccess(row, "CASH", operatorId);
+                continue;
+            }
+            if (Payment.CHANNEL_CARD.equals(pay.channel())) {
+                // 卡付的原路退回卡，不走微信退款接口 —— 那笔钱从来没到过微信。
+                if (cards != null) {
+                    cards.refundToCard(row.orderId(), "card-refund:" + row.refundNo());
+                }
+                markRefundSuccess(row, "CARD", operatorId);
                 continue;
             }
             try {

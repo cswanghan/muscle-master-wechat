@@ -20,6 +20,8 @@ public record Payment(
 ) {
     public static final String CHANNEL_WECHAT = "WECHAT";
     public static final String CHANNEL_CASH = "CASH";
+    /** 储值卡扣款：内部记账，没有外部渠道回调，落库即已收。 */
+    public static final String CHANNEL_CARD = "CARD";
     public static final String PENDING = "PENDING";
     public static final String SUCCESS = "SUCCESS";
     public static final String FAILED = "FAILED";

@@ -31,6 +31,8 @@ public final class PaymentDtos {
             boolean mock,
             Map<String, String> payParams
     ) {
+        /** 储值卡已结清，没有微信这条腿：客户端看到这个就不要再去 requestPayment。 */
+        public static final String PAID = "SUCCESS";
     }
 
     public record NativePayResponse(

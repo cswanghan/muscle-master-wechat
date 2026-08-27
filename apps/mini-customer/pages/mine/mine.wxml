@@ -9,17 +9,27 @@
     </view>
     <view class="wallet">
       <view class="wallet-col">
-        <view class="wallet-cap">储值余额</view>
-        <view class="wallet-num">¥0.00</view>
+        <view class="wallet-cap">储值本金</view>
+        <view class="wallet-num">¥{{wallet.principalYuan}}</view>
       </view>
       <view class="wallet-col">
-        <view class="wallet-cap">礼卡余额</view>
-        <view class="wallet-num">¥200.00</view>
+        <view class="wallet-cap">赠送余额</view>
+        <view class="wallet-num">¥{{wallet.bonusYuan}}</view>
       </view>
       <view class="recharge" bindtap="onRecharge">充值</view>
     </view>
   </view>
-  <view id="no-wallet" class="sr-only">P0 无资金总览 · 无储值 / 礼卡 / 券</view>
+  <view wx:if="{{wallet.txns.length}}" class="card wallet-log">
+    <view class="sec-row">
+      <view class="sec">储值流水</view>
+      <view class="more">余额 ¥{{wallet.balanceYuan}}</view>
+    </view>
+    <view wx:for="{{wallet.txns}}" wx:key="txnId" class="wallet-row">
+      <view class="grow">{{item.title}}</view>
+      <view class="hint">{{item.day}}</view>
+      <view class="wallet-delta {{item.sign==='+'?'plus':''}}">{{item.sign}}¥{{item.amountYuan}}</view>
+    </view>
+  </view>
 
   <view wx:if="{{loading}}" class="hint pad">加载中…</view>
   <view wx:if="{{error}}" class="error pad">{{error}}</view>
@@ -102,8 +112,6 @@
       >{{item.reviewCta}}</view>
     </view>
   </view>
-
-  <view class="no-wallet" id="no-wallet">P0 无资金总览 · 无储值 / 礼卡 / 券</view>
 
   <view class="build" bindtap="tapBuild">体验版 v{{version}} · {{transport}}</view>
   <view wx:if="{{staffEntry}}" class="staff-entry" hover-class="tap" bindtap="goStaff">员工端 · 技师 / 前台 / 店长</view>

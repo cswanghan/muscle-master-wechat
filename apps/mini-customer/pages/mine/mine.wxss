@@ -308,3 +308,30 @@
   border: 1rpx solid #d7e6df;
   font-weight: 400;
 }
+
+.wallet-log {
+  margin-top: 24rpx;
+}
+
+.wallet-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid #f0f4f2;
+  font-size: 26rpx;
+}
+
+.wallet-row:last-child {
+  border-bottom: none;
+}
+
+.wallet-delta {
+  font-family: ui-monospace, Menlo, monospace;
+  font-weight: 700;
+  color: #3d4d46;
+}
+
+.wallet-delta.plus {
+  color: #2f8f5b;
+}

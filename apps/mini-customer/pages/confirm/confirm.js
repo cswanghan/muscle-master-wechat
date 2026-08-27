@@ -191,6 +191,13 @@ Page({
     })
   },
   payOrder(order) {
+    // 下单那一步就会试着付一次；储值够付的话回来已经是 BOOKED 了，
+    // 这里不能当成"不可支付"报错 —— 钱已经扣了，报错只会让用户再点一次。
+    if (this.data.paid || (order && order.status === 'BOOKED')) {
+      this.stopTick()
+      this.setData({ paying: false, paid: true, pending: false, status: 'BOOKED' })
+      return Promise.resolve()
+    }
     if (!order || !isPending(this.data.status) || this.data.closed) {
       this.setData({ paying: false, error: '订单不可支付' })
       return Promise.resolve()
@@ -207,6 +214,14 @@ Page({
     }).then((pay) => this.completePay(pay))
   },
   completePay(pay) {
+    // 储值卡够付时服务端当场就把单子结清了，没有微信这条腿。再去 requestPayment
+    // 只会拿着一组空参数失败一次，用户看到的是"支付失败"但钱其实已经扣了。
+    if (pay.status === 'SUCCESS' || !pay.payParams) {
+      this.stopTick()
+      this.setData({ paying: false, paid: true, pending: false, status: 'BOOKED' })
+      wx.showToast({ title: '储值已抵扣', icon: 'none' })
+      return Promise.resolve()
+    }
     // The server says so when the prepay params came from the mock channel — nothing can
     // charge them, so drive the notify callback ourselves. This used to probe
     // `typeof wx.requestPayment`, which is a function in the devtools simulator too, so the

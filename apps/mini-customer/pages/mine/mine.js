@@ -3,6 +3,26 @@ const { fenYuan, statusLabel, isOngoing, levelLabel, rating } = require('../../u
 const { qs } = require('../../utils/query.js')
 const config = require('../../config.js')
 
+const TXN_SIGN = { TOPUP: '+', REFUND: '+' }
+
+function toWallet(card) {
+  if (!card) {
+    return { principalYuan: '0.00', bonusYuan: '0.00', balanceYuan: '0.00', txns: [] }
+  }
+  return {
+    principalYuan: fenYuan(card.principalFen),
+    bonusYuan: fenYuan(card.bonusFen),
+    balanceYuan: fenYuan(card.balanceFen),
+    txns: (card.txns || []).map((t) => ({
+      ...t,
+      // 后端给的 deltaFen 消费为负；这里只取绝对值，正负交给符号表达。
+      sign: TXN_SIGN[t.type] || '-',
+      amountYuan: fenYuan(Math.abs(t.deltaFen || 0)),
+      day: (t.createdAt || '').slice(0, 10),
+    })),
+  }
+}
+
 Page({
   data: {
     customerId: '',
@@ -16,6 +36,7 @@ Page({
     version: config.version,
     transport: config.transport,
     staffEntry: false,
+    wallet: { principalYuan: '0.00', bonusYuan: '0.00', balanceYuan: '0.00', txns: [] },
   },
   onShow() {
     this.reload()
@@ -29,9 +50,11 @@ Page({
           request({ path: '/api/v1/c/bookings', auth: true }),
           request({ path: '/api/v1/c/therapists' }),
           request({ path: '/api/v1/c/stores' }),
+          // 钱包挂了不该把整页拖垮：余额看不到是小事，订单看不到是大事。
+          request({ path: '/api/v1/c/card', auth: true }).catch(() => null),
         ])
       })
-      .then(([page, tPage, sPage]) => {
+      .then(([page, tPage, sPage, card]) => {
         const therapistNames = {}
         const therapistLabels = {}
         ;((tPage && tPage.items) || []).forEach((t) => {
@@ -58,6 +81,7 @@ Page({
           ongoing: orders.filter((o) => isOngoing(o.status)),
           therapists: therapistNames,
           stores,
+          wallet: toWallet(card),
           loading: false,
         })
       })
@@ -95,6 +119,15 @@ Page({
       this.setData({ staffEntry: true })
       wx.showToast({ title: '员工入口已开启', icon: 'none' })
     }
+  },
+  // 储值收钱在前台（现金 / 扫码），小程序里没有充值入口。写清楚比放一个点不动的按钮强。
+  onRecharge() {
+    wx.showModal({
+      title: '储值充值',
+      content: '目前储值在门店前台办理，充完立刻可用。下单时余额会自动抵扣，不够的部分走微信支付。',
+      showCancel: false,
+      confirmText: '知道了',
+    })
   },
   goStaff() {
     wx.navigateTo({ url: '/pages/staff/home/home' })

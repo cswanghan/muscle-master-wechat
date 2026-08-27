@@ -47,9 +47,10 @@ public class OrderStateMachine {
     private final SnowflakeIdGenerator ids;
     private final ServiceRecordSide records;
     private final ReviewSide reviews;
+    private final CardRefundSide cardRefunds;
 
     public OrderStateMachine() {
-        this(null, null, new AppClock(), new AppProperties(), null, null, null, null, null);
+        this(null, null, new AppClock(), new AppProperties(), null, null, null, null, null, null);
     }
 
     @Autowired
@@ -62,7 +63,8 @@ public class OrderStateMachine {
             @Autowired(required = false) AuditLogRepository audits,
             @Autowired(required = false) SnowflakeIdGenerator ids,
             @Autowired(required = false) ServiceRecordSide records,
-            @Autowired(required = false) ReviewSide reviews
+            @Autowired(required = false) ReviewSide reviews,
+            @Autowired(required = false) CardRefundSide cardRefunds
     ) {
         this.store = store;
         this.occupy = occupy;
@@ -73,10 +75,11 @@ public class OrderStateMachine {
         this.ids = ids;
         this.records = records;
         this.reviews = reviews;
+        this.cardRefunds = cardRefunds;
     }
 
     public OrderStateMachine(SlotOccupyStore store, SlotOccupyService occupy, AppClock clock) {
-        this(store, occupy, clock, new AppProperties(), null, null, null, null, null);
+        this(store, occupy, clock, new AppProperties(), null, null, null, null, null, null);
     }
 
     OrderStateMachine(
@@ -87,7 +90,7 @@ public class OrderStateMachine {
             AuditLogRepository audits,
             SnowflakeIdGenerator ids
     ) {
-        this(store, occupy, clock, properties, null, audits, ids, null, null);
+        this(store, occupy, clock, properties, null, audits, ids, null, null, null);
     }
 
     /** Table lookup. Unknown {@code (from,event)} → 40904. */
@@ -254,6 +257,11 @@ public class OrderStateMachine {
                         occupy.releaseAddOnHoldInOpenTx(order.addOnHoldId());
                     }
                 }
+                case RETURN_CARD -> {
+                    if (cardRefunds != null) {
+                        cardRefunds.returnToCard(order.id());
+                    }
+                }
                 case SERVICE_RECORD -> {
                     if (records != null) {
                         records.insertStarted(order, clock.instant());
@@ -335,9 +343,9 @@ public class OrderStateMachine {
         rows.add(OrderTransition.of(OrderStatus.PENDING_PAY, OrderEvent.PAY_SUCCESS,
                 OrderStatus.BOOKED, OrderSide.CONFIRM_PAID));
         rows.add(OrderTransition.of(OrderStatus.PENDING_PAY, OrderEvent.PAY_TIMEOUT,
-                OrderStatus.CLOSED, OrderSide.RELEASE_LOCK));
+                OrderStatus.CLOSED, OrderSide.RELEASE_LOCK, OrderSide.RETURN_CARD));
         rows.add(OrderTransition.of(OrderStatus.PENDING_PAY, OrderEvent.USER_CANCEL,
-                OrderStatus.CLOSED, OrderSide.RELEASE_LOCK));
+                OrderStatus.CLOSED, OrderSide.RELEASE_LOCK, OrderSide.RETURN_CARD));
         rows.add(OrderTransition.of(OrderStatus.BOOKED, OrderEvent.CHECK_IN,
                 OrderStatus.CHECKED_IN, OrderSide.CHECKED_IN_AT));
         rows.add(OrderTransition.of(OrderStatus.BOOKED, OrderEvent.CANCEL,
