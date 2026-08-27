@@ -1,5 +1,6 @@
 package com.jisuodashi.frontdesk;
 
+import com.jisuodashi.DevApiTest;
 import com.jisuodashi.auth.CustomerRepository;
 import com.jisuodashi.auth.DemoStaffIds;
 import com.jisuodashi.auth.JwtPrincipal;
@@ -22,7 +23,6 @@ import com.jisuodashi.workflow.WorkflowInstance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -31,7 +31,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -50,8 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * §1 店长 M1：完整满班率（全日 + byHour）+ 待办（请假 / ≥¥500 退款 / 异常单 / 人工队列）。
  * 走真实 HTTP，并顺带把 mini-staff 店长页的 15px / 48px 与语义化 key 做静态门禁。
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("dev")
+@DevApiTest
 class ManagerBoardReportTest {
 
     private static final ParameterizedTypeReference<Map<String, Object>> MAP = new ParameterizedTypeReference<>() {

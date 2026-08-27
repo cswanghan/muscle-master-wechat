@@ -1,5 +1,6 @@
 package com.jisuodashi.rbac;
 
+import com.jisuodashi.DevApiTest;
 import com.jisuodashi.auth.DemoStaffIds;
 import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.JwtService;
@@ -7,7 +8,6 @@ import com.jisuodashi.auth.TokenType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
@@ -16,7 +16,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.io.IOException;
@@ -29,8 +28,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("dev")
+@DevApiTest
 @Import(UnscopedWriteFixtureController.class)
 class RbacReportTest {
 

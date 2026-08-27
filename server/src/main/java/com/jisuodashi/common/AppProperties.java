@@ -18,6 +18,7 @@ public class AppProperties {
     private final Availability availability = new Availability();
     private final Gray gray = new Gray();
     private final Flags flags = new Flags();
+    private final ClockSettings clock = new ClockSettings();
 
     public Jobs getJobs() {
         return jobs;
@@ -61,6 +62,29 @@ public class AppProperties {
 
     public Flags getFlags() {
         return flags;
+    }
+
+    public ClockSettings getClock() {
+        return clock;
+    }
+
+    /**
+     * Freezes the business calendar so date-sensitive guards (CHECK_IN "not-service-day",
+     * cancel windows) do not rot as wall-clock time moves past fixture dates. Empty in
+     * production and local dev, set only by the test harness.
+     */
+    public static class ClockSettings {
+
+        /** Asia/Shanghai local date-time, e.g. {@code 2026-08-14T02:15:00}. Empty = system clock. */
+        private String fixedAt = "";
+
+        public String getFixedAt() {
+            return fixedAt;
+        }
+
+        public void setFixedAt(String fixedAt) {
+            this.fixedAt = fixedAt;
+        }
     }
 
     public static class Jobs {

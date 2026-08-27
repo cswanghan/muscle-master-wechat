@@ -1,5 +1,14 @@
 const qrcode = require('../../utils/qrcode.js')
 
+// The dev server seeds its demo calendar on today, so the front desk has to
+// open on today too — a pinned date lands on a day with no slots at all.
+function todayIso() {
+  const dt = new Date()
+  const mm = String(dt.getMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getDate()).padStart(2, '0')
+  return `${dt.getFullYear()}-${mm}-${dd}`
+}
+
 const STORE = '3100000000000000001'
 const THERAPIST = '3100000000000000401'
 const PROJECT = '3100000000000000501'
@@ -13,7 +22,7 @@ Page({
     checkInText: '',
     phone: '18600001111',
     customerName: '王先生',
-    date: '2026-08-14',
+    date: todayIso(),
     startSlotNo: 64,
     alreadyInStore: true,
     payChannel: 'WECHAT',

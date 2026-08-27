@@ -85,35 +85,25 @@
     </view>
   </view>
 
-  <view id="order-list" class="card order-list">
-    <view class="sec">项目订单</view>
-    <view wx:if="{{!loading && orders.length===0}}" class="empty">暂无订单</view>
-    <view
-      wx:for="{{orders}}"
-      wx:key="orderId"
-      class="order"
-      data-id="{{item.orderId}}"
-      hover-class="tap"
-      bindtap="openOrder"
-    >
-      <view class="order-top">
-        <view class="order-name">{{item.projectLabel}}</view>
-        <view class="st muted">{{item.statusLabel}}</view>
-      </view>
-      <view class="meta">{{item.whenLabel}} · {{item.therapistName}}</view>
-      <view class="order-bottom">
-        <view class="price">¥{{item.priceYuan}}</view>
-        <view
-          wx:if="{{item.canReview}}"
-          class="rate-btn"
-          catchtap="openReview"
-          data-id="{{item.orderId}}"
-          data-name="{{item.therapistName}}"
-        >去评价</view>
-        <view wx:elif="{{item.reviewed}}" class="rated">已评 {{item.reviewScore}} 星</view>
-      </view>
+  <view class="sec">订单</view>
+  <view wx:if="{{!loading && orders.length===0}}" class="empty">暂无订单</view>
+  <view wx:for="{{orders}}" wx:key="orderId" class="card order">
+    <view class="order-top">
+      <view class="order-no">{{item.orderNo}}</view>
+      <view class="st muted">{{item.statusLabel}}</view>
+    </view>
+    <view class="hint">{{item.date}} {{item.start}} · ¥{{item.priceYuan}}</view>
+    <!-- catchtap 而不是 bindtap：卡片本身可能挂 openOrder，冒泡上去会顺手把详情页也推开 -->
+    <view wx:if="{{item.reviewCta}}" class="ord-foot">
+      <view
+        class="ord-btn {{item.reviewDone?'done':''}}"
+        data-item="{{item}}"
+        catchtap="openReview"
+      >{{item.reviewCta}}</view>
     </view>
   </view>
+
+  <view class="no-wallet" id="no-wallet">P0 无资金总览 · 无储值 / 礼卡 / 券</view>
 
   <view class="build" bindtap="tapBuild">体验版 v{{version}} · {{transport}}</view>
   <view wx:if="{{staffEntry}}" class="staff-entry" hover-class="tap" bindtap="goStaff">员工端 · 技师 / 前台 / 店长</view>

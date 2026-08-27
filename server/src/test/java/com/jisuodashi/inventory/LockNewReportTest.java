@@ -149,7 +149,11 @@ class LockNewReportTest {
                 .replace("__SOV__", String.valueOf(overlap.successes))
                 .replace("__OCCOV__", String.valueOf(overlap.successes * 10))
                 .replace("__OCCID__", String.valueOf(occIdem))
+                // Sorted: which racer wins is genuinely nondeterministic, so unsorted rows
+                // reshuffled the committed report on every run. The outcome multiset is the
+                // claim being made here — who drew which outcome is not.
                 .replace("__CODES32__", threeByTwo.codes.stream()
+                        .sorted()
                         .map(c -> "<tr><td>" + c + "</td><td>" + label(c) + "</td></tr>\n")
                         .reduce("", String::concat));
     }

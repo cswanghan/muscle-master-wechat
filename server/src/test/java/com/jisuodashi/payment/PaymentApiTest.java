@@ -1,16 +1,18 @@
 package com.jisuodashi.payment;
 
+import com.jisuodashi.DevApiTest;
 import com.jisuodashi.auth.DemoStaffIds;
 import com.jisuodashi.auth.JwtPrincipal;
 import com.jisuodashi.auth.JwtService;
 import com.jisuodashi.auth.TokenType;
 import com.jisuodashi.catalog.DemoCatalogIds;
+import com.jisuodashi.common.AppClock;
+import com.jisuodashi.common.AppProperties;
 import com.jisuodashi.inventory.InMemorySlotOccupyStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.core.ParameterizedTypeReference;
@@ -20,7 +22,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,9 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DevApiTest
 @AutoConfigureMockMvc
-@ActiveProfiles("dev")
 class PaymentApiTest {
 
     private static final ParameterizedTypeReference<Map<String, Object>> MAP = new ParameterizedTypeReference<>() {
@@ -52,6 +52,9 @@ class PaymentApiTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private AppClock clock;
 
     @BeforeEach
     void reset() {
@@ -75,11 +78,26 @@ class PaymentApiTest {
         assertThat(params).containsKeys("timeStamp", "nonceStr", "package", "signType", "paySign");
         assertThat(params.get("package")).startsWith("prepay_id=mock_prepay_");
         assertThat(params.get("signType")).isEqualTo("RSA");
+        // These params cannot be charged, and the C client is allowed to POST the notify
+        // callback itself when told so. It is told so here and nowhere else.
+        assertThat(first.get("mock")).isEqualTo(true);
 
         Map<String, Object> again = data(post("/api/v1/c/bookings/" + orderId + "/pay",
                 Map.of("requestId", "pay-2"), token), HttpStatus.OK);
         assertThat(again.get("paymentNo")).isEqualTo(first.get("paymentNo"));
         assertThat(again.get("reused")).isEqualTo(true);
+    }
+
+    @Test
+    void realChannelNeverInvitesTheClientToSelfNotify() {
+        // The other half of the contract above, and the half that matters: with app.wechat.mock
+        // off, the wired client is not the mock one, so PayResponse.mock comes back false and the
+        // self-notify shortcut stays unreachable. Asserted on the config rather than a booted
+        // production context because that is the single place the two are tied together.
+        AppProperties productionDefaults = new AppProperties();
+        assertThat(productionDefaults.getWechat().isMock()).isFalse();
+        assertThat(new WeChatPayClientConfig().weChatPayClient(productionDefaults, clock))
+                .isNotInstanceOf(MockWeChatPayClient.class);
     }
 
     @Test

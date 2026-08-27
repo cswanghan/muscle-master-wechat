@@ -40,7 +40,10 @@
   <view wx:for="{{therapists}}" wx:key="therapistId" class="th-block">
     <view class="th-head">
       <view class="th-name">{{item.name}}</view>
-      <view class="hint">{{item.levelLabel}} · {{item.rating}}</view>
+      <text class="{{item.levelClass}}">{{item.levelLabel}}</text>
+      <text wx:if="{{item.newcomer}}" class="lv-new">新</text>
+      <!-- 这一页是「确认时段」不是「挑技师」，统计压成一行右对齐，不跟时段格抢注意力 -->
+      <view class="th-stat">{{item.statLine}}</view>
     </view>
     <view class="slots">
       <view

@@ -2,6 +2,7 @@ package com.jisuodashi.inventory;
 
 import com.jisuodashi.catalog.DemoCatalogIds;
 import com.jisuodashi.catalog.DemoFixtures;
+import com.jisuodashi.common.AppClock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
@@ -21,7 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Profile("dev")
 public class InMemoryAvailabilityStore implements AvailabilityStore {
 
-    static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
+    /** Anchor for hand-built stores in unit tests; the Spring bean follows the clock instead. */
+    public static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
     static final int OPEN = 40;
     static final int CLOSE = 88;
     static final long BED1 = 3_100_000_000_000_000_201L;
@@ -31,13 +33,13 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
     private final Map<String, BedSlotView> bedSlots = new ConcurrentHashMap<>();
     private final Map<String, OccupancyView> occupancies = new ConcurrentHashMap<>();
 
+    private final LocalDate anchor;
+
     /**
-     * Bookings write their occupancy into InMemorySlotOccupyStore, not here, so
-     * on dev the two held different pictures of the same day: lockNew correctly
-     * refused a taken slot while this store still reported it FREE, leaving the
-     * schedule board empty and the customer calendar offering slots that could
-     * not be booked. Under MySQL both read one slot_occupancy table, so this
-     * seam only exists for the in-memory pair. Null in unit tests.
+     * Bookings write occupancy into InMemorySlotOccupyStore, not here, so on dev the
+     * two held different pictures of the same day: lockNew refused a taken slot while
+     * this store still reported it FREE. Under MySQL both read one slot_occupancy
+     * table, so the seam is in-memory only. Null in unit tests.
      */
     private InMemorySlotOccupyStore liveOccupancy;
 
@@ -47,15 +49,35 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
     }
 
     public InMemoryAvailabilityStore() {
+        this(DEMO_DATE);
+    }
+
+    /**
+     * Seeds the demo day on whatever "today" the clock reports, so a dev run is bookable on
+     * any date instead of rotting the day after a hard-coded anchor.
+     */
+    @Autowired
+    public InMemoryAvailabilityStore(AppClock clock) {
+        this(clock.today());
+    }
+
+    private InMemoryAvailabilityStore(LocalDate anchor) {
+        this.anchor = anchor;
         seedFourStatesDemo();
     }
 
     /** Tests that want an empty calendar. */
     public static InMemoryAvailabilityStore blank() {
-        return new InMemoryAvailabilityStore(false);
+        return new InMemoryAvailabilityStore(DEMO_DATE, false);
     }
 
-    private InMemoryAvailabilityStore(boolean unused) {
+    private InMemoryAvailabilityStore(LocalDate anchor, boolean unused) {
+        this.anchor = anchor;
+    }
+
+    /** The day {@link #seedFourStatesDemo()} wrote to. */
+    public LocalDate anchor() {
+        return anchor;
     }
 
     public void seedTherapistSlots(long therapistId, LocalDate date, int from, int toExclusive, String status) {
@@ -105,12 +127,7 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         bedSlots.put(bkey(bedId, date, slotNo), new BedSlotView(bedId, slotNo, status));
     }
 
-    /**
-     * 林晓 REST+LOCKED, 周可 BOOKED+BUFFER, 陈默 FREE on DEMO_DATE — starts only on
-     * FREE. Every therapist in DemoFixtures gets an open day, and so does every
-     * bed: a therapist whose store has no free bed can never be booked, so the
-     * two counts have to move together.
-     */
+    /** 林晓 REST+LOCKED, 周可 BOOKED+BUFFER, 陈默 FREE — starts only on FREE. */
     public final void seedFourStatesDemo() {
         therapistSlots.clear();
         bedSlots.clear();
@@ -118,8 +135,10 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         long t1 = DemoCatalogIds.THERAPIST_LIN;
         long t3 = DemoCatalogIds.THERAPIST_ZHOU;
 
+        // Every therapist and bed in the fixtures gets an open day: a therapist whose
+        // store has no free bed can never be booked however open the schedule looks.
         for (int day = 0; day < 60; day++) {
-            LocalDate date = DEMO_DATE.plusDays(day);
+            LocalDate date = anchor.plusDays(day);
             for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
                 seedTherapistSlots(s.therapistId(), date, OPEN, CLOSE, SlotStatus.FREE);
             }
@@ -128,21 +147,20 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
             }
         }
 
-        // The four-state picture the fixtures assert, on DEMO_DATE only.
-        seedTherapistSlots(t1, DEMO_DATE, 56, 64, SlotStatus.REST);
-        seedTherapistSlots(t1, DEMO_DATE, 78, 83, SlotStatus.LOCKED);
-        seedOccupancy(ResourceType.THERAPIST, t1, DEMO_DATE, 78, 83);
+        seedTherapistSlots(t1, anchor, 56, 64, SlotStatus.REST);
+        seedTherapistSlots(t1, anchor, 78, 83, SlotStatus.LOCKED);
+        seedOccupancy(ResourceType.THERAPIST, t1, anchor, 78, 83);
 
-        seedTherapistSlots(t3, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
-        seedTherapistSlots(t3, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
-        seedOccupancy(ResourceType.THERAPIST, t3, DEMO_DATE, 40, 45);
+        seedTherapistSlots(t3, anchor, 40, 44, SlotStatus.BOOKED);
+        seedTherapistSlots(t3, anchor, 44, 45, SlotStatus.BUFFER);
+        seedOccupancy(ResourceType.THERAPIST, t3, anchor, 40, 45);
 
-        seedBedSlots(BED1, DEMO_DATE, 78, 83, SlotStatus.LOCKED);
-        seedOccupancy(ResourceType.BED, BED1, DEMO_DATE, 78, 83);
+        seedBedSlots(BED1, anchor, 78, 83, SlotStatus.LOCKED);
+        seedOccupancy(ResourceType.BED, BED1, anchor, 78, 83);
 
-        seedBedSlots(BED2, DEMO_DATE, 40, 44, SlotStatus.BOOKED);
-        seedBedSlots(BED2, DEMO_DATE, 44, 45, SlotStatus.BUFFER);
-        seedOccupancy(ResourceType.BED, BED2, DEMO_DATE, 40, 45);
+        seedBedSlots(BED2, anchor, 40, 44, SlotStatus.BOOKED);
+        seedBedSlots(BED2, anchor, 44, 45, SlotStatus.BUFFER);
+        seedOccupancy(ResourceType.BED, BED2, anchor, 40, 45);
     }
 
     @Override
@@ -179,27 +197,29 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
         return out;
     }
 
-
-    /**
-     * The slot keys carry no store, so these listings used to return every
-     * therapist and bed regardless of the store asked for. Harmless while only
-     * one store had staff; with two it made store 1's calendar show store 2's
-     * therapists. The JDBC implementations filter by store_id in SQL, so this
-     * keeps the in-memory pair honest. Anything not in the fixtures (tests
-     * seeding their own rows) is left visible.
-     */
-
-    /**
-     * Only a non-FREE live status overrides the seed. confirmPaidSlots promotes
-     * LOCKED to BOOKED in the occupancy store, and without this the schedule
-     * showed a paid booking as still merely locked. Leaving FREE alone keeps the
-     * seeded four-state day on DEMO_DATE intact, since the live rows there are
-     * all FREE.
-     */
-    private static boolean isBusy(String status) {
-        return status != null && !SlotStatus.FREE.equals(status);
+    @Override
+    public List<OccupancyView> listOccupancies(long storeId, LocalDate date) {
+        List<OccupancyView> out = new ArrayList<>();
+        for (Map.Entry<String, OccupancyView> e : occupancies.entrySet()) {
+            if (e.getKey().contains("|" + date + "|")) {
+                out.add(e.getValue());
+            }
+        }
+        if (liveOccupancy != null) {
+            // Method call, not field access: liveOccupancy is a CGLIB proxy.
+            for (SlotOccupyStore.OccupancyInsert row : liveOccupancy.occupanciesOn(date)) {
+                out.add(new OccupancyView(row.resourceType(), row.resourceId(), row.slotNo()));
+            }
+        }
+        // AvailabilityDay keeps these in a Set, so overlap with the seed is harmless.
+        return out;
     }
 
+    /**
+     * Slot keys carry no store, so these listings would otherwise return every
+     * therapist and bed regardless of the store asked for — harmless with one
+     * store, wrong with two. The JDBC side filters by store_id in SQL.
+     */
     private static boolean ownsTherapist(long storeId, long therapistId) {
         return DemoFixtures.therapists().stream()
                 .filter(s -> s.therapistId() == therapistId)
@@ -216,23 +236,9 @@ public class InMemoryAvailabilityStore implements AvailabilityStore {
                 .orElse(true);
     }
 
-    @Override
-    public List<OccupancyView> listOccupancies(long storeId, LocalDate date) {
-        List<OccupancyView> out = new ArrayList<>();
-        for (Map.Entry<String, OccupancyView> e : occupancies.entrySet()) {
-            if (e.getKey().contains("|" + date + "|")) {
-                out.add(e.getValue());
-            }
-        }
-        if (liveOccupancy != null) {
-            // Method call, not field access: liveOccupancy is a CGLIB proxy.
-            for (SlotOccupyStore.OccupancyInsert row : liveOccupancy.occupanciesOn(date)) {
-                out.add(new OccupancyView(row.resourceType(), row.resourceId(), row.slotNo()));
-            }
-        }
-        // AvailabilityDay keeps these in a Set, so overlap between the seed and
-        // the live rows is harmless.
-        return out;
+    /** Only a non-FREE live status overrides the seed, so a paid booking reads BOOKED. */
+    private static boolean isBusy(String status) {
+        return status != null && !SlotStatus.FREE.equals(status);
     }
 
     static String tkey(long therapistId, LocalDate date, int slotNo) {

@@ -168,7 +168,7 @@ class FrontDeskSwapReportTest {
         InMemoryTreatmentNoteRepository notes = new InMemoryTreatmentNoteRepository();
         occupy.setTreatmentNotes(notes);
         AppProperties props = new AppProperties();
-        SnowflakeIdGenerator snow = new SnowflakeIdGenerator(props);
+        SnowflakeIdGenerator snow = new SnowflakeIdGenerator(props, clock.clock());
         OrderStateMachine machine = new OrderStateMachine(store, occupy, clock);
         InMemoryPaymentStore payments = new InMemoryPaymentStore();
         PaymentService pay = new PaymentService(

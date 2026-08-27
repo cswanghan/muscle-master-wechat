@@ -5,6 +5,8 @@ import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.ApiResponse;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.payment.PaymentDtos;
+import com.jisuodashi.review.ReviewDtos;
+import com.jisuodashi.review.ReviewService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class CBookingController {
 
     private final BookingService bookings;
+    private final ReviewService reviews;
 
-    public CBookingController(BookingService bookings) {
+    public CBookingController(BookingService bookings, ReviewService reviews) {
         this.bookings = bookings;
+        this.reviews = reviews;
     }
 
     @GetMapping
@@ -57,6 +61,19 @@ public class CBookingController {
             @PathVariable("id") String id,
             @Valid @RequestBody BookingDtos.PayRequest request) {
         return ApiResponse.ok(bookings.pay(AuthContext.requireCustomer().subjectId(), parseId(id), request));
+    }
+
+    @PostMapping("/{id}/review")
+    public ApiResponse<ReviewDtos.ReviewDetail> review(
+            @PathVariable("id") String id,
+            @Valid @RequestBody ReviewDtos.SubmitReviewRequest request) {
+        return ApiResponse.ok(
+                reviews.submit(AuthContext.requireCustomer().subjectId(), parseId(id), request));
+    }
+
+    @GetMapping("/{id}/review")
+    public ApiResponse<ReviewDtos.ReviewDetail> getReview(@PathVariable("id") String id) {
+        return ApiResponse.ok(reviews.get(AuthContext.requireCustomer().subjectId(), parseId(id)));
     }
 
     private static long parseId(String raw) {

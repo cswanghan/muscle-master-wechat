@@ -1,0 +1,125 @@
+.rv-page {
+  padding-bottom: 220rpx;
+}
+
+.rv-order {
+  margin-bottom: 20rpx;
+}
+
+.rv-th {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1e5c4a;
+}
+
+.rv-block {
+  margin-bottom: 20rpx;
+}
+
+.rv-q {
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.stars {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+/* 未选中的星保持描边灰而不是隐形：五颗都要看得见，用户才知道满分是几颗 */
+.star {
+  font-size: 64rpx;
+  line-height: 72rpx;
+  color: #d7e6df;
+}
+
+.star.on {
+  color: #c8a24a;
+}
+
+.score-hint {
+  margin-left: 8rpx;
+  font-size: 24rpx;
+  color: #6b7a74;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 8rpx;
+}
+
+.tag {
+  padding: 10rpx 24rpx;
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  background: #fff;
+  border: 1rpx solid #d7e6df;
+  color: #1a1c1b;
+}
+
+.tag.on {
+  background: #e8f0ec;
+  border-color: #1e5c4a;
+  color: #1e5c4a;
+  font-weight: 600;
+}
+
+.tag.ro {
+  opacity: 0.9;
+}
+
+.rv-text {
+  width: 100%;
+  height: 180rpx;
+  font-size: 28rpx;
+  line-height: 44rpx;
+  box-sizing: border-box;
+}
+
+.rv-ph {
+  color: #a8b3ae;
+}
+
+.rv-count {
+  text-align: right;
+  font-size: 22rpx;
+  color: #a8b3ae;
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-said {
+  font-size: 28rpx;
+  line-height: 44rpx;
+}
+
+.rv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.rv-done {
+  margin-top: 24rpx;
+  text-align: center;
+}
+
+.rv-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 32rpx 32rpx;
+  background: #faf8f3;
+  border-top: 1rpx solid #d7e6df;
+  z-index: 20;
+}
+
+.rv-tip {
+  text-align: center;
+  margin-top: 10rpx;
+}

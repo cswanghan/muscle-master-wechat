@@ -3,6 +3,7 @@ package com.jisuodashi.review;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -11,29 +12,24 @@ public final class ReviewDtos {
     private ReviewDtos() {
     }
 
-    public record CreateRequest(
-            String requestId,
-            @NotNull(message = "score 不能为空")
-            @Min(value = 1, message = "score 需在 1–5")
-            @Max(value = 5, message = "score 需在 1–5") Integer score,
-            List<String> tags,
-            String content
+    public record SubmitReviewRequest(
+            @NotNull @Min(1) @Max(5) Integer score,
+            @Size(max = ReviewPolicy.MAX_TAGS) List<String> tags,
+            @Size(max = ReviewPolicy.MAX_CONTENT_LENGTH) String content,
+            Boolean anonymous
     ) {
     }
 
-    public record ReviewView(
-            String reviewId,
+    /** 提交与回显同一形状：小程序评价页读写两态复用一个渲染分支。 */
+    public record ReviewDetail(
             String orderId,
             String therapistId,
-            String therapistName,
             int score,
+            boolean positive,
             List<String> tags,
             String content,
-            String customerMask,
+            boolean anonymous,
             String createdAt
     ) {
-    }
-
-    public record ReviewListResponse(List<ReviewView> items, Integer avgScoreX100, int total) {
     }
 }

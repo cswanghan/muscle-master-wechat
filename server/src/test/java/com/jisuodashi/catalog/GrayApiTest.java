@@ -1,5 +1,6 @@
 package com.jisuodashi.catalog;
 
+import com.jisuodashi.DevApiTest;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppProperties;
 import com.jisuodashi.common.ErrorCodes;
@@ -11,13 +12,11 @@ import com.jisuodashi.inventory.InMemoryAvailabilityStore;
 import com.jisuodashi.inventory.SlotStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -28,8 +27,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("dev")
+@DevApiTest
 class GrayApiTest {
 
     private static final ParameterizedTypeReference<Map<String, Object>> MAP = new ParameterizedTypeReference<>() {

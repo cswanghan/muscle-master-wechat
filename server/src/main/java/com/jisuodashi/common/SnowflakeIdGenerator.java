@@ -2,6 +2,7 @@ package com.jisuodashi.common;
 
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -18,18 +19,26 @@ public class SnowflakeIdGenerator {
     private static final long MAX_SEQ = (1L << SEQ_BITS) - 1;
 
     private final long workerId;
+    private final Clock clock;
     private final AtomicLong lastMsAndSeq = new AtomicLong(0);
 
-    public SnowflakeIdGenerator(AppProperties properties) {
+    /**
+     * Takes the shared {@link Clock} bean rather than reading the wall clock directly, so the one
+     * knob that freezes time freezes id generation with it. Under a fixed clock the sequence is
+     * reproducible, which is what makes the generated HTML reports byte-stable instead of
+     * re-dirtying the working tree on every {@code mvn test}.
+     */
+    public SnowflakeIdGenerator(AppProperties properties, Clock clock) {
         long id = properties.getSnowflake().getWorkerId();
         if (id < 0 || id > MAX_WORKER) {
             throw new IllegalArgumentException("snowflake worker-id out of range: " + id);
         }
         this.workerId = id;
+        this.clock = clock;
     }
 
     public synchronized long nextId() {
-        long now = Math.max(System.currentTimeMillis(), EPOCH_MS);
+        long now = Math.max(clock.millis(), EPOCH_MS);
         long packed = lastMsAndSeq.get();
         long lastMs = packed >>> SEQ_BITS;
         long seq = packed & MAX_SEQ;

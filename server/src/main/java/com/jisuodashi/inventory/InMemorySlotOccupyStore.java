@@ -20,7 +20,9 @@ import com.jisuodashi.inventory.SlotOccupyStore.OwnedSlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.ProjectRef;
 import com.jisuodashi.inventory.SlotOccupyStore.SlotRow;
 import com.jisuodashi.inventory.SlotOccupyStore.TherapistRef;
+import com.jisuodashi.common.AppClock;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
@@ -44,7 +46,8 @@ import java.util.concurrent.locks.ReentrantLock;
 @Profile("dev")
 public class InMemorySlotOccupyStore implements SlotOccupyStore {
 
-    static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
+    /** Anchor for hand-built stores in unit tests; the Spring bean follows the clock instead. */
+    public static final LocalDate DEMO_DATE = LocalDate.of(2026, 8, 14);
     static final int OPEN_SLOT = 40;
     static final int CLOSE_SLOT = 88;
     static final long ROOM = 3_100_000_000_000_000_101L;
@@ -57,21 +60,6 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     final Map<String, MutableSlot> therapistSlots = new ConcurrentHashMap<>();
     final Map<String, MutableSlot> bedSlots = new ConcurrentHashMap<>();
     public final Map<String, OccupancyInsert> occupancies = new ConcurrentHashMap<>();
-
-    /**
-     * Read through a method, never the field: this bean is wrapped in a CGLIB
-     * proxy whose fields are null, so a caller touching .occupancies directly
-     * gets an NPE.
-     */
-    public List<OccupancyInsert> occupanciesOn(LocalDate date) {
-        List<OccupancyInsert> out = new ArrayList<>();
-        for (OccupancyInsert row : occupancies.values()) {
-            if (date != null && date.equals(row.slotDate())) {
-                out.add(row);
-            }
-        }
-        return out;
-    }
 
     public int occupancyCount() {
         return occupancies.size();
@@ -101,6 +89,26 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
 
     private final ConcurrentHashMap<String, ReentrantLock> rowLocks = new ConcurrentHashMap<>();
     private final ThreadLocal<Work> work = new ThreadLocal<>();
+
+    private final LocalDate anchor;
+
+    public InMemorySlotOccupyStore() {
+        this.anchor = DEMO_DATE;
+    }
+
+    /**
+     * Seeds the 15-day demo calendar from whatever "today" the clock reports, so a dev run is
+     * bookable on any date instead of rotting the day after a hard-coded anchor.
+     */
+    @Autowired
+    public InMemorySlotOccupyStore(AppClock clock) {
+        this.anchor = clock.today();
+    }
+
+    /** The first day {@link #seedDemoCalendar()} wrote to. */
+    public LocalDate anchor() {
+        return anchor;
+    }
 
     @PostConstruct
     void initDemo() {
@@ -134,7 +142,6 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P60, "全身推拿放松", 60, 15, 19800, 4900L));
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P45, "肩颈专项疏通", 45, 15, 12800, 4200L));
         seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P90, "腰背深层理筋", 90, 15, 26800, 4400L));
-        seedProject(new ProjectRef(DemoCatalogIds.PROJECT_P120, "尊享全身深度调理", 120, 15, 68800, 9800L));
         for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
             seedTherapist(new TherapistRef(s.therapistId(), s.storeId()));
         }
@@ -144,14 +151,14 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     /**
-     * Booking reads this store, not the availability one, so every therapist and
-     * bed in the fixtures needs rows here too — otherwise lockNew answers
-     * "技师不存在" or runs out of beds while the calendar shows a full roster.
-     * 60 days so a demo does not fall off the end of the seeded window.
+     * Booking reads this store, not the availability one, so every therapist and bed
+     * in the fixtures needs rows here too — otherwise lockNew answers 技师不存在 or
+     * runs out of beds while the calendar shows a full roster. 60 days so a demo does
+     * not fall off the end of the window.
      */
     void seedDemoCalendar() {
         for (int day = 0; day < 60; day++) {
-            LocalDate date = DEMO_DATE.plusDays(day);
+            LocalDate date = anchor.plusDays(day);
             for (DemoFixtures.TherapistSeed s : DemoFixtures.therapists()) {
                 seedTherapistSlots(s.therapistId(), s.storeId(), date, OPEN_SLOT, CLOSE_SLOT, SlotStatus.FREE);
             }
@@ -1357,9 +1364,19 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     }
 
     /**
-     * Live status, or null when this store has no row. Method, not field access:
-     * the bean is behind a CGLIB proxy.
+     * Read live rows through methods, never the fields: this bean sits behind a
+     * CGLIB proxy whose fields are null, so a caller touching them gets an NPE.
      */
+    public List<OccupancyInsert> occupanciesOn(LocalDate date) {
+        List<OccupancyInsert> out = new ArrayList<>();
+        for (OccupancyInsert row : occupancies.values()) {
+            if (date != null && date.equals(row.slotDate())) {
+                out.add(row);
+            }
+        }
+        return out;
+    }
+
     public String therapistSlotStatus(long therapistId, LocalDate date, int slotNo) {
         MutableSlot s = therapistSlots.get(tkey(therapistId, date, slotNo));
         return s == null ? null : s.status;

@@ -1,158 +1,172 @@
 package com.jisuodashi.review;
 
-import com.jisuodashi.auth.AuthContext;
-import com.jisuodashi.catalog.CatalogModels;
-import com.jisuodashi.catalog.CatalogRepository;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
-import com.jisuodashi.common.SnowflakeIdGenerator;
 import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
+import com.jisuodashi.order.FireContext;
+import com.jisuodashi.order.OrderEvent;
+import com.jisuodashi.order.OrderStateMachine;
+import com.jisuodashi.order.OrderStatus;
+import com.jisuodashi.order.ReviewDraft;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ReviewService {
 
-    private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_INSTANT;
-    private static final int MAX_CONTENT = 500;
-    private static final int MAX_TAGS = 5;
-    private static final int DEFAULT_LIMIT = 20;
+    private static final DateTimeFormatter ISO =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
-    private final ReviewRepository reviews;
+    private final ReviewStore reviews;
     private final SlotOccupyService occupy;
-    private final CatalogRepository catalog;
-    private final SnowflakeIdGenerator ids;
+    private final OrderStateMachine machine;
+    private final TherapistStatService statService;
     private final AppClock clock;
 
     public ReviewService(
-            ReviewRepository reviews,
+            ReviewStore reviews,
             SlotOccupyService occupy,
-            CatalogRepository catalog,
-            SnowflakeIdGenerator ids,
+            OrderStateMachine machine,
+            TherapistStatService statService,
             AppClock clock) {
         this.reviews = reviews;
         this.occupy = occupy;
-        this.catalog = catalog;
-        this.ids = ids;
+        this.machine = machine;
+        this.statService = statService;
         this.clock = clock;
     }
 
     /**
-     * Only the customer who owns a COMPLETED order may review it, once. A second
-     * attempt replays the existing review rather than erroring, so a retried tap
-     * does not look like a failure.
+     * 重复提交返回已有评价而不是报错：客户端超时重发、双击提交都会走到这里，
+     * 一个「已评价」的 40904 对客户来说和失败没有区别。幂等由 {@code uk_review_order} 兜底。
      */
-    public ReviewDtos.ReviewView create(String orderIdRaw, ReviewDtos.CreateRequest request) {
-        long customerId = AuthContext.requireCustomer().subjectId();
-        long orderId = parseId(orderIdRaw);
-        if (request == null || request.score() == null) {
-            throw new ApiException(ErrorCodes.BAD_REQUEST, "score 不能为空");
+    public ReviewDtos.ReviewDetail submit(
+            long customerId, long orderId, ReviewDtos.SubmitReviewRequest request) {
+        BookingOrderRef order = requireOwnOrder(customerId, orderId);
+
+        Optional<OrderReview> existing = reviews.findByOrderId(orderId);
+        if (existing.isPresent()) {
+            return detail(existing.get());
         }
+
+        OrderStatus status = OrderStatus.parse(order.status());
+        if (status != OrderStatus.COMPLETED) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "只有已完成的订单可以评价");
+        }
+        if (order.serviceDate() != null
+                && order.serviceDate().plusDays(ReviewPolicy.REVIEW_WINDOW_DAYS).isBefore(clock.today())) {
+            throw new ApiException(
+                    ErrorCodes.ILLEGAL_TRANSITION,
+                    "服务结束超过 " + ReviewPolicy.REVIEW_WINDOW_DAYS + " 天，不能再评价");
+        }
+
+        ReviewDraft draft = draft(request);
+        try {
+            machine.fire(orderId, OrderEvent.REVIEW, FireContext.customer(customerId).withReview(draft));
+        } catch (ApiException e) {
+            // 并发双提交：一方 CAS 赢，另一方撞 40904。有评价行就说明赢家已经写完了。
+            if (e.getCode() == ErrorCodes.ILLEGAL_TRANSITION) {
+                Optional<OrderReview> raced = reviews.findByOrderId(orderId);
+                if (raced.isPresent()) {
+                    return detail(raced.get());
+                }
+            }
+            throw e;
+        }
+
+        OrderReview saved = reviews.findByOrderId(orderId)
+                .orElseThrow(() -> new ApiException(ErrorCodes.INTERNAL, "评价写入失败"));
+        statService.onReviewed(saved.therapistId(), saved.score(), saved.positive());
+        return detail(saved);
+    }
+
+    public ReviewDtos.ReviewDetail get(long customerId, long orderId) {
+        requireOwnOrder(customerId, orderId);
+        return reviews.findByOrderId(orderId)
+                .map(this::detail)
+                .orElseThrow(() -> new ApiException(ErrorCodes.NOT_FOUND, "尚未评价"));
+    }
+
+    private BookingOrderRef requireOwnOrder(long customerId, long orderId) {
         BookingOrderRef order = occupy.findOrderById(orderId);
-        if (order == null || order.customerId() != customerId) {
+        if (order == null) {
             throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
         }
-        if (!"COMPLETED".equals(order.status())) {
-            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "服务完成后才能评价");
+        // 不存在与不属于你，对外一律 40401：否则枚举 orderId 就能探出哪些单号是真的。
+        if (order.customerId() != customerId) {
+            throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
         }
-        Optional<Review> existing = reviews.findByOrderId(orderId);
-        if (existing.isPresent()) {
-            return view(existing.get());
+        return order;
+    }
+
+    private ReviewDraft draft(ReviewDtos.SubmitReviewRequest request) {
+        int score = request.score();
+        String tags = normalizeTags(request.tags(), score);
+        String content = normalizeContent(request.content());
+        boolean anonymous = Boolean.TRUE.equals(request.anonymous());
+        return new ReviewDraft(score, tags, content, anonymous);
+    }
+
+    /** 标签白名单 + 分档校验，去重保序，逗号拼存。 */
+    private String normalizeTags(List<String> raw, int score) {
+        if (raw == null || raw.isEmpty()) {
+            return null;
         }
-        Review saved = reviews.insert(new Review(
-                ids.nextId(),
-                orderId,
-                customerId,
-                order.therapistId(),
-                order.storeId(),
-                request.score(),
-                joinTags(request.tags()),
-                trim(request.content()),
-                Instant.now(clock.clock())));
-        return view(saved);
+        List<String> kept = new ArrayList<>(new LinkedHashSet<>(raw));
+        if (kept.size() > ReviewPolicy.MAX_TAGS) {
+            throw new ApiException(ErrorCodes.BAD_REQUEST, "最多选择 " + ReviewPolicy.MAX_TAGS + " 个标签");
+        }
+        for (String tag : kept) {
+            if (!ReviewPolicy.knownTag(tag)) {
+                throw new ApiException(ErrorCodes.BAD_REQUEST, "未知标签 " + tag);
+            }
+            if (!ReviewPolicy.tagMatchesScore(tag, score)) {
+                throw new ApiException(ErrorCodes.BAD_REQUEST, "标签与评分不匹配 " + tag);
+            }
+        }
+        return String.join(",", kept);
     }
 
-    public ReviewDtos.ReviewView ofOrder(String orderIdRaw) {
-        long customerId = AuthContext.requireCustomer().subjectId();
-        long orderId = parseId(orderIdRaw);
-        Review r = reviews.findByOrderId(orderId)
-                .filter(x -> x.customerId() == customerId)
-                .orElseThrow(() -> new ApiException(ErrorCodes.NOT_FOUND, "尚未评价"));
-        return view(r);
+    private String normalizeContent(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        if (trimmed.length() > ReviewPolicy.MAX_CONTENT_LENGTH) {
+            throw new ApiException(
+                    ErrorCodes.BAD_REQUEST, "评价内容不超过 " + ReviewPolicy.MAX_CONTENT_LENGTH + " 字");
+        }
+        return trimmed;
     }
 
-    /** Public list for the therapist picker; the customer is masked. */
-    public ReviewDtos.ReviewListResponse listByTherapist(String therapistIdRaw, Integer limit) {
-        long therapistId = parseId(therapistIdRaw);
-        List<ReviewDtos.ReviewView> items = reviews
-                .listByTherapistId(therapistId, limit == null ? DEFAULT_LIMIT : limit)
-                .stream().map(this::view).toList();
-        return new ReviewDtos.ReviewListResponse(
-                items, reviews.averageScoreX100(therapistId).orElse(null), items.size());
-    }
-
-    public ReviewDtos.ReviewListResponse mine() {
-        long customerId = AuthContext.requireCustomer().subjectId();
-        List<ReviewDtos.ReviewView> items = reviews.listByCustomerId(customerId)
-                .stream().map(this::view).toList();
-        return new ReviewDtos.ReviewListResponse(items, null, items.size());
-    }
-
-    private ReviewDtos.ReviewView view(Review r) {
-        String name = catalog.listTherapists().stream()
-                .filter(t -> t.id() == r.therapistId())
-                .findFirst()
-                .map(CatalogModels.Therapist::name)
-                .orElse("技师");
-        return new ReviewDtos.ReviewView(
-                String.valueOf(r.id()),
+    private ReviewDtos.ReviewDetail detail(OrderReview r) {
+        return new ReviewDtos.ReviewDetail(
                 String.valueOf(r.orderId()),
                 String.valueOf(r.therapistId()),
-                name,
                 r.score(),
+                r.positive(),
                 splitTags(r.tags()),
                 r.content(),
-                "****",
-                r.createdAt() == null ? null : ISO.format(r.createdAt()));
+                r.anonymous(),
+                r.createdAt() == null
+                        ? null
+                        : ISO.format(r.createdAt().atZone(AppClock.SHANGHAI).toOffsetDateTime()));
     }
 
-    private static String joinTags(List<String> tags) {
-        if (tags == null || tags.isEmpty()) {
-            return null;
-        }
-        return String.join(",", tags.stream()
-                .filter(s -> s != null && !s.isBlank())
-                .map(String::trim)
-                .limit(MAX_TAGS)
-                .toList());
-    }
-
-    private static List<String> splitTags(String raw) {
-        if (raw == null || raw.isBlank()) {
+    static List<String> splitTags(String tags) {
+        if (tags == null || tags.isBlank()) {
             return List.of();
         }
-        return List.of(raw.split(","));
-    }
-
-    private static String trim(String content) {
-        if (content == null || content.isBlank()) {
-            return null;
-        }
-        String s = content.trim();
-        return s.length() > MAX_CONTENT ? s.substring(0, MAX_CONTENT) : s;
-    }
-
-    private static long parseId(String raw) {
-        try {
-            return Long.parseLong(raw);
-        } catch (NumberFormatException e) {
-            throw new ApiException(ErrorCodes.BAD_REQUEST, "id 无效");
-        }
+        return List.of(tags.split(","));
     }
 }

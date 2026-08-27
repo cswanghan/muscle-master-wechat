@@ -1,10 +1,16 @@
 const { request } = require('../../utils/api.js')
-const { fenYuan, slotToTime, todayIso } = require('../../utils/format.js')
-const { demoDate, mockFallback } = require('../../config.js')
+const {
+  fenYuan, rating, levelLabel, levelClass, positiveRate, slotToTime,
+} = require('../../utils/format.js')
+const { demoDate } = require('../../config.js')
+const { qs, decodeQuery } = require('../../utils/query.js')
 
-// demoDate pins the calendar for a scripted demo; empty means the real today.
-const startDate = () => demoDate || todayIso()
-const mock = require('../../utils/mock.js')
+function todayIso() {
+  const dt = new Date()
+  const mm = String(dt.getMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getDate()).padStart(2, '0')
+  return `${dt.getFullYear()}-${mm}-${dd}`
+}
 
 function addDays(iso, n) {
   const [y, m, d] = iso.split('-').map(Number)
@@ -17,13 +23,6 @@ function addDays(iso, n) {
 function weekday(iso) {
   const [y, m, d] = iso.split('-').map(Number)
   return '日一二三四五六'[new Date(y, m - 1, d).getDay()]
-}
-
-function qs(obj) {
-  return Object.keys(obj)
-    .filter((k) => obj[k] !== undefined && obj[k] !== '')
-    .map((k) => `${k}=${encodeURIComponent(obj[k])}`)
-    .join('&')
 }
 
 function paintTherapist(t, selected) {
@@ -53,11 +52,31 @@ function paintTherapist(t, selected) {
       priceFen: startPrice[b.slotNo],
     }
   })
+  const stats = t.stats || {}
   return {
-    ...mock.decorateTherapist(t),
-    starts: t.starts || [],
+    ...t,
+    rating: rating(t.ratingX100),
+    levelLabel: levelLabel(t.level),
+    levelClass: levelClass(t.level),
+    newcomer: !!stats.newcomer,
+    statLine: statLine(stats),
     slots,
   }
+}
+
+// 一行讲完：有率就「好评率 · 回头」，没率就退回条数，两个都没有就不占位。
+function statLine(stats) {
+  const parts = []
+  const rate = positiveRate(stats.positiveRateX100)
+  if (rate) {
+    parts.push('好评 ' + rate)
+  } else if (stats.reviewCount) {
+    parts.push(stats.reviewCount + ' 条评价')
+  }
+  if (stats.repeatCount) {
+    parts.push('回头 ' + stats.repeatCount)
+  }
+  return parts.join(' · ')
 }
 
 Page({
@@ -72,33 +91,32 @@ Page({
     priceYuan: '0',
     durationMinutes: 60,
     bufferMinutes: 15,
-    date: '',
+    date: demoDate || todayIso(),
     dates: [],
     therapists: [],
     selected: null,
     loading: true,
     error: '',
   },
-  onLoad(query) {
-    const base = startDate()
+  onLoad(rawQuery) {
+    const query = decodeQuery(rawQuery)
     const dates = []
-    for (let i = 0; i < 5; i += 1) {
-      const iso = addDays(base, i)
+    for (let i = 0; i < 7; i += 1) {
+      const iso = addDays(this.data.date, i)
       const label = i === 0 ? '今天' : i === 1 ? '明天' : '周' + weekday(iso)
       dates.push({ iso, day: iso.slice(8), week: weekday(iso), label, left: '—', on: i === 0 })
     }
     this.setData({
-      storeId: query.storeId || mock.STORE_ID,
-      storeName: query.storeName ? decodeURIComponent(query.storeName) : mock.stores[0].name,
-      projectId: query.projectId || mock.projects[0].projectId,
-      projectName: query.projectName ? decodeURIComponent(query.projectName) : mock.projects[0].name,
+      storeId: query.storeId || '',
+      storeName: query.storeName || '',
+      projectId: query.projectId || '',
+      projectName: query.projectName || '',
       therapistId: query.therapistId || '',
-      therapistName: query.therapistName ? decodeURIComponent(query.therapistName) : '',
+      therapistName: query.therapistName || '',
       priceFen: Number(query.priceFen || 0),
       priceYuan: fenYuan(query.priceFen || 0),
       durationMinutes: Number(query.durationMinutes || 60),
       bufferMinutes: Number(query.bufferMinutes || 15),
-      date: query.date || base,
       dates,
     }, () => {
       this._ready = true
@@ -121,50 +139,35 @@ Page({
   },
   loadAvailability() {
     const { storeId, date, projectId, therapistId } = this.data
-    this.setData({ loading: true, error: '' })
-    const apply = (data) => {
-      const selected = this.data.selected
-      let therapists = ((data && data.therapists) || []).map((t) => paintTherapist(t, selected))
-      const bookable = therapists.some((t) => (t.slots || []).some((s) => s.bookable))
-      // "Fully booked" is a real answer. Papering over it with invented slots
-      // just moves the failure to the booking call.
-      if (mockFallback && (!therapists.length || !bookable)) {
-        therapists = mock.mockAvailability({
-          therapistId,
-          priceFen: this.data.priceFen || 19800,
-        }).therapists.map((t) => paintTherapist(t, selected))
-      }
-      const left = therapists.reduce((n, t) => n + (t.slots || []).filter((s) => s.bookable).length, 0)
-      const dates = this.data.dates.map((d) => (d.iso === this.data.date ? { ...d, left } : d))
-      this.setData({
-        therapists,
-        dates,
-        loading: false,
-        error: therapists.length && !left ? '这天已约满，换一天试试' : '',
-      })
+    if (!storeId || !projectId) {
+      this.setData({ error: '缺少门店或项目', loading: false })
+      return
     }
-    let path = `/api/v1/c/availability?storeId=${storeId || mock.STORE_ID}&date=${date}&projectId=${projectId || mock.projects[0].projectId}&includeBusy=1`
+    this.setData({ loading: true, error: '' })
+    let path = `/api/v1/c/availability?storeId=${storeId}&date=${date}&projectId=${projectId}&includeBusy=1`
     if (therapistId) {
       path += `&therapistId=${therapistId}`
     }
     request({ path })
-      .then(apply)
+      .then((data) => {
+        const selected = this.data.selected
+        const therapists = ((data && data.therapists) || []).map((t) => paintTherapist(t, selected))
+        const left = therapists.reduce((n, t) => n + (t.slots || []).filter((s) => s.bookable).length, 0)
+        const dates = this.data.dates.map((d) => (d.iso === this.data.date ? { ...d, left } : d))
+        this.setData({
+          therapists,
+          dates,
+          loading: false,
+          error: therapists.length && !left ? '这天已约满，换一天试试' : '',
+        })
+      })
       .catch((err) => {
-        if (!mockFallback) {
-          // Faking availability offers slots the server never held, so the
-          // booking can only fail later — report it here instead.
-          this.setData({ therapists: [], loading: false, error: err.message || '加载时段失败' })
-          return
-        }
-        apply(mock.mockAvailability({
-          therapistId,
-          priceFen: this.data.priceFen || 19800,
-        }))
+        this.setData({ error: err.message || '加载失败', loading: false })
       })
   },
   pickSlot(e) {
     const { tid, tname, slot, start, price, bookable } = e.currentTarget.dataset
-    if (bookable !== 1 && bookable !== '1' && bookable !== true) {
+    if (!bookable) {
       return
     }
     const selected = {

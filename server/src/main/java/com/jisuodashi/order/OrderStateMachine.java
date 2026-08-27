@@ -20,6 +20,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,9 +46,10 @@ public class OrderStateMachine {
     private final AuditLogRepository audits;
     private final SnowflakeIdGenerator ids;
     private final ServiceRecordSide records;
+    private final ReviewSide reviews;
 
     public OrderStateMachine() {
-        this(null, null, new AppClock(), new AppProperties(), null, null, null, null);
+        this(null, null, new AppClock(), new AppProperties(), null, null, null, null, null);
     }
 
     @Autowired
@@ -59,7 +61,8 @@ public class OrderStateMachine {
             PlatformTransactionManager txManager,
             @Autowired(required = false) AuditLogRepository audits,
             @Autowired(required = false) SnowflakeIdGenerator ids,
-            @Autowired(required = false) ServiceRecordSide records
+            @Autowired(required = false) ServiceRecordSide records,
+            @Autowired(required = false) ReviewSide reviews
     ) {
         this.store = store;
         this.occupy = occupy;
@@ -69,10 +72,11 @@ public class OrderStateMachine {
         this.audits = audits;
         this.ids = ids;
         this.records = records;
+        this.reviews = reviews;
     }
 
     public OrderStateMachine(SlotOccupyStore store, SlotOccupyService occupy, AppClock clock) {
-        this(store, occupy, clock, new AppProperties(), null, null, null, null);
+        this(store, occupy, clock, new AppProperties(), null, null, null, null, null);
     }
 
     OrderStateMachine(
@@ -83,7 +87,7 @@ public class OrderStateMachine {
             AuditLogRepository audits,
             SnowflakeIdGenerator ids
     ) {
-        this(store, occupy, clock, properties, null, audits, ids, null);
+        this(store, occupy, clock, properties, null, audits, ids, null, null);
     }
 
     /** Table lookup. Unknown {@code (from,event)} → 40904. */
@@ -141,7 +145,7 @@ public class OrderStateMachine {
             auditIllegal(order, from, event, ctx, "cas-miss");
             throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "非法状态转移");
         }
-        applySides(t, store.lockOrderById(orderId));
+        applySides(t, store.lockOrderById(orderId), ctx);
         return new FireResult(orderId, from, event, t.to());
     }
 
@@ -215,11 +219,11 @@ public class OrderStateMachine {
                     ? null : "not-desk";
             case RESOLVE_COMPLETE, RESOLVE_CANCEL -> (ctx.storeManager() || ctx.privileged())
                     ? null : "not-manager";
-            case REVIEW -> ctx.reviewAllowed() ? null : "review-p1";
+            case REVIEW -> ctx.reviewAllowed() ? null : "review-not-allowed";
         };
     }
 
-    private void applySides(OrderTransition t, BookingOrderRef order) {
+    private void applySides(OrderTransition t, BookingOrderRef order, FireContext ctx) {
         if (order == null) {
             return;
         }
@@ -258,6 +262,11 @@ public class OrderStateMachine {
                 case ENDED_AT -> {
                     if (records != null) {
                         records.markEnded(order.id(), clock.instant());
+                    }
+                }
+                case REVIEW_RECORD -> {
+                    if (reviews != null && ctx.reviewDraft() != null) {
+                        reviews.insertReview(order, ctx.reviewDraft(), clock.instant());
                     }
                 }
                 case NONE, CHECKED_IN_AT, NO_SHOW_COUNT,
@@ -362,7 +371,7 @@ public class OrderStateMachine {
         rows.add(OrderTransition.of(OrderStatus.ABNORMAL, OrderEvent.RESOLVE_CANCEL,
                 OrderStatus.CANCELLED, OrderSide.RELEASE_UNCONSUMED_NOW));
         rows.add(OrderTransition.of(OrderStatus.COMPLETED, OrderEvent.REVIEW,
-                OrderStatus.REVIEWED, OrderSide.NONE));
+                OrderStatus.REVIEWED, OrderSide.REVIEW_RECORD));
         rows.add(OrderTransition.of(OrderStatus.COMPLETED, OrderEvent.REFUND,
                 OrderStatus.COMPLETED, OrderSide.REFUND));
         rows.add(OrderTransition.of(OrderStatus.CANCELLED, OrderEvent.MARK_NO_SHOW,
@@ -372,7 +381,10 @@ public class OrderStateMachine {
         for (OrderTransition row : rows) {
             table.put(new Key(row.from(), row.event()), row);
         }
-        return Map.copyOf(table);
+        // Not Map.copyOf: its iteration order is salted per JVM, so transfers() came back shuffled
+        // on every run. The declaration order above groups transitions by from-state, which is the
+        // order a reader of the table — or of the generated pr-6 report — expects to see.
+        return Collections.unmodifiableMap(table);
     }
 
     private record Key(OrderStatus from, OrderEvent event) {

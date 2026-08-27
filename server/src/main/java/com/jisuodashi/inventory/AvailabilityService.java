@@ -6,6 +6,8 @@ import com.jisuodashi.catalog.Pricing;
 import com.jisuodashi.common.ApiException;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.GrayStores;
+import com.jisuodashi.common.TherapistStatsPort;
+import com.jisuodashi.common.TherapistStatsView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,7 @@ public class AvailabilityService {
     private final CatalogRepository catalog;
     private final AvailabilityCache cache;
     private GrayStores gray;
+    private TherapistStatsPort therapistStats;
 
     public AvailabilityService(
             AvailabilityStore store,
@@ -45,6 +48,12 @@ public class AvailabilityService {
     @Autowired(required = false)
     public void setGrayStores(GrayStores gray) {
         this.gray = gray;
+    }
+
+    /** 上层的 review 模块实现；缺席时日历照常出可约时段，只是技师头上没有统计。 */
+    @Autowired(required = false)
+    public void setTherapistStats(TherapistStatsPort therapistStats) {
+        this.therapistStats = therapistStats;
     }
 
     public AvailabilityDtos.Availability query(
@@ -68,7 +77,7 @@ public class AvailabilityService {
         Long storeFen = storeProjectFen(storeId, projectId);
         AvailabilityDay day = cache.get(storeId, date, () -> loadDay(storeId, date));
 
-        List<AvailabilityDtos.Therapist> therapists = new ArrayList<>();
+        List<Candidate> candidates = new ArrayList<>();
         for (CatalogModels.Therapist card : catalog.listTherapists().stream()
                 .filter(t -> t.status() == 1)
                 .sorted(Comparator.comparingLong(CatalogModels.Therapist::id))
@@ -85,14 +94,23 @@ public class AvailabilityService {
             if (starts.isEmpty() && blocks == null) {
                 continue;
             }
-            therapists.add(new AvailabilityDtos.Therapist(
-                    String.valueOf(card.id()),
-                    card.name(),
-                    card.level(),
-                    card.ratingX100(),
-                    starts,
-                    blocks));
+            candidates.add(new Candidate(card, starts, blocks));
         }
+
+        // 统计一次批量取。日历一屏就是整店技师，逐人一次聚合会把这个热路径接口拖垮。
+        Map<Long, TherapistStatsView> stats = therapistStats == null
+                ? Map.of()
+                : therapistStats.statsFor(candidates.stream().map(c -> c.card().id()).toList());
+        List<AvailabilityDtos.Therapist> therapists = candidates.stream()
+                .map(c -> new AvailabilityDtos.Therapist(
+                        String.valueOf(c.card().id()),
+                        c.card().name(),
+                        c.card().level(),
+                        c.card().ratingX100(),
+                        stats.getOrDefault(c.card().id(), TherapistStatsView.NONE),
+                        c.starts(),
+                        c.blocks()))
+                .toList();
 
         return new AvailabilityDtos.Availability(
                 String.valueOf(storeId),
@@ -166,5 +184,12 @@ public class AvailabilityService {
             }
         }
         return null;
+    }
+
+    /** 先攒可约技师，再一次性配统计 —— 两步只是为了让统计查询批量化。 */
+    private record Candidate(
+            CatalogModels.Therapist card,
+            List<AvailabilityDtos.Start> starts,
+            List<AvailabilityDtos.Block> blocks) {
     }
 }

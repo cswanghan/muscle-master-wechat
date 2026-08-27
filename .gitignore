@@ -14,3 +14,9 @@ server/.mvn/wrapper/maven-wrapper.jar
 
 # Real deploy endpoints; public repo keeps placeholders in docs/
 docs/*.local.md
+
+# Design material lives in docs/; binaries are un-reviewable in diffs.
+*.zip
+
+# WeChat DevTools per-developer overrides (urlCheck off for the local http backend).
+project.private.config.json

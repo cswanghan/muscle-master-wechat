@@ -1,5 +1,6 @@
 package com.jisuodashi.common;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -20,6 +21,7 @@ public class AppClock {
         this(Clock.system(SHANGHAI));
     }
 
+    @Autowired
     public AppClock(Clock clock) {
         this.clock = clock.withZone(SHANGHAI);
     }

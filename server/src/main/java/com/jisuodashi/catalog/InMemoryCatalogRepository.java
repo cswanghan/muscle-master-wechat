@@ -171,7 +171,10 @@ public class InMemoryCatalogRepository implements CatalogRepository {
 
     private static String intro(String level) {
         return switch (level) {
-            case "SENIOR" -> "资深技师，深层手法";
+            // Four levels renamed SENIOR to 资深; keep the blurb in step so one card
+            // does not show two different level words. V3__demo_store.sql keeps its
+            // own wording — editing an applied migration breaks the checksum.
+            case "SENIOR" -> "资深技师，肩颈深层";
             case "MIDDLE" -> "中级技师，肩颈腰背";
             default -> "全身放松";
         };

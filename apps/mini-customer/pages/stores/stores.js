@@ -1,13 +1,6 @@
 const { request } = require('../../utils/api.js')
 const { fenYuan } = require('../../utils/format.js')
-const mock = require('../../utils/mock.js')
-
-function qs(obj) {
-  return Object.keys(obj)
-    .filter((k) => obj[k] !== undefined && obj[k] !== '')
-    .map((k) => `${k}=${encodeURIComponent(obj[k])}`)
-    .join('&')
-}
+const { qs, decodeQuery } = require('../../utils/query.js')
 
 Page({
   data: {
@@ -22,10 +15,11 @@ Page({
     loading: true,
     error: '',
   },
-  onLoad(query) {
+  onLoad(rawQuery) {
+    const query = decodeQuery(rawQuery)
     this.setData({
       projectId: query.projectId || '',
-      projectName: query.projectName ? decodeURIComponent(query.projectName) : '',
+      projectName: query.projectName || '',
       priceFen: query.priceFen || '',
       durationMinutes: query.durationMinutes || '',
       bufferMinutes: query.bufferMinutes || '',
@@ -36,24 +30,14 @@ Page({
     this.setData({ loading: true, error: '' })
     request({ path: '/api/v1/c/stores' })
       .then((page) => {
-        this.setData({
-          stores: mock.first(
-            ((page && page.items) || []).map((s) => mock.decorateStore(s)),
-            mock.stores,
-          ),
-          loading: false,
-        })
+        this.setData({ stores: (page && page.items) || [], loading: false })
       })
-      .catch(() => {
-        this.setData({ stores: mock.stores, loading: false })
+      .catch((err) => {
+        this.setData({ error: err.message || '加载失败', loading: false })
       })
   },
   pickStore(e) {
-    const id = e.currentTarget.dataset.id
-    const store = (this.data.stores || []).find((s) => String(s.storeId) === String(id))
-    if (!store) {
-      return
-    }
+    const store = e.currentTarget.dataset.item
     if (this.data.projectId) {
       this.goCalendar(store, {
         projectId: this.data.projectId,
@@ -71,18 +55,14 @@ Page({
           ...p,
           priceYuan: fenYuan(p.priceFen),
         }))
-        this.setData({ projects: mock.first(items, mock.projects), loading: false })
+        this.setData({ projects: items, loading: false })
       })
-      .catch(() => {
-        this.setData({ projects: mock.projects, loading: false })
+      .catch((err) => {
+        this.setData({ error: err.message || '加载失败', loading: false })
       })
   },
   pickProject(e) {
-    const id = e.currentTarget.dataset.id
-    const p = (this.data.projects || []).find((x) => String(x.projectId) === String(id))
-    if (!p || !this.data.pickedStore) {
-      return
-    }
+    const p = e.currentTarget.dataset.item
     this.goCalendar(this.data.pickedStore, p)
   },
   goCalendar(store, project) {
