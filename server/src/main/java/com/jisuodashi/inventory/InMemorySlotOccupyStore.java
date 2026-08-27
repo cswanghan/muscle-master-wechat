@@ -1331,7 +1331,7 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
                 row.lockExpireAt(), payableFens.getOrDefault(row.id(), row.payableFen()),
                 row.startSlotNo(), endSlotNos.getOrDefault(row.id(), row.endSlotNo()), row.bufferSlots(),
                 addOnHolds.get(row.id()), row.storeId(), row.serviceDate(),
-                row.customerId(), row.therapistId());
+                row.customerId(), row.therapistId(), row.designated());
     }
 
     private MutableSlot slotFor(OccupancyInsert row) {
@@ -1659,7 +1659,8 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
                 prev.customerId(), prev.storeId(), newTherapistId, newHomeStoreId,
                 prev.bedId(), prev.roomId(), prev.status(), prev.source(),
                 prev.serviceDate(), prev.startSlotNo(), prev.endSlotNo(), prev.bufferSlots(),
-                prev.originPriceFen(), prev.payableFen(), prev.lockExpireAt(), prev.createdAt());
+                prev.originPriceFen(), prev.payableFen(), prev.lockExpireAt(), prev.createdAt(),
+                prev.designated());
         orders.put(orderId, next);
         ordersByRequest.put(next.requestId(), next);
         requireWork().undos.add(() -> {
@@ -1856,7 +1857,8 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
                 prev.customerId(), prev.storeId(), therapistId, home,
                 bedId, roomId, prev.status(), prev.source(),
                 serviceDate, startSlotNo, endSlotNo, prev.bufferSlots(),
-                prev.originPriceFen(), prev.payableFen(), null, prev.createdAt());
+                prev.originPriceFen(), prev.payableFen(), null, prev.createdAt(),
+                prev.designated());
         orders.put(orderId, next);
         if (prev.requestId() != null) {
             ordersByRequest.put(prev.requestId(), next);

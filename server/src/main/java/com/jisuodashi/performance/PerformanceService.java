@@ -71,7 +71,12 @@ public class PerformanceService {
             }
             clocks++;
             service += commission;
-            entries.add(entry(o, "SERVICE", o.payableFen(), commission, false));
+            entries.add(entry(o, "SERVICE", o.payableFen(), commission, o.designated()));
+            if (o.designated()) {
+                // 点名加成是定额，不随客单价浮动 —— 认的是"冲这个人来的"，不是单子大小。
+                designated += CommissionPolicy.DESIGNATED_BONUS_FEN;
+                entries.add(entry(o, "DESIGNATED", 0L, CommissionPolicy.DESIGNATED_BONUS_FEN, true));
+            }
             if (o.addOnHoldId() != null) {
                 // 加钟单独成条：技师看的是"这一单我拿了多少"，混在一起就说不清。
                 long addOnCommission = CommissionPolicy.commissionFen(o.payableFen(), me.level());
@@ -111,6 +116,7 @@ public class PerformanceService {
         return switch (kind) {
             case "ADD_ON" -> "加钟";
             case "REFUND" -> "退款回滚";
+            case "DESIGNATED" -> "指定加成";
             default -> "到店服务";
         };
     }

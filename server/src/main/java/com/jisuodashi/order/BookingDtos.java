@@ -20,7 +20,9 @@ public final class BookingDtos {
             @NotBlank(message = "projectId 不能为空") String projectId,
             @NotNull(message = "date 不能为空") LocalDate date,
             @NotNull(message = "startSlotNo 不能为空")
-            @Min(value = 0, message = "startSlotNo 无效") Integer startSlotNo
+            @Min(value = 0, message = "startSlotNo 无效") Integer startSlotNo,
+            /** 顾客点名这位技师（从技师详情进的日历）。缺省按非指定算。 */
+            Boolean designated
     ) {
     }
 

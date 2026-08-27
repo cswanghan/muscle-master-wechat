@@ -29,7 +29,8 @@ public class JdbcStaffBoardStore implements StaffBoardStore {
             rs.getLong("store_id"),
             rs.getObject("service_date", LocalDate.class),
             rs.getLong("customer_id"),
-            rs.getLong("therapist_id"));
+            rs.getLong("therapist_id"),
+            rs.getBoolean("designated"));
 
     private final JdbcTemplate jdbc;
 
@@ -43,7 +44,7 @@ public class JdbcStaffBoardStore implements StaffBoardStore {
                 """
                 SELECT id, order_no, hold_id, bed_id, room_id, status, lock_expire_at, payable_fen,
                        start_slot_no, end_slot_no, buffer_slots, add_on_hold_id, store_id,
-                       service_date, customer_id, therapist_id
+                       service_date, customer_id, therapist_id, designated
                   FROM booking_order
                  WHERE therapist_id = ? AND service_date = ?
                  ORDER BY start_slot_no, id

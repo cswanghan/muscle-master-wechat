@@ -50,6 +50,7 @@ Page({
       projectName: query.projectName || '',
       date: query.date || '',
       startSlotNo: Number(query.startSlotNo || 0),
+      designated: query.designated === '1' || query.designated === 1,
       start: query.start || '',
       priceFen: Number(query.priceFen || 0),
       priceYuan: fenYuan(query.priceFen || 0),
@@ -182,6 +183,7 @@ Page({
         projectId: this.data.projectId,
         date: this.data.date,
         startSlotNo: this.data.startSlotNo,
+        designated: this.data.designated,
       },
     }).then((data) => {
       this.applyOrder(data)

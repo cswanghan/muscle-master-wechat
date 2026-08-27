@@ -465,7 +465,8 @@ public class SlotOccupyService {
                     cmd.customerId(), cmd.storeId(), cmd.therapistId(), therapist.homeStoreId(),
                     chosen.id(), chosen.roomId(), ORDER_PENDING_PAY, cmd.source(),
                     cmd.date(), cmd.startSlotNo(), spec.endSlotNo(cmd.startSlotNo()), spec.bufferSlots(),
-                    payableFen, payableFen, expireAt, now));
+                    payableFen, payableFen, expireAt, now,
+                    cmd.designated()));
             store.insertOrderItem(new OrderItemInsert(
                     ids.getAsLong(), orderId, ITEM_PROJECT, project.id(), project.name(),
                     project.durationMinutes(), project.bufferMinutes(), 1,

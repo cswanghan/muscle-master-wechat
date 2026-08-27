@@ -211,7 +211,8 @@ public interface SlotOccupyStore extends DelayedJobStore {
             long storeId,
             LocalDate serviceDate,
             long customerId,
-            long therapistId
+            long therapistId,
+            boolean designated
     ) {
     }
 
@@ -238,7 +239,8 @@ public interface SlotOccupyStore extends DelayedJobStore {
             long originPriceFen,
             long payableFen,
             LocalDateTime lockExpireAt,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            boolean designated
     ) {
     }
 

@@ -98,7 +98,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE request_id = #{requestId}
             """)
@@ -259,13 +259,14 @@ public interface InventoryOccupyMapper {
     @Insert("""
             INSERT INTO booking_order
               (id, order_no, request_id, hold_id, add_on_hold_id, customer_id, store_id,
-               therapist_id, therapist_home_store_id, bed_id, room_id, status, source,
+               therapist_id, therapist_home_store_id, bed_id, room_id, status, source, designated,
                service_date, start_slot_no, end_slot_no, buffer_slots,
                origin_price_fen, payable_fen, paid_fen, lock_expire_at,
                version, created_at, updated_at)
             VALUES
               (#{id}, #{orderNo}, #{requestId}, #{holdId}, NULL, #{customerId}, #{storeId},
                #{therapistId}, #{therapistHomeStoreId}, #{bedId}, #{roomId}, #{status}, #{source},
+               #{designated},
                #{serviceDate}, #{startSlotNo}, #{endSlotNo}, #{bufferSlots},
                #{originPriceFen}, #{payableFen}, 0, #{lockExpireAt},
                0, #{createdAt}, #{createdAt})
@@ -336,7 +337,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE hold_id = #{holdId}
              LIMIT 1
@@ -348,7 +349,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE add_on_hold_id = #{holdId}
              LIMIT 1
@@ -360,7 +361,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE hold_id = #{holdId}
              LIMIT 1
@@ -373,7 +374,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE id = #{id}
              FOR UPDATE
@@ -385,7 +386,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE id = #{id}
             """)
@@ -396,7 +397,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE customer_id = #{customerId}
              ORDER BY id DESC
@@ -408,7 +409,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE order_no = #{orderNo}
              LIMIT 1
@@ -420,7 +421,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE customer_id = #{customerId}
              ORDER BY service_date DESC, start_slot_no ASC
@@ -432,7 +433,7 @@ public interface InventoryOccupyMapper {
                    status, lock_expire_at AS lockExpireAt, payable_fen AS payableFen,
                    start_slot_no AS startSlotNo, end_slot_no AS endSlotNo, buffer_slots AS bufferSlots,
                    add_on_hold_id AS addOnHoldId, store_id AS storeId, service_date AS serviceDate,
-                   customer_id AS customerId, therapist_id AS therapistId
+                   customer_id AS customerId, therapist_id AS therapistId, designated
               FROM booking_order
              WHERE therapist_id = #{therapistId}
                AND service_date BETWEEN #{from} AND #{to}

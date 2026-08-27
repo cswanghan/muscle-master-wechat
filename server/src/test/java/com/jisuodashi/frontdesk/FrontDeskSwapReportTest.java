@@ -135,7 +135,7 @@ class FrontDeskSwapReportTest {
 
         BookingOrderRef inSvcRef = new BookingOrderRef(
                 1L, "n", 1L, 1L, 1L, "IN_SERVICE", null, 0L, 78, 83, 1, null,
-                DemoCatalogIds.STORE, TODAY, 1L, DemoCatalogIds.THERAPIST_LIN);
+                DemoCatalogIds.STORE, TODAY, 1L, DemoCatalogIds.THERAPIST_LIN, false);
         int afterEnd = SlotOccupyService.remainFrom(inSvcRef, TODAY.atTime(21, 0));
         int nextMorning = SlotOccupyService.remainFrom(inSvcRef, TODAY.plusDays(1).atTime(8, 0));
         rows.add(row("OVERNIGHT", "跨日 / 结束后 fromNo=end，不回退到 start",

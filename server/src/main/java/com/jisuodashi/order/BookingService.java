@@ -60,7 +60,8 @@ public class BookingService {
                 parseId(req.projectId(), "projectId"),
                 req.date(),
                 req.startSlotNo(),
-                LockNewCommand.SOURCE_MINI_C));
+                LockNewCommand.SOURCE_MINI_C,
+                Boolean.TRUE.equals(req.designated())));
         Map<String, String> payParams = null;
         if (payments != null) {
             PaymentDtos.PayResponse prepay = payments.tryPrepayAfterLock(

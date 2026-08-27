@@ -203,6 +203,9 @@ Page({
         priceFen: s.priceFen,
         durationMinutes: this.data.durationMinutes,
         bufferMinutes: this.data.bufferMinutes,
+        // 带着 therapistId 进来 = 从技师页点过来的，就是"冲这个人来的"。
+        // 只选时段再由系统排人的路径没有这个参数，也就不算指定。
+        designated: this.data.therapistId ? 1 : '',
       }),
     })
   },

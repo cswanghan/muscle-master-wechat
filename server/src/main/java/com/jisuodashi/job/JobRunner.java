@@ -19,6 +19,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
+import com.jisuodashi.level.LevelDtos;
+import com.jisuodashi.level.LevelService;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -55,6 +57,9 @@ public class JobRunner {
     private final OrderStateMachine machine;
     private final TherapistStatService therapistStats;
 
+    /** 可空：等级模块是 P1 才加的，只跑排班/清算的用例不构造它。 */
+    private final LevelService levels;
+
     public JobRunner(
             SlotGenerateJob slotGenerateJob,
             SlotScanJob slotScanJob,
@@ -63,13 +68,15 @@ public class JobRunner {
             AppProperties properties,
             PlatformTransactionManager txManager,
             @Autowired(required = false) OrderStateMachine machine,
-            @Autowired(required = false) TherapistStatService therapistStats
+            @Autowired(required = false) TherapistStatService therapistStats,
+            @Autowired(required = false) LevelService levels
     ) {
         this(slotGenerateJob, slotScanJob, delayedJobs, clock,
                 "w" + properties.getSnowflake().getWorkerId(),
                 new TransactionTemplate(txManager),
                 machine,
-                therapistStats);
+                therapistStats,
+                levels);
     }
 
     public JobRunner(
@@ -80,7 +87,7 @@ public class JobRunner {
             String instanceId,
             TransactionTemplate tx
     ) {
-        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, null, null);
+        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, null, null, null);
     }
 
     /** 统计缺席的重载：排班/清算类用例只关心 drain，不需要背上评价统计。 */
@@ -93,9 +100,10 @@ public class JobRunner {
             TransactionTemplate tx,
             OrderStateMachine machine
     ) {
-        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, machine, null);
+        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx, machine, null, null);
     }
 
+    /** 等级模块缺席的重载：老用例只关心 drain 与统计。 */
     public JobRunner(
             SlotGenerateJob slotGenerateJob,
             SlotScanJob slotScanJob,
@@ -106,6 +114,21 @@ public class JobRunner {
             OrderStateMachine machine,
             TherapistStatService therapistStats
     ) {
+        this(slotGenerateJob, slotScanJob, delayedJobs, clock, instanceId, tx,
+                machine, therapistStats, null);
+    }
+
+    public JobRunner(
+            SlotGenerateJob slotGenerateJob,
+            SlotScanJob slotScanJob,
+            DelayedJobStore delayedJobs,
+            AppClock clock,
+            String instanceId,
+            TransactionTemplate tx,
+            OrderStateMachine machine,
+            TherapistStatService therapistStats,
+            LevelService levels
+    ) {
         this.slotGenerateJob = slotGenerateJob;
         this.slotScanJob = slotScanJob;
         this.delayedJobs = delayedJobs;
@@ -114,6 +137,7 @@ public class JobRunner {
         this.tx = tx;
         this.machine = machine;
         this.therapistStats = therapistStats;
+        this.levels = levels;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -134,6 +158,26 @@ public class JobRunner {
     @Scheduled(cron = "0 40 2 * * *", zone = "Asia/Shanghai")
     public void recomputeTherapistStatsAt0240Shanghai() {
         recomputeTherapistStats();
+    }
+
+    /**
+     * 等级达标扫描。排在 02:40 的统计重算之后：晋升读的是累计口径，
+     * 与 30 天统计不共用数据，但同一批评价写完再算，语义上更干净。
+     *
+     * <p>扫描只提名不改档 —— 一位技师一个目标档只留一条待确认，
+     * 所以天天跑也不会堆重复条目，admin 确认才真正生效。
+     */
+    @Scheduled(cron = "0 50 2 * * *", zone = "Asia/Shanghai")
+    public void scanTherapistLevelsAt0250Shanghai() {
+        if (levels == null) {
+            return;
+        }
+        try {
+            LevelDtos.ScanResponse r = levels.scan();
+            log.info("LevelScan scanned={} proposed={}", r.scanned(), r.proposed());
+        } catch (RuntimeException e) {
+            log.warn("LevelScan failed: {}", e.getMessage());
+        }
     }
 
     public int recomputeTherapistStats() {
