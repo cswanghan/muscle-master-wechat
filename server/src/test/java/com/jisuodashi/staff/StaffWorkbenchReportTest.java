@@ -344,7 +344,7 @@ class StaffWorkbenchReportTest {
                 </head>
                 <body>
                   <header>
-                    <h1>mini-staff T1 / T2 HTML preview</h1>
+                    <h1>员工端 T1 / T2 HTML preview</h1>
                     <p>WeChat 开发者工具未接入时的页面验收。最小字号 15px，主操作 48px tap target。orderId=__OID__</p>
                   </header>
                   <div class="wrap">

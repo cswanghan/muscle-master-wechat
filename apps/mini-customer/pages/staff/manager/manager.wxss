@@ -1,3 +1,5 @@
+/* 750rpx 设计宽 → 2rpx = 1px。正文最小 30rpx(15px)，主操作 96rpx(48px)。
+   ManagerBoardReportTest 把这两条做成静态门禁。 */
 .page {
   min-height: 100vh;
   padding-bottom: 140rpx;
@@ -28,7 +30,7 @@
   padding: 0 18rpx;
   border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.12);
-  font-size: 22rpx;
+  font-size: 30rpx;
 }
 
 .pill.ghost {
@@ -43,7 +45,7 @@
 }
 
 .rate-cap {
-  font-size: 22rpx;
+  font-size: 30rpx;
   color: #a8c0b6;
 }
 
@@ -81,7 +83,7 @@
 
 .remain {
   margin-top: 12rpx;
-  font-size: 22rpx;
+  font-size: 30rpx;
   color: #a8c0b6;
 }
 
@@ -106,7 +108,7 @@
 }
 
 .more {
-  font-size: 24rpx;
+  font-size: 30rpx;
   color: #8b948f;
 }
 
@@ -118,7 +120,7 @@
   background: #b3452f;
   color: #fff;
   border-radius: 999rpx;
-  font-size: 22rpx;
+  font-size: 30rpx;
   padding: 0 10rpx;
 }
 
@@ -148,12 +150,12 @@
 }
 
 .task-time {
-  font-size: 22rpx;
+  font-size: 30rpx;
   color: #8b948f;
 }
 
 .warn-tag {
-  font-size: 20rpx;
+  font-size: 30rpx;
   color: #a9752f;
   background: #faf1e4;
   padding: 4rpx 10rpx;
@@ -162,7 +164,7 @@
 
 .task-meta {
   margin-top: 8rpx;
-  font-size: 26rpx;
+  font-size: 32rpx;
   color: #7d8b85;
 }
 
@@ -174,12 +176,14 @@
 
 .btn {
   min-width: 120rpx;
-  height: 72rpx;
-  line-height: 72rpx;
+  height: 96rpx;
+  min-width: 96rpx;
+  min-height: 96rpx;
+  line-height: 96rpx;
   padding: 0 24rpx;
   background: #1e5c4a;
   color: #f4f1ea;
-  font-size: 28rpx;
+  font-size: 34rpx;
   border-radius: 999rpx;
   text-align: center;
 }
@@ -195,10 +199,11 @@
 }
 
 .tag {
-  min-height: 72rpx;
-  line-height: 72rpx;
+  min-height: 96rpx;
+  min-width: 96rpx;
+  line-height: 96rpx;
   padding: 0 24rpx;
-  font-size: 28rpx;
+  font-size: 34rpx;
   color: #7d8b85;
 }
 
@@ -211,7 +216,7 @@
 
 .store-name {
   width: 180rpx;
-  font-size: 28rpx;
+  font-size: 34rpx;
 }
 
 .store-bar {
@@ -242,7 +247,7 @@
 .store-rate {
   width: 80rpx;
   text-align: right;
-  font-size: 26rpx;
+  font-size: 32rpx;
   font-family: ui-monospace, Menlo, monospace;
 }
 
@@ -251,7 +256,7 @@
   padding: 16rpx;
   background: #e8f1ed;
   color: #1e5c4a;
-  font-size: 28rpx;
+  font-size: 34rpx;
   border-radius: 12rpx;
 }
 
@@ -260,7 +265,7 @@
   padding: 16rpx;
   background: #fdecea;
   color: #8a2418;
-  font-size: 28rpx;
+  font-size: 34rpx;
   border-radius: 12rpx;
 }
 

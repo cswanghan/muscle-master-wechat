@@ -13,7 +13,7 @@
 | 端 | AppID | 备注 | 到位日 |
 | --- | --- | --- | --- |
 | C 端 `apps/mini-customer` | `wxf848c067f5807a75` | 正式号；Secret 只放本机 `.env.local` | 2026-08-15 |
-| 员工端 `apps/mini-staff`（技师 / 前台 / 店长） | | 独立 AppID，不可与 C 端共用 | |
+| 员工端（技师 / 前台 / 店长） | 同 C 端 | 已并入顾客端小程序 `pages/staff/*`，共用一个 AppID | 2026-08-16 |
 
 - [ ] C 端 AppID 已写入构建配置
 - [ ] 员工端 AppID 已写入构建配置
@@ -120,60 +120,27 @@ cd apps/admin-web && wxcloud run:deploy . -e <ENV_ID> -s muscle-admin \
 
 ## 服务器域名（小程序后台）
 
-只有 `transport: 'request'` 才需要这一节。两个小程序的 `config.js` 里 `apiBase` 指向 `<API_HOST>`；
-员工端没有 callContainer 可用（还没有自己的 AppID），仍走 `wx.request`。
+只有 `transport: 'request'` 才需要这一节。当前默认是 `container`，不配也能跑。
+员工端已并入同一个小程序，所以只有一份 `config.js` 要管。
 配置位置：MP 后台「开发管理 → 开发设置 → 服务器域名」，开发者工具里可临时勾「不校验合法域名」跳过。
 
-| 类型 | C 端 | 员工端 |
-| --- | --- | --- |
-| request 合法域名 | [ ] `<API_HOST>` 的域名部分 | [ ] 同左 |
-| uploadFile | P0 可不配 | [ ] 头像/封面如走 OSS |
-| downloadFile | [ ] | [ ] |
+| 类型 | 是否必须 |
+| --- | --- |
+| request 合法域名 | 仅 `transport: 'request'` 时需要 `<API_HOST>` 的域名部分 |
+| uploadFile | P0 可不配 |
+| downloadFile | P0 可不配 |
 
 ## 员工端已并入顾客端（2026-08-16）
 
 一个小程序按角色分流，不再需要第二个 AppID。员工页面在
 `apps/mini-customer/pages/staff/`，入口在「我的」页连点版本号 5 次，不进 tabBar。
 好处是员工端也能走 callContainer（同 AppID），免配 request 合法域名。
-`apps/mini-staff/` 保留为将来拆分的起点，不再维护、不会上传。
+`apps/mini-staff/` 已于 2026-08-27 删除——它和 `pages/staff/*` 并存时改错目录的风险，
+比留个「将来拆分的起点」更实在。真要拆分时从 git 历史取回即可。
 
 **主包体积要盯着**：合并后 1.8 MB，上限 2 MB，余量约 150 KB。图片占 1.7 MB，
 `images/goods/*.jpg` 三张就 580 KB。再加内容前先压图，或者把员工端做成分包
 （`subPackages`），主包只留顾客端。
-
-下面这节是历史记录，说明当初为什么不走"独立员工端小程序"这条路。
-
-## 员工端独立上传（已放弃）
-
-`apps/mini-staff/project.config.json` 的 `appid` 还是 `touristappid`，上传直接被拒：
-
-```
-Error: AppID 不合法, invalid appid (code 10)
-```
-
-游客号只能在开发者工具里跑，不能预览、不能上传、不能设体验版。**必须注册第二个小程序**，
-员工端和顾客端是两个独立小程序，不能共用一个 AppID。
-
-拿到 AppID 之后：
-
-1. 填进 `apps/mini-staff/project.config.json` 的 `appid`
-2. `wxcloud`/开发者工具 CLI 上传：
-   `cli upload --project apps/mini-staff -v 0.1.0 -d "员工端首个体验版"`
-3. **必须在员工端自己的 MP 后台配 request 合法域名**（见下）
-
-### 员工端为什么用不了 callContainer
-
-`wx.cloud.callContainer` 要求小程序和云托管服务在**同一 AppID** 下，而服务开在顾客端
-`wxf848c067f5807a75` 的环境里。员工端换了 AppID 就走不了这条路，只能 `wx.request` 打
-`apiBase`，因此那个域名必须登记进员工端的 request 合法域名，否则一样是 `url not in domain list`。
-
-要让员工端也免配域名，就得在员工端 AppID 下另开一个云托管环境部署同一个镜像——但两个环境
-各自一份 H2 内存库，数据不互通，等于两套系统。除非先切到共享的 MySQL，否则不要这么做。
-
-### 演示等不及的话
-
-H5 版 `<ADMIN_HOST>/phone/` 里技师端和店长端都在，功能一致，随时能发。
-注册小程序要过主体和类目审核，别把演示排期压在它上面。
 
 ## 体验版发布
 
@@ -191,6 +158,14 @@ H5 版 `<ADMIN_HOST>/phone/` 里技师端和店长端都在，功能一致，随
 | 0.6.0 | 2026-08-16 | 401 自动重登重试，清掉 0.4.0 前遗留的 `mock-token` |
 | 0.7.0 | 2026-08-16 | 日历改用真实今天（原来写死 08-15）；约满不再假填时段 |
 | 0.8.0 | 2026-08-16 | 员工端并入，一个小程序多角色；员工端也走 callContainer |
+| 0.9.0 | 2026-08-16 | 技师端可选三位技师身份（原来写死林晓） |
+| 0.10.0 | 2026-08-16 | 员工端首页技师列表改为动态拉取 |
+| 0.11.0 | 2026-08-16 | 修员工端样式被 C 端 `.ico` 覆盖（底部图标全空白） |
+| 0.12.0 | 2026-08-16 | 排班页按 M2 设计稿重写：横向时间条 + 日期切换 + 今晚空档 |
+| 0.13.0 | 2026-08-16 | 首页不再用假门店顶替失败；两家门店可见 |
+| 0.14.0 | 2026-08-16 | 修到店时间显示成 `15%3A00` |
+| 0.15.0 | 2026-08-16 | 评价功能 + ¥688 SKU（可触发退款审批） |
+| 0.16.0 | 2026-08-27 | 合并评价体系与技师 30 天统计；排班锚点跟随时钟 |
 
 JWT 只有 2 小时（`app.jwt.customer-ttl`），演示跨了午休回来就会过期。
 0.6.0 起遇到 401 会自动重新登录并重放那次请求，不用手工清缓存。
@@ -223,13 +198,13 @@ request:fail url not in domain list
 | 技师 | 10 位（401–410，前三位仍是林晓/陈默/周可） | 10 位（421–430） |
 | 床位 | 10 张（201–210） | 10 张（211–220） |
 | 技师登录 code | `dev-staff-t1` … `dev-staff-t10` | `dev-staff-e1` … `dev-staff-e10` |
-| C 端可见 | 是 | **否**，`gray.store-ids` 只放开一号店 |
+| C 端可见 | 是 | 是（`gray.store-ids` 已放开两店） |
 
 **床位数必须跟技师数一起改**：床位是并发上限，10 位技师配 2 张床的话，
 排班看着全是空档，第三单就 `40902 无空闲床位`。
 
-二号店是灰度机制的测试夹具（`GrayApiTest` 验证非灰度门店必须不可见），
-不要为了让它显示而往 `gray.store-ids` 里加——那会拆掉那三个测试。
+灰度夹具是**第三家店** `DEMO03 未开放门店`（`…003`），它永远不在 `gray.store-ids` 里，
+`GrayApiTest` 靠它验证「非灰度门店必须不可见」。别把它加进灰度，那会拆掉那三个测试。
 
 已知既有行为：`/api/v1/c/therapists` **不带 `storeId` 时不按门店过滤**，
 所以二号店的技师会出现在该列表里（DTO 含 `homeStoreId`）。带 `storeId` 查询则正常过滤。

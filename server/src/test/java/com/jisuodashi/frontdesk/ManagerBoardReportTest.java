@@ -47,7 +47,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * §1 店长 M1：完整满班率（全日 + byHour）+ 待办（请假 / ≥¥500 退款 / 异常单 / 人工队列）。
- * 走真实 HTTP，并顺带把 mini-staff 店长页的 15px / 48px 与语义化 key 做静态门禁。
+ * 走真实 HTTP，并顺带把店长页的 15px / 48px 与语义化 key 做静态门禁。
+ * 页面已并入顾客端小程序（pages/staff/manager），门禁跟着实际发布的那份走。
  */
 @DevApiTest
 class ManagerBoardReportTest {
@@ -190,8 +191,8 @@ class ManagerBoardReportTest {
         rows.add(row("QUEUE", "处理完队列清空，店长台回到 0 待办",
                 left.isEmpty(), "open=" + left.size() + " refundOrder=" + refundOrderId));
 
-        // ---- mini-staff 静态门禁 ----
-        Path page = resolveRepoRoot().resolve("apps/mini-staff/pages/manager");
+        // ---- 店长页静态门禁 ----
+        Path page = resolveRepoRoot().resolve("apps/mini-customer/pages/staff/manager");
         String wxss = Files.readString(page.resolve("manager.wxss"), StandardCharsets.UTF_8);
         String js = Files.readString(page.resolve("manager.js"), StandardCharsets.UTF_8);
         String wxml = Files.readString(page.resolve("manager.wxml"), StandardCharsets.UTF_8);
@@ -579,7 +580,7 @@ class ManagerBoardReportTest {
                 </head>
                 <body>
                   <header>
-                    <h1>mini-staff 店长台 M1 HTML preview</h1>
+                    <h1>店长台 M1 HTML preview</h1>
                     <p>WeChat 开发者工具未接入时的页面验收。最小字号 15px，主操作 48px tap target。</p>
                   </header>
                   <div class="wrap">

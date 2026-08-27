@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#F4F2EE; -webkit-font-smoothing:antialiased; }
+  a { color:#1E5C4A; text-decoration:none; }
+  a:hover { color:#C0803A; }
+</style>
+</helmet>
+
+<div style="display:flex;flex-direction:column;gap:88px;padding:72px 80px 120px;background:#F4F2EE;font-family:'Noto Sans SC','PingFang SC',sans-serif;color:#17211D;width:max-content">
+
+  <div style="display:flex;flex-direction:column;gap:32px;max-width:980px">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="width:52px;height:52px;border-radius:50%;background:#1E5C4A;display:flex;align-items:center;justify-content:center;color:#fff;font:600 22px/1 'Noto Serif SC',serif">松</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font:700 15px/1 'Noto Sans SC',sans-serif;letter-spacing:.18em;color:#1E5C4A">肌松大师</div>
+        <div style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">JISONG · 对症推拿连锁</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <h1 style="margin:0;font:600 46px/1.25 'Noto Serif SC',serif;letter-spacing:-.01em">肌松大师小程序 · 三端设计方案</h1>
+      <p style="margin:0;font:400 17px/1.8 'Noto Sans SC',sans-serif;color:#4A544F;max-width:760px;text-wrap:pretty">覆盖客户端小程序、技师端与管理后台。设计围绕一个指标展开：<strong style="font-weight:700;color:#17211D">满班率</strong>。技师工时不可库存，空一小时即永久损失，因此每一屏的信息层级都以「让 slot 卖掉、让 slot 不出错」为排序依据。</p>
+    </div>
+    <div style="display:flex;gap:48px;padding-top:8px;border-top:1px solid #E7E3DC">
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px"><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">版本</span><span style="font:500 15px/1 'Noto Sans SC',sans-serif">v1.0</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px"><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">日期</span><span style="font:500 15px/1 'Noto Sans SC',sans-serif">2026-08-13</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px"><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">端</span><span style="font:500 15px/1 'Noto Sans SC',sans-serif">客户端 · 技师端 · 管理后台</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px"><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">屏数</span><span style="font:500 15px/1 'Noto Sans SC',sans-serif">17</span></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:28px">
+    <div style="display:flex;align-items:baseline;gap:14px">
+      <span style="font:400 13px/1 ui-monospace,monospace;color:#C0803A">00</span>
+      <h2 style="margin:0;font:600 28px/1.3 'Noto Serif SC',serif">设计基础</h2>
+    </div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div style="background:#fff;border-radius:16px;padding:28px;width:520px;display:flex;flex-direction:column;gap:20px;border:1px solid #E7E3DC">
+        <div style="font:500 13px/1 'Noto Sans SC',sans-serif;letter-spacing:.1em;color:#8B948F">色彩</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:#1E5C4A"></div><span style="font:500 12px/1.4 'Noto Sans SC',sans-serif">玉墨 主色</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">#1E5C4A</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:#143F34"></div><span style="font:500 12px/1.4 'Noto Sans SC',sans-serif">深玉 按压</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">#143F34</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:#C0803A"></div><span style="font:500 12px/1.4 'Noto Sans SC',sans-serif">暖铜 价格</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">#C0803A</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:#17211D"></div><span style="font:500 12px/1.4 'Noto Sans SC',sans-serif">墨 文字</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">#17211D</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:#E8F0EC"></div><span style="font:500 12px/1.4 'Noto Sans SC',sans-serif">玉底 可选</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">#E8F0EC</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:#F4F2EE;border:1px solid #E7E3DC"></div><span style="font:500 12px/1.4 'Noto Sans SC',sans-serif">砂 背景</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">#F4F2EE</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:#B3452F"></div><span style="font:500 12px/1.4 'Noto Sans SC',sans-serif">警示 异常</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">#B3452F</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:#8B948F"></div><span style="font:500 12px/1.4 'Noto Sans SC',sans-serif">灰 次要</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">#8B948F</span></div>
+        </div>
+        <p style="margin:0;font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">全端只用一个主色。状态色固定语义：空闲=玉底、锁定中=暖铜、已预约=玉墨实心、异常=警示。技师端与前台大屏的状态色不允许自定义。</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:28px;width:420px;display:flex;flex-direction:column;gap:20px;border:1px solid #E7E3DC">
+        <div style="font:500 13px/1 'Noto Sans SC',sans-serif;letter-spacing:.1em;color:#8B948F">字体</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font:600 30px/1.2 'Noto Serif SC',serif">头颈肩痛调理</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">Noto Serif SC 600 · 标题 / 品牌</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font:400 16px/1.6 'Noto Sans SC',sans-serif">60 分钟 · 郑世明 · 3 号房</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">Noto Sans SC 400 / 500 · 正文</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font:400 15px/1 ui-monospace,monospace">19:30–20:30 ¥199</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">等宽 · 时间 / 金额 / 编号</span></div>
+        </div>
+        <p style="margin:0;font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">时间与金额一律等宽对齐，技师端最小字号 15px、点击热区 ≥ 48px（含视障从业者适配）。</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:28px;width:380px;display:flex;flex-direction:column;gap:18px;border:1px solid #E7E3DC">
+        <div style="font:500 13px/1 'Noto Sans SC',sans-serif;letter-spacing:.1em;color:#8B948F">组件</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div style="background:#1E5C4A;color:#fff;border-radius:999px;padding:11px 22px;font:500 14px/1 'Noto Sans SC',sans-serif">立即预约</div>
+          <div style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:10px 20px;font:500 14px/1 'Noto Sans SC',sans-serif">改约</div>
+          <div style="background:#F4F2EE;color:#8B948F;border-radius:999px;padding:11px 22px;font:500 14px/1 'Noto Sans SC',sans-serif">已约满</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="background:#E8F0EC;color:#1E5C4A;border-radius:6px;padding:5px 10px;font:500 12px/1 'Noto Sans SC',sans-serif">头颈肩痛</span>
+          <span style="background:#E8F0EC;color:#1E5C4A;border-radius:6px;padding:5px 10px;font:500 12px/1 'Noto Sans SC',sans-serif">睡眠调理</span>
+          <span style="border:1px solid #C0803A;color:#C0803A;border-radius:6px;padding:4px 9px;font:500 12px/1 'Noto Sans SC',sans-serif">9.5折</span>
+          <span style="border:1px solid #E7E3DC;color:#8B948F;border-radius:6px;padding:4px 9px;font:500 12px/1 'Noto Sans SC',sans-serif">就近</span>
+          <span style="background:#B3452F;color:#fff;border-radius:6px;padding:5px 10px;font:500 12px/1 'Noto Sans SC',sans-serif">异常单</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:40px;height:28px;border-radius:6px;background:#E8F0EC;border:1px solid #CFE0D7;display:flex;align-items:center;justify-content:center;font:400 11px/1 ui-monospace,monospace;color:#1E5C4A">空</div>
+          <div style="width:40px;height:28px;border-radius:6px;background:#FAF1E4;border:1px solid #E8D3B2;display:flex;align-items:center;justify-content:center;font:400 11px/1 ui-monospace,monospace;color:#A9752F">锁</div>
+          <div style="width:40px;height:28px;border-radius:6px;background:#1E5C4A;display:flex;align-items:center;justify-content:center;font:400 11px/1 ui-monospace,monospace;color:#fff">约</div>
+          <div style="width:40px;height:28px;border-radius:6px;background:#F4F2EE;border:1px dashed #C9CFCB;display:flex;align-items:center;justify-content:center;font:400 11px/1 ui-monospace,monospace;color:#8B948F">休</div>
+          <span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">slot = 15 分钟</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:32px">
+    <div style="display:flex;align-items:baseline;gap:14px">
+      <span style="font:400 13px/1 ui-monospace,monospace;color:#C0803A">01</span>
+      <h2 style="margin:0;font:600 28px/1.3 'Noto Serif SC',serif">客户端小程序</h2>
+      <span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#8B948F">微信原生 · 7 屏</span>
+    </div>
+    <p style="margin:0;font:400 15px/1.8 'Noto Sans SC',sans-serif;color:#4A544F;max-width:820px">首页把同一份「技师×时段」库存切成三个入口：症状、门店、技师。用户从哪个入口进都能落到同一张选时段表，减少中途流失。特惠卡片是空档甩卖位，精确到单个 slot。</p>
+
+    <div style="display:flex;gap:32px;flex-wrap:wrap">
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">C1 预约首页</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">pages/booking/index</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:46</span><span style="display:flex;align-items:center;gap:4px"><span style="font:500 10px/1 ui-monospace,monospace;color:#8B948F">5G</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></span></div>
+          <div style="display:flex;align-items:center;justify-content:flex-end;padding:6px 14px 8px">
+            <span style="width:78px;height:30px;border-radius:999px;background:#fff;border:1px solid #E7E3DC;display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #17211D"></span></span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:2px 12px 0">
+            <div style="font:600 21px/1.3 'Noto Serif SC',serif;color:#1E5C4A;padding:0 4px 2px">疲劳酸痛，到肌松大师</div>
+            <div style="background:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+              <span style="width:15px;height:15px;border-radius:50%;border:1.6px solid #8B948F"></span>
+              <span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#8B948F">说说哪里不舒服，为你找师傅</span>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font:600 16px/1 'Noto Serif SC',serif">特惠预约</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">更多活动 ›</span></div>
+              <div style="display:flex;gap:12px">
+                <div style="width:74px;height:88px;border-radius:10px;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;flex:none"><span style="font:400 9px/1 ui-monospace,monospace;color:#9AA39E">技师照</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+                    <span style="font:600 15px/1.3 'Noto Sans SC',sans-serif">头颈肩痛 60 分钟</span>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;flex:none">
+                      <span style="font:700 17px/1 ui-monospace,monospace;color:#C0803A">¥199</span>
+                      <span style="font:400 11px/1.6 ui-monospace,monospace;color:#B6BDB8;text-decoration:line-through">209</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#4A544F">郑世明</span><span style="width:1px;height:10px;background:#E7E3DC"></span><span style="font:400 12px/1 ui-monospace,monospace;color:#4A544F">今天 19:30–20:30</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">4.0km</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">· 西溪天街店</span></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                    <span style="border:1px solid #C0803A;color:#C0803A;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">9.5折 · 仅此1档</span>
+                    <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:9px 18px;font:500 13px/1 'Noto Sans SC',sans-serif">立即抢约</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">门店预约</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">更多门店 ›</span></div>
+              <div style="display:flex;gap:12px;align-items:center">
+                <div style="width:88px;height:64px;border-radius:8px;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;flex:none"><span style="font:400 9px/1 ui-monospace,monospace;color:#9AA39E">门店实拍</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:5px;min-width:0">
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 15px/1 'Noto Sans SC',sans-serif">龙湖西溪天街店</span><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">4.0km</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">10:00–22:00</span><span style="border:1px solid #E7E3DC;color:#8B948F;border-radius:5px;padding:2px 6px;font:500 10px/1 'Noto Sans SC',sans-serif">就近</span></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">今晚余 6 档</span><span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:5px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">预约</span></div>
+                </div>
+              </div>
+              <div style="height:1px;background:#F0EDE7"></div>
+              <div style="display:flex;gap:12px;align-items:center">
+                <div style="width:88px;height:64px;border-radius:8px;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;flex:none"><span style="font:400 9px/1 ui-monospace,monospace;color:#9AA39E">门店实拍</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:5px;min-width:0">
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 15px/1 'Noto Sans SC',sans-serif">城西银泰店</span><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">7.3km</span></div>
+                  <div style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">10:00–22:00</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">今晚已满 · 可约明天</span><span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:5px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">预约</span></div>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">推拿师预约</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">按症状找 ›</span></div>
+              <div style="display:flex;gap:12px;align-items:center">
+                <div style="width:52px;height:52px;border-radius:50%;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);flex:none"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font:600 15px/1 'Noto Sans SC',sans-serif">胡泽侠</span><span style="background:#E8F0EC;color:#1E5C4A;border-radius:4px;padding:2px 6px;font:500 10px/1 'Noto Sans SC',sans-serif">高级技师</span><span style="font:400 12px/1 ui-monospace,monospace;color:#C0803A">4.9</span></div>
+                  <div style="display:flex;gap:6px"><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">头颈肩痛</span><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">睡眠调理</span></div>
+                </div>
+                <span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:6px 14px;font:500 12px/1 'Noto Sans SC',sans-serif;flex:none">预约</span>
+              </div>
+              <div style="height:1px;background:#F0EDE7"></div>
+              <div style="display:flex;gap:12px;align-items:center">
+                <div style="width:52px;height:52px;border-radius:50%;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);flex:none"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font:600 15px/1 'Noto Sans SC',sans-serif">束兴业</span><span style="background:#E8F0EC;color:#1E5C4A;border-radius:4px;padding:2px 6px;font:500 10px/1 'Noto Sans SC',sans-serif">资深技师</span><span style="font:400 12px/1 ui-monospace,monospace;color:#C0803A">4.8</span></div>
+                  <div style="display:flex;gap:6px"><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">腰酸背痛</span><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">久坐劳损</span></div>
+                </div>
+                <span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:6px 14px;font:500 12px/1 'Noto Sans SC',sans-serif;flex:none">预约</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;background:#fff;border-top:1px solid #EDEAE4;padding:9px 0 22px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E5C4A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"></rect><path d="M4 9.5h16"></path><path d="M8 3v3M16 3v3"></path><path d="M8.5 13.2l1.6 1.6 3.4-3.6"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">预约</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="1.5"></rect><path d="M4 12.5h16"></path><path d="M12 9v11"></path><path d="M12 9c-1.4-3.6-6.4-3.6-6.4-.5C5.6 10.5 8 9 12 9zm0 0c1.4-3.6 6.4-3.6 6.4-.5 0 1-2.4-.5-6.4-.5z"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">好礼</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.3"></circle><path d="M5.5 20c.8-3.6 3.8-5.6 6.5-5.6s5.7 2 6.5 5.6"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">我的</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">C2 症状路由</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">pages/symptom/list</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:46</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:#fff">
+            <span style="font:400 20px/1 'Noto Sans SC',sans-serif;color:#17211D">‹</span>
+            <span style="font:500 16px/1 'Noto Sans SC',sans-serif">找准症状</span>
+            <span style="width:78px;height:30px;border-radius:999px;background:#F8F7F4;border:1px solid #E7E3DC;display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #17211D"></span></span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:12px">
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="font:600 16px/1 'Noto Serif SC',serif">按部位选</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+                <div style="background:#1E5C4A;border-radius:10px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:7px"><span style="width:22px;height:22px;border-radius:6px;border:1.6px solid rgba(255,255,255,.7)"></span><span style="font:500 11px/1.3 'Noto Sans SC',sans-serif;color:#fff;text-align:center">头颈肩</span></div>
+                <div style="background:#F8F7F4;border-radius:10px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:7px"><span style="width:22px;height:22px;border-radius:6px;border:1.6px solid #B6BDB8"></span><span style="font:500 11px/1.3 'Noto Sans SC',sans-serif;color:#4A544F;text-align:center">腰背</span></div>
+                <div style="background:#F8F7F4;border-radius:10px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:7px"><span style="width:22px;height:22px;border-radius:6px;border:1.6px solid #B6BDB8"></span><span style="font:500 11px/1.3 'Noto Sans SC',sans-serif;color:#4A544F;text-align:center">手臂</span></div>
+                <div style="background:#F8F7F4;border-radius:10px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:7px"><span style="width:22px;height:22px;border-radius:6px;border:1.6px solid #B6BDB8"></span><span style="font:500 11px/1.3 'Noto Sans SC',sans-serif;color:#4A544F;text-align:center">腿足</span></div>
+              </div>
+              <div style="font:600 16px/1 'Noto Serif SC',serif;padding-top:2px">按不适选</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <span style="background:#E8F0EC;color:#1E5C4A;border-radius:8px;padding:9px 13px;font:500 13px/1 'Noto Sans SC',sans-serif">久坐僵硬</span>
+                <span style="background:#F8F7F4;color:#4A544F;border-radius:8px;padding:9px 13px;font:500 13px/1 'Noto Sans SC',sans-serif">睡不好</span>
+                <span style="background:#F8F7F4;color:#4A544F;border-radius:8px;padding:9px 13px;font:500 13px/1 'Noto Sans SC',sans-serif">腰酸背痛</span>
+                <span style="background:#F8F7F4;color:#4A544F;border-radius:8px;padding:9px 13px;font:500 13px/1 'Noto Sans SC',sans-serif">肩周僵硬</span>
+                <span style="background:#F8F7F4;color:#4A544F;border-radius:8px;padding:9px 13px;font:500 13px/1 'Noto Sans SC',sans-serif">头痛头晕</span>
+                <span style="background:#F8F7F4;color:#4A544F;border-radius:8px;padding:9px 13px;font:500 13px/1 'Noto Sans SC',sans-serif">产后调理</span>
+                <span style="background:#F8F7F4;color:#4A544F;border-radius:8px;padding:9px 13px;font:500 13px/1 'Noto Sans SC',sans-serif">足底疲劳</span>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">头颈肩 · 推荐项目</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">3 项</span></div>
+              <div style="border:1px solid #1E5C4A;border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                  <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 16px/1 'Noto Sans SC',sans-serif">头颈肩痛调理</span><span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">60 分钟 · 含颈椎评估 · 12 位技师可承接</span></div>
+                  <span style="font:700 19px/1 ui-monospace,monospace;color:#C0803A;flex:none">¥209</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">今晚 19:30 起可约</span>
+                  <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:8px 18px;font:500 13px/1 'Noto Sans SC',sans-serif">选技师</span>
+                </div>
+              </div>
+              <div style="border:1px solid #EDEAE4;border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                  <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 16px/1 'Noto Sans SC',sans-serif">肩颈通络 90 分钟</span><span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">90 分钟 · 深层放松 · 限资深及以上</span></div>
+                  <span style="font:700 19px/1 ui-monospace,monospace;color:#C0803A;flex:none">¥299</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">今日约满 · 明天 10:00 起</span>
+                  <span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:7px 17px;font:500 13px/1 'Noto Sans SC',sans-serif">选技师</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#FAF1E4;border-radius:14px;padding:13px 14px;display:flex;gap:10px;align-items:flex-start">
+              <span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #C0803A;flex:none;margin-top:1px"></span>
+              <span style="font:400 12px/1.7 'Noto Sans SC',sans-serif;color:#8A5F24">选不准可先填写不适描述，到店由技师面诊后调整项目，差价按实际项目结算。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">C3 技师详情 · 选时段</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">pages/therapist/detail</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:46</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:#fff">
+            <span style="font:400 20px/1 'Noto Sans SC',sans-serif;color:#17211D">‹</span>
+            <span style="font:500 16px/1 'Noto Sans SC',sans-serif">郑世明</span>
+            <span style="width:78px;height:30px;border-radius:999px;background:#F8F7F4;border:1px solid #E7E3DC;display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #17211D"></span></span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:10px 12px 0">
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;gap:14px">
+              <div style="width:76px;height:76px;border-radius:50%;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);flex:none"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:7px;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 19px/1 'Noto Serif SC',serif">郑世明</span><span style="background:#1E5C4A;color:#fff;border-radius:4px;padding:3px 7px;font:500 10px/1 'Noto Sans SC',sans-serif">资深技师</span></div>
+                <div style="display:flex;align-items:center;gap:12px"><span style="font:700 14px/1 ui-monospace,monospace;color:#C0803A">4.9 分</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">服务 1,204 次</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">从业 8 年</span></div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap"><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">头颈肩痛</span><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">睡眠调理</span><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">力度偏重</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">选择时间</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">头颈肩痛调理 60 分钟</span></div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;background:#1E5C4A;border-radius:10px;padding:9px 0;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#fff">今天</span><span style="font:400 10px/1 ui-monospace,monospace;color:rgba(255,255,255,.75)">余 3</span></div>
+                <div style="flex:1;background:#F8F7F4;border-radius:10px;padding:9px 0;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#4A544F">明天</span><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">余 11</span></div>
+                <div style="flex:1;background:#F8F7F4;border-radius:10px;padding:9px 0;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#4A544F">周五</span><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">余 14</span></div>
+                <div style="flex:1;background:#F8F7F4;border-radius:10px;padding:9px 0;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#4A544F">周六</span><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">余 6</span></div>
+                <div style="flex:1;background:#F8F7F4;border-radius:10px;padding:9px 0;display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#4A544F">周日</span><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">余 9</span></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">
+                <div style="background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#B6BDB8">10:00</div>
+                <div style="background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#B6BDB8">11:00</div>
+                <div style="background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#B6BDB8">13:30</div>
+                <div style="background:#E8F0EC;border:1px solid #CFE0D7;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#1E5C4A">15:00</div>
+                <div style="background:#E8F0EC;border:1px solid #CFE0D7;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#1E5C4A">16:00</div>
+                <div style="background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#B6BDB8">17:15</div>
+                <div style="background:#FAF1E4;border:1px solid #E8D3B2;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#A9752F">18:30</div>
+                <div style="background:#1E5C4A;border:1px solid #1E5C4A;border-radius:8px;padding:10px 0;text-align:center;font:500 13px/1 ui-monospace,monospace;color:#fff">19:30</div>
+                <div style="background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#B6BDB8">20:45</div>
+                <div style="background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:8px;padding:10px 0;text-align:center;font:400 13px/1 ui-monospace,monospace;color:#B6BDB8">21:00</div>
+              </div>
+              <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:2px">
+                <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:3px;background:#E8F0EC;border:1px solid #CFE0D7"></span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">可约</span></span>
+                <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:3px;background:#FAF1E4;border:1px solid #E8D3B2"></span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">他人锁定中</span></span>
+                <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:3px;background:#1E5C4A"></span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">已选</span></span>
+                <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:3px;background:#F4F2EE;border:1px dashed #D8DCD8"></span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">不可约</span></span>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">评价 128 条</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">全部 ›</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif">王**</span><span style="font:400 12px/1 ui-monospace,monospace;color:#C0803A">5.0</span><span style="font:400 11px/1 ui-monospace,monospace;color:#B6BDB8">08-09</span></div>
+                <p style="margin:0;font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">颈椎问题找他第三次了，力度沟通很到位，会记得上次的酸点。</p>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border-top:1px solid #EDEAE4;padding:12px 16px 22px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+              <span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">今天 19:30–20:30 · 60 分钟</span>
+              <span style="font:700 21px/1 ui-monospace,monospace;color:#C0803A">¥199 <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">已含 9.5 折</span></span>
+            </div>
+            <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:14px 30px;font:500 15px/1 'Noto Sans SC',sans-serif;flex:none">去下单</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">C4 确认下单 · 支付</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">pages/order/confirm</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:47</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:#fff">
+            <span style="font:400 20px/1 'Noto Sans SC',sans-serif;color:#17211D">‹</span>
+            <span style="font:500 16px/1 'Noto Sans SC',sans-serif">确认预约</span>
+            <span style="width:78px;height:30px;border-radius:999px;background:#F8F7F4;border:1px solid #E7E3DC;display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #17211D"></span></span>
+          </div>
+          <div style="background:#FAF1E4;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8A5F24">时段已为你锁定，请在</span>
+            <span style="font:700 13px/1 ui-monospace,monospace;color:#8A5F24">14:52 内完成支付</span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:10px 12px 0">
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;gap:12px;align-items:center">
+                <div style="width:56px;height:56px;border-radius:50%;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);flex:none"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                  <span style="font:600 16px/1 'Noto Sans SC',sans-serif">头颈肩痛调理 60 分钟</span>
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">郑世明 · 资深技师 · 指定加成 ¥0</span>
+                </div>
+              </div>
+              <div style="height:1px;background:#F0EDE7"></div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">到店时间</span><span style="font:500 13px/1 ui-monospace,monospace">08-13 今天 19:30</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">门店</span><span style="font:500 13px/1 'Noto Sans SC',sans-serif">龙湖西溪天街店</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">房间</span><span style="font:500 13px/1 'Noto Sans SC',sans-serif">到店由前台分配</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">主诉备注</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">填写 ›</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="font:600 16px/1 'Noto Serif SC',serif">优惠</div>
+              <div style="border:1px solid #1E5C4A;border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:10px">
+                <span style="width:17px;height:17px;border-radius:50%;background:#1E5C4A;display:flex;align-items:center;justify-content:center;color:#fff;font:400 10px/1 sans-serif;flex:none">✓</span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif">新客体验券 ¥20</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">周一至周五 10:00–17:00 可用</span></div>
+                <span style="font:700 15px/1 ui-monospace,monospace;color:#C0803A;flex:none">-20</span>
+              </div>
+              <div style="border:1px solid #EDEAE4;border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:10px;background:#FBFAF8">
+                <span style="width:17px;height:17px;border-radius:50%;border:1.5px solid #D8DCD8;flex:none"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif;color:#B6BDB8">满 300 减 50</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#B3452F">未满门槛，还差 ¥101</span></div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">9.5 折时段优惠</span><span style="font:500 13px/1 ui-monospace,monospace;color:#C0803A">-10.45</span></div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="font:600 16px/1 'Noto Serif SC',serif">支付方式</div>
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:17px;height:17px;border-radius:50%;border:1.5px solid #D8DCD8;flex:none"></span><span style="flex:1;font:500 13px/1 'Noto Sans SC',sans-serif;color:#B6BDB8">储值余额 ¥0.00</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">去充值</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:17px;height:17px;border-radius:50%;border:1.5px solid #D8DCD8;flex:none"></span><span style="flex:1;font:500 13px/1 'Noto Sans SC',sans-serif">礼卡余额 ¥200.00</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:17px;height:17px;border-radius:50%;background:#1E5C4A;display:flex;align-items:center;justify-content:center;color:#fff;font:400 10px/1 sans-serif;flex:none">✓</span><span style="flex:1;font:500 13px/1 'Noto Sans SC',sans-serif">微信支付</span></div>
+            </div>
+          </div>
+          <div style="background:#fff;border-top:1px solid #EDEAE4;padding:12px 16px 22px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+              <span style="font:700 21px/1 ui-monospace,monospace;color:#C0803A">¥178.55</span>
+              <span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">已优惠 ¥30.45</span>
+            </div>
+            <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:14px 34px;font:500 15px/1 'Noto Sans SC',sans-serif;flex:none">立即支付</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display:flex;gap:32px;flex-wrap:wrap;margin-top:-52px">
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">C5 我的券包</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">pages/coupon/wallet</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:46</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:#fff">
+            <span style="font:400 20px/1 'Noto Sans SC',sans-serif;color:#17211D">‹</span>
+            <span style="font:500 16px/1 'Noto Sans SC',sans-serif">我的券包</span>
+            <span style="width:78px;height:30px;border-radius:999px;background:#F8F7F4;border:1px solid #E7E3DC;display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #17211D"></span></span>
+          </div>
+          <div style="display:flex;background:#fff;border-bottom:1px solid #EDEAE4">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 0 0"><span style="font:600 14px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">未使用 3</span><span style="width:22px;height:2px;background:#1E5C4A;border-radius:2px"></span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 0 0"><span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#8B948F">已使用 0</span><span style="width:22px;height:2px"></span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 0 0"><span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#8B948F">已过期 0</span><span style="width:22px;height:2px"></span></div>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:14px 12px 0">
+            <div style="background:#fff;border-radius:14px;display:flex;overflow:hidden">
+              <div style="width:104px;background:#E8F0EC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:none;border-right:1px dashed #CFE0D7">
+                <span style="font:700 30px/1 ui-monospace,monospace;color:#1E5C4A">¥20</span>
+                <span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#4F7A6B">无门槛</span>
+              </div>
+              <div style="flex:1;padding:13px 14px;display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font:600 15px/1 'Noto Sans SC',sans-serif">新客体验券</span>
+                <span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">周一至周五 · 10:00–17:00 · 全门店</span>
+                <span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">2026/08/13 – 2026/10/12</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">规则 ⌄</span>
+                  <span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:6px 14px;font:500 12px/1 'Noto Sans SC',sans-serif">去使用</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;display:flex;overflow:hidden">
+              <div style="width:104px;background:#E8F0EC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:none;border-right:1px dashed #CFE0D7">
+                <span style="font:700 30px/1 ui-monospace,monospace;color:#1E5C4A">¥20</span>
+                <span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#4F7A6B">无门槛</span>
+              </div>
+              <div style="flex:1;padding:13px 14px;display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font:600 15px/1 'Noto Sans SC',sans-serif">新客体验券</span>
+                <span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">周一至周五 · 10:00–17:00 · 全门店</span>
+                <span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">2026/08/13 – 2026/10/12</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">规则 ⌄</span>
+                  <span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:6px 14px;font:500 12px/1 'Noto Sans SC',sans-serif">去使用</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;display:flex;overflow:hidden">
+              <div style="width:104px;background:#FAF1E4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:none;border-right:1px dashed #E8D3B2">
+                <span style="font:700 26px/1 ui-monospace,monospace;color:#A9752F">9.5折</span>
+                <span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8A5F24">限指定技师</span>
+              </div>
+              <div style="flex:1;padding:13px 14px;display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font:600 15px/1 'Noto Sans SC',sans-serif">郑世明 空档专享</span>
+                <span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">仅 08-14 14:00–17:00 · 西溪天街店</span>
+                <span style="font:400 11px/1 ui-monospace,monospace;color:#B3452F">17 小时后过期</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">规则 ⌄</span>
+                  <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:7px 15px;font:500 12px/1 'Noto Sans SC',sans-serif">去使用</span>
+                </div>
+              </div>
+            </div>
+            <div style="padding:6px 4px;font:400 12px/1.8 'Noto Sans SC',sans-serif;color:#8B948F">同一订单可叠加 1 张券 + 时段折扣；储值赠金不与券叠加。</div>
+          </div>
+          <div style="background:#fff;border-radius:14px 14px 0 0;margin:0 12px;padding:12px 14px;display:flex;align-items:center;gap:12px;border:1px solid #EDEAE4;border-bottom:none">
+            <div style="width:40px;height:40px;border-radius:50%;background:#1E5C4A;display:flex;align-items:center;justify-content:center;color:#fff;font:600 16px/1 'Noto Serif SC',serif;flex:none">松</div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif">关注服务通知</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">开启后到店提醒与优惠券到期提醒</span></div>
+            <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:7px 14px;font:500 12px/1 'Noto Sans SC',sans-serif;flex:none">开启</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">C6 我的</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">pages/mine/index</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:47</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px">
+            <span style="width:20px"></span>
+            <span style="font:500 16px/1 'Noto Sans SC',sans-serif">我的</span>
+            <span style="width:78px;height:30px;border-radius:999px;background:#fff;border:1px solid #E7E3DC;display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #17211D"></span></span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:6px 12px 0">
+            <div style="background:#1E5C4A;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:20px">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);flex:none"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                  <span style="font:600 18px/1 ui-monospace,monospace;color:#fff">186****7752</span>
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.72)">调理 12 次 · 常约技师 郑世明</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:flex-end;justify-content:space-between;border-top:1px solid rgba(255,255,255,.16);padding-top:16px">
+                <div style="display:flex;flex-direction:column;gap:5px"><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.72)">储值余额</span><span style="font:700 22px/1 ui-monospace,monospace;color:#fff">¥0.00</span></div>
+                <div style="display:flex;flex-direction:column;gap:5px"><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.72)">礼卡余额</span><span style="font:700 22px/1 ui-monospace,monospace;color:#fff">¥200.00</span></div>
+                <span style="border:1px solid rgba(255,255,255,.55);color:#fff;border-radius:999px;padding:7px 15px;font:500 12px/1 'Noto Sans SC',sans-serif">充值</span>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 15px/1 'Noto Serif SC',serif">下一次调理</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">全部订单 ›</span></div>
+              <div style="background:#F8F7F4;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 14px/1 'Noto Sans SC',sans-serif">头颈肩痛调理 60 分钟</span><span style="background:#E8F0EC;color:#1E5C4A;border-radius:4px;padding:3px 7px;font:500 10px/1 'Noto Sans SC',sans-serif">待到店</span></div>
+                <span style="font:400 12px/1 ui-monospace,monospace;color:#4A544F">今天 19:30 · 郑世明 · 西溪天街店</span>
+                <div style="display:flex;gap:8px;margin-top:2px">
+                  <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:7px 15px;font:500 12px/1 'Noto Sans SC',sans-serif">核销码</span>
+                  <span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:999px;padding:6px 14px;font:500 12px/1 'Noto Sans SC',sans-serif">改约</span>
+                  <span style="border:1px solid #E7E3DC;color:#8B948F;border-radius:999px;padding:6px 14px;font:500 12px/1 'Noto Sans SC',sans-serif">取消</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:4px 16px;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #F4F2EE"><span style="width:20px;height:20px;border-radius:5px;border:1.6px solid #1E5C4A;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif">项目订单</span><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #F4F2EE"><span style="width:20px;height:20px;border-radius:5px;border:1.6px solid #1E5C4A;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif">好礼订单</span><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #F4F2EE"><span style="width:20px;height:20px;border-radius:5px;border:1.6px solid #1E5C4A;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif">我的券包</span><span style="background:#B3452F;color:#fff;border-radius:999px;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;font:500 11px/1 ui-monospace,monospace">3</span><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #F4F2EE"><span style="width:20px;height:20px;border-radius:5px;border:1.6px solid #1E5C4A;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif">理疗档案</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">12 次记录</span><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #F4F2EE"><span style="width:20px;height:20px;border-radius:5px;border:1.6px solid #1E5C4A;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif">邀请有奖</span><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #F4F2EE"><span style="width:20px;height:20px;border-radius:5px;border:1.6px solid #1E5C4A;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif">联系客服</span><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+              <div style="display:flex;align-items:center;gap:12px;padding:15px 0"><span style="width:20px;height:20px;border-radius:5px;border:1.6px solid #1E5C4A;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif">关于肌松大师</span><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+            </div>
+          </div>
+          <div style="display:flex;background:#fff;border-top:1px solid #EDEAE4;padding:9px 0 22px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"></rect><path d="M4 9.5h16"></path><path d="M8 3v3M16 3v3"></path><path d="M8.5 13.2l1.6 1.6 3.4-3.6"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">预约</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="1.5"></rect><path d="M4 12.5h16"></path><path d="M12 9v11"></path><path d="M12 9c-1.4-3.6-6.4-3.6-6.4-.5C5.6 10.5 8 9 12 9zm0 0c1.4-3.6 6.4-3.6 6.4-.5 0 1-2.4-.5-6.4-.5z"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">好礼</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E5C4A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.3"></circle><path d="M5.5 20c.8-3.6 3.8-5.6 6.5-5.6s5.7 2 6.5 5.6"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">我的</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">C7 好礼商城</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">pages/mall/index</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:46</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px">
+            <span style="width:20px"></span>
+            <span style="font:500 16px/1 'Noto Sans SC',sans-serif">好礼商城</span>
+            <span style="width:78px;height:30px;border-radius:999px;background:#fff;border:1px solid #E7E3DC;display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #17211D"></span></span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:6px 12px 0">
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="font:600 16px/1 'Noto Serif SC',serif">肌松礼卡</div>
+              <div style="height:150px;border-radius:12px;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 8px,#F7F5F1 8px 16px);padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span style="font:600 21px/1 'Noto Serif SC',serif;color:#1E5C4A">项目礼卡</span>
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#7C857F">对症调理 · 健康守护</span>
+                </div>
+                <div style="display:flex;align-items:flex-end;justify-content:space-between">
+                  <span style="font:700 20px/1 ui-monospace,monospace;color:#C0803A">¥119 起</span>
+                  <span style="font:400 9px/1 ui-monospace,monospace;color:#9AA39E">礼卡主视觉</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="flex:1;background:#F8F7F4;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:24px">
+                  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:600 15px/1.3 'Noto Serif SC',serif;color:#1E5C4A">电子礼卡</span><span style="font:400 11px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">在线赠送 心意速达</span></div>
+                  <span style="font:700 16px/1 ui-monospace,monospace;color:#C0803A">¥200 起</span>
+                </div>
+                <div style="flex:1;background:#F8F7F4;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:24px">
+                  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:600 15px/1.3 'Noto Serif SC',serif;color:#1E5C4A">实体礼卡</span><span style="font:400 11px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">定制礼盒 独特心意</span></div>
+                  <span style="font:700 16px/1 ui-monospace,monospace;color:#C0803A">¥200 起</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">肌松周边</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">全部 ›</span></div>
+              <div style="display:flex;gap:12px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                  <div style="height:108px;border-radius:10px;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px"><span style="font:400 9px/1 ui-monospace,monospace;color:#9AA39E">商品图</span></div>
+                  <span style="font:500 14px/1.3 'Noto Sans SC',sans-serif">护颈助眠小枕</span>
+                  <span style="font:700 15px/1 ui-monospace,monospace;color:#C0803A">¥299.00</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                  <div style="height:108px;border-radius:10px;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px"><span style="font:400 9px/1 ui-monospace,monospace;color:#9AA39E">商品图</span></div>
+                  <span style="font:500 14px/1.3 'Noto Sans SC',sans-serif">祛寒理疗包</span>
+                  <span style="font:700 15px/1 ui-monospace,monospace;color:#C0803A">¥199.00</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px">
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:600 15px/1 'Noto Serif SC',serif">储值有礼</span><span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">充 1000 得 1100，赠金不可退</span></div>
+              <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:9px 18px;font:500 13px/1 'Noto Sans SC',sans-serif;flex:none">去充值</span>
+            </div>
+          </div>
+          <div style="display:flex;background:#fff;border-top:1px solid #EDEAE4;padding:9px 0 22px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"></rect><path d="M4 9.5h16"></path><path d="M8 3v3M16 3v3"></path><path d="M8.5 13.2l1.6 1.6 3.4-3.6"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">预约</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E5C4A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="1.5"></rect><path d="M4 12.5h16"></path><path d="M12 9v11"></path><path d="M12 9c-1.4-3.6-6.4-3.6-6.4-.5C5.6 10.5 8 9 12 9zm0 0c1.4-3.6 6.4-3.6 6.4-.5 0 1-2.4-.5-6.4-.5z"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">好礼</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="width:20px;height:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px"><span style="width:7px;height:7px;border-radius:50%;border:1.6px solid #8B948F"></span><span style="width:14px;height:7px;border:1.6px solid #8B948F;border-bottom:none;border-radius:8px 8px 0 0"></span></span><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">我的</span></div>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ showSpec }}" hint-placeholder-val="{{ true }}">
+        <div style="width:420px;background:#fff;border:1px solid #E7E3DC;border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:18px;align-self:flex-start">
+          <div style="font:500 13px/1 'Noto Sans SC',sans-serif;letter-spacing:.1em;color:#C0803A">客户端 · 实现要点</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">时段表只有一张</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">症状 / 门店 / 技师三个入口最终都落到 C3。可预约时段查询按 store_id + date 聚合缓存 30 秒，写操作主动失效——首页秒开靠它。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">锁定倒计时必须外显</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">下单即锁 slot 15 分钟，C4 顶部常驻倒计时。到期由延时消息释放，另有每 5 分钟兜底扫描，卡死的 slot 是直接收入损失。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">双资源约束对用户不可见</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">用户只选技师和时间，床位由服务端择优分配（同房型、减少碎片），所以 C4 房间一栏写「到店由前台分配」。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">券的可用性就地解释</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">不可用券不隐藏，直接写出原因（未满门槛 / 不在适用星期）。领券、选券、支付三处共用同一个规则求值器。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">余额分三笔展示</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">储值本金、储值赠金、礼卡余额是三个独立账户，C6 分开显示，避免用户以为赠金可退。</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+  <div style="display:flex;flex-direction:column;gap:32px">
+    <div style="display:flex;align-items:baseline;gap:14px">
+      <span style="font:400 13px/1 ui-monospace,monospace;color:#C0803A">02</span>
+      <h2 style="margin:0;font:600 28px/1.3 'Noto Serif SC',serif">技师端</h2>
+      <span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#8B948F">微信小程序 · 4 屏</span>
+    </div>
+    <p style="margin:0;font:400 15px/1.8 'Noto Sans SC',sans-serif;color:#4A544F;max-width:820px">技师双手在工作、手机在储物柜，只在客间间隙看几十秒。所以首屏只回答一个问题：<strong style="font-weight:700;color:#17211D">下一单是谁、几点、在哪张床</strong>。其余功能全部折叠。正文最小 15px，热区 ≥ 48px，关键信息支持语音播报（推拿行业视障从业者占比不低，这既是合规项也是口碑项）。</p>
+
+    <div style="display:flex;gap:32px;flex-wrap:wrap">
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">T1 今日工作台</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">therapist/dashboard/today</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="background:#143F34;padding:14px 22px 0;display:flex;align-items:center;justify-content:space-between;font:500 12px/1 ui-monospace,monospace;color:#fff"><span>17:46</span><span style="width:17px;height:9px;border:1px solid #fff;border-radius:2px"></span></div>
+          <div style="background:#143F34;padding:14px 16px 18px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);flex:none"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                <span style="font:600 17px/1 'Noto Serif SC',serif;color:#fff">郑世明</span>
+                <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">资深技师 · 西溪天街店</span>
+              </div>
+              <span style="border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:8px 14px;font:500 13px/1 'Noto Sans SC',sans-serif;color:#fff;flex:none">在岗 ●</span>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">今日已完成</span><span style="font:700 20px/1 ui-monospace,monospace;color:#fff">5 钟</span></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">预估收入</span><span style="font:700 20px/1 ui-monospace,monospace;color:#fff">¥412</span></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">今日满班</span><span style="font:700 20px/1 ui-monospace,monospace;color:#fff">78%</span></div>
+            </div>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:12px 12px 0">
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;border:2px solid #1E5C4A">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font:600 15px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">下一单</span>
+                <span style="font:700 17px/1 ui-monospace,monospace;color:#C0803A">23 分钟后</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="font:600 22px/1 'Noto Serif SC',serif">王女士</span>
+                  <span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:4px 8px;font:500 12px/1 'Noto Sans SC',sans-serif">第 3 次</span>
+                  <span style="border:1px solid #C0803A;color:#C0803A;border-radius:5px;padding:3px 7px;font:500 12px/1 'Noto Sans SC',sans-serif">力度偏轻</span>
+                </div>
+                <span style="font:500 17px/1.5 'Noto Sans SC',sans-serif">头颈肩痛调理 60 分钟</span>
+                <div style="display:flex;align-items:center;gap:14px">
+                  <span style="font:700 17px/1 ui-monospace,monospace;color:#17211D">19:30–20:30</span>
+                  <span style="background:#143F34;color:#fff;border-radius:6px;padding:5px 10px;font:600 14px/1 ui-monospace,monospace">3 号房</span>
+                </div>
+                <span style="font:400 14px/1.6 'Noto Sans SC',sans-serif;color:#4A544F">上次主诉：右侧颈肩僵硬，久坐后加重。避开肩胛内侧压痛点。</span>
+              </div>
+              <div style="display:flex;gap:10px">
+                <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:12px;padding:16px 0;text-align:center;font:600 16px/1 'Noto Sans SC',sans-serif">开始服务</span>
+                <span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:12px;padding:16px 18px;font:500 15px/1 'Noto Sans SC',sans-serif">档案</span>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">今日时间轴</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">8 月 13 日</span></div>
+              <div style="display:flex;flex-direction:column;gap:11px">
+                <div style="display:flex;gap:12px;align-items:center"><span style="font:500 14px/1 ui-monospace,monospace;color:#8B948F;width:42px;flex:none">14:00</span><span style="width:8px;height:8px;border-radius:50%;background:#C9CFCB;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif;color:#8B948F">李先生 · 腰背 60 分钟</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">已完成</span></div>
+                <div style="display:flex;gap:12px;align-items:center"><span style="font:500 14px/1 ui-monospace,monospace;color:#8B948F;width:42px;flex:none">15:30</span><span style="width:8px;height:8px;border-radius:50%;background:#C9CFCB;flex:none"></span><span style="flex:1;font:400 15px/1 'Noto Sans SC',sans-serif;color:#8B948F">散客 · 足底 45 分钟</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">已完成</span></div>
+                <div style="display:flex;gap:12px;align-items:center"><span style="font:500 14px/1 ui-monospace,monospace;color:#A9752F;width:42px;flex:none">17:00</span><span style="width:8px;height:8px;border-radius:50%;background:#C0803A;flex:none"></span><span style="flex:1;font:500 15px/1 'Noto Sans SC',sans-serif;color:#A9752F">空档 90 分钟</span><span style="border:1px solid #C0803A;color:#C0803A;border-radius:999px;padding:6px 12px;font:500 13px/1 'Noto Sans SC',sans-serif">填满它</span></div>
+                <div style="display:flex;gap:12px;align-items:center"><span style="font:500 14px/1 ui-monospace,monospace;width:42px;flex:none">19:30</span><span style="width:8px;height:8px;border-radius:50%;background:#1E5C4A;flex:none"></span><span style="flex:1;font:500 15px/1 'Noto Sans SC',sans-serif">王女士 · 头颈肩 60 分钟</span><span style="font:500 13px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">待服务</span></div>
+                <div style="display:flex;gap:12px;align-items:center"><span style="font:500 14px/1 ui-monospace,monospace;width:42px;flex:none">21:00</span><span style="width:8px;height:8px;border-radius:50%;background:#1E5C4A;flex:none"></span><span style="flex:1;font:500 15px/1 'Noto Sans SC',sans-serif">周先生 · 睡眠 60 分钟</span><span style="font:500 13px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">待服务</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <span style="width:20px;height:20px;border-radius:50%;border:1.6px solid #1E5C4A;flex:none"></span>
+              <span style="flex:1;font:500 15px/1 'Noto Sans SC',sans-serif">新预约待接单</span>
+              <span style="background:#B3452F;color:#fff;border-radius:999px;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;font:500 12px/1 ui-monospace,monospace">2</span>
+            </div>
+          </div>
+          <div style="display:flex;background:#fff;border-top:1px solid #EDEAE4;padding:10px 0 22px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E5C4A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5L12 4l8 7.5"></path><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"></path><path d="M10 20v-5h4v5"></path></svg><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">工作台</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"></rect><path d="M4 9.5h16"></path><path d="M8 3v3M16 3v3"></path><path d="M8 13.5h3M8 17h3M14 13.5h2M14 17h2"></path></svg><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">排班</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V13M12 20V6M19 20v-9"></path><path d="M4 20h16"></path></svg><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">业绩</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.3"></circle><path d="M5.5 20c.8-3.6 3.8-5.6 6.5-5.6s5.7 2 6.5 5.6"></path></svg><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">我的</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">T2 服务中 · 理疗记录</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">therapist/orders/:id/record</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="background:#143F34;padding:14px 22px 0;display:flex;align-items:center;justify-content:space-between;font:500 12px/1 ui-monospace,monospace;color:#fff"><span>19:58</span><span style="width:17px;height:9px;border:1px solid #fff;border-radius:2px"></span></div>
+          <div style="background:#143F34;padding:16px 16px 22px;display:flex;flex-direction:column;gap:16px;align-items:center">
+            <span style="font:500 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.75);letter-spacing:.1em">服务进行中 · 3 号房</span>
+            <span style="font:700 56px/1 ui-monospace,monospace;color:#fff;letter-spacing:-.02em">28:15</span>
+            <span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.75)">王女士 · 头颈肩痛调理 60 分钟</span>
+            <div style="display:flex;gap:10px;width:100%">
+              <span style="flex:1;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:12px;padding:14px 0;text-align:center;font:500 15px/1 'Noto Sans SC',sans-serif">申请加钟</span>
+              <span style="flex:1;background:#fff;color:#143F34;border-radius:12px;padding:14px 0;text-align:center;font:600 15px/1 'Noto Sans SC',sans-serif">结束服务</span>
+            </div>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:12px 12px 0">
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">理疗记录</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">提交后不可删除</span></div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <span style="font:500 14px/1 'Noto Sans SC',sans-serif;color:#4A544F">主诉</span>
+                <div style="background:#F8F7F4;border-radius:10px;padding:13px;font:400 15px/1.6 'Noto Sans SC',sans-serif;color:#17211D">右侧颈肩僵硬，转头受限，久坐 2 小时后加重</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <span style="font:500 14px/1 'Noto Sans SC',sans-serif;color:#4A544F">手法</span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <span style="background:#1E5C4A;color:#fff;border-radius:8px;padding:10px 14px;font:500 14px/1 'Noto Sans SC',sans-serif">滚法</span>
+                  <span style="background:#1E5C4A;color:#fff;border-radius:8px;padding:10px 14px;font:500 14px/1 'Noto Sans SC',sans-serif">拿捏</span>
+                  <span style="background:#F8F7F4;color:#4A544F;border-radius:8px;padding:10px 14px;font:500 14px/1 'Noto Sans SC',sans-serif">点按</span>
+                  <span style="background:#F8F7F4;color:#4A544F;border-radius:8px;padding:10px 14px;font:500 14px/1 'Noto Sans SC',sans-serif">拔伸</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <span style="font:500 14px/1 'Noto Sans SC',sans-serif;color:#4A544F">力度</span>
+                <div style="display:flex;gap:8px">
+                  <span style="flex:1;background:#F8F7F4;color:#4A544F;border-radius:8px;padding:12px 0;text-align:center;font:500 15px/1 'Noto Sans SC',sans-serif">轻</span>
+                  <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:8px;padding:12px 0;text-align:center;font:500 15px/1 'Noto Sans SC',sans-serif">中</span>
+                  <span style="flex:1;background:#F8F7F4;color:#4A544F;border-radius:8px;padding:12px 0;text-align:center;font:500 15px/1 'Noto Sans SC',sans-serif">重</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <span style="font:500 14px/1 'Noto Sans SC',sans-serif;color:#4A544F">禁忌与提醒</span>
+                <div style="background:#FAF1E4;border-radius:10px;padding:13px;font:400 14px/1.7 'Noto Sans SC',sans-serif;color:#8A5F24">高血压，避免颈部快速扳动；肩胛内侧有压痛点，下次减力。</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding-top:2px">
+                <span style="width:20px;height:20px;border-radius:5px;background:#1E5C4A;display:flex;align-items:center;justify-content:center;color:#fff;font:400 12px/1 sans-serif;flex:none">✓</span>
+                <span style="flex:1;font:400 14px/1.5 'Noto Sans SC',sans-serif;color:#4A544F">已向客户口头告知本次记录内容</span>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <span style="width:20px;height:20px;border-radius:50%;border:1.6px solid #1E5C4A;flex:none"></span>
+              <span style="flex:1;font:500 15px/1 'Noto Sans SC',sans-serif">语音填写</span>
+              <span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">长按说话</span>
+            </div>
+          </div>
+          <div style="background:#fff;border-top:1px solid #EDEAE4;padding:14px 16px 24px">
+            <span style="display:block;background:#1E5C4A;color:#fff;border-radius:12px;padding:17px 0;text-align:center;font:600 17px/1 'Noto Sans SC',sans-serif">提交记录并结单</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">T3 空档营销</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">therapist/promotions</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:46</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:#fff">
+            <span style="font:400 20px/1 'Noto Sans SC',sans-serif;color:#17211D">‹</span>
+            <span style="font:500 16px/1 'Noto Sans SC',sans-serif">填满我的空档</span>
+            <span style="width:78px"></span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:12px 12px 0">
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">明天的空档</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">08-14 周五</span></div>
+              <div style="display:flex;gap:9px">
+                <div style="flex:1;background:#1E5C4A;border-radius:10px;padding:14px 0;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font:600 15px/1 ui-monospace,monospace;color:#fff">14:00</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.75)">60 分钟</span></div>
+                <div style="flex:1;background:#1E5C4A;border-radius:10px;padding:14px 0;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font:600 15px/1 ui-monospace,monospace;color:#fff">15:30</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.75)">60 分钟</span></div>
+                <div style="flex:1;background:#F8F7F4;border-radius:10px;padding:14px 0;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font:600 15px/1 ui-monospace,monospace;color:#4A544F">17:00</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">90 分钟</span></div>
+              </div>
+              <span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#8B948F">仅距今 48 小时内的空档可发起。已选 2 档。</span>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">折扣</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">总部允许 8.5–9.5 折</span></div>
+              <div style="display:flex;gap:9px">
+                <span style="flex:1;background:#F8F7F4;color:#4A544F;border-radius:10px;padding:14px 0;text-align:center;font:600 16px/1 ui-monospace,monospace">9.5</span>
+                <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:10px;padding:14px 0;text-align:center;font:600 16px/1 ui-monospace,monospace">9.0</span>
+                <span style="flex:1;background:#F8F7F4;color:#4A544F;border-radius:10px;padding:14px 0;text-align:center;font:600 16px/1 ui-monospace,monospace">8.8</span>
+                <span style="flex:1;background:#F8F7F4;color:#4A544F;border-radius:10px;padding:14px 0;text-align:center;font:600 16px/1 ui-monospace,monospace">8.5</span>
+              </div>
+              <div style="background:#F8F7F4;border-radius:10px;padding:13px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;justify-content:space-between"><span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#4A544F">客户实付</span><span style="font:600 15px/1 ui-monospace,monospace;color:#C0803A">¥188</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#4A544F">你的提成（按实收）</span><span style="font:600 15px/1 ui-monospace,monospace">¥62.0</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#8B948F">折扣分摊 · 总部 70% / 门店 30%</span><span style="font:400 14px/1 ui-monospace,monospace;color:#8B948F">¥21</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+              <span style="font:600 16px/1 'Noto Serif SC',serif">分享卡预览</span>
+              <div style="border:1px solid #EDEAE4;border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center">
+                <div style="width:56px;height:56px;border-radius:50%;background-image:repeating-linear-gradient(45deg,#EDEAE4 0 6px,#F7F5F1 6px 12px);flex:none"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                  <span style="font:600 15px/1.3 'Noto Sans SC',sans-serif">郑世明 明天 14:00 有空档</span>
+                  <span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">头颈肩痛 60 分钟 · 9 折 ¥188</span>
+                  <span style="font:400 11px/1 ui-monospace,monospace;color:#B3452F">17 小时后失效</span>
+                </div>
+              </div>
+              <span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#8B948F">本周还可发起 2 次；同一客户 30 天内仅可享 1 次；成交仍计你的提成与归因。</span>
+            </div>
+          </div>
+          <div style="background:#fff;border-top:1px solid #EDEAE4;padding:14px 16px 24px;display:flex;gap:10px">
+            <span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:12px;padding:17px 20px;font:500 15px/1 'Noto Sans SC',sans-serif">发给老客</span>
+            <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:12px;padding:17px 0;text-align:center;font:600 17px/1 'Noto Sans SC',sans-serif">生成分享卡</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">T4 业绩明细</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">therapist/performance</span></sc-if></div>
+        <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:46</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:#fff">
+            <span style="width:20px"></span>
+            <span style="font:500 16px/1 'Noto Sans SC',sans-serif">我的业绩</span>
+            <span style="width:78px"></span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:12px 12px 0">
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;gap:8px">
+                <span style="flex:1;background:#F8F7F4;color:#4A544F;border-radius:8px;padding:11px 0;text-align:center;font:500 14px/1 'Noto Sans SC',sans-serif">今日</span>
+                <span style="flex:1;background:#F8F7F4;color:#4A544F;border-radius:8px;padding:11px 0;text-align:center;font:500 14px/1 'Noto Sans SC',sans-serif">本周</span>
+                <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:8px;padding:11px 0;text-align:center;font:500 14px/1 'Noto Sans SC',sans-serif">本月</span>
+              </div>
+              <div style="display:flex;align-items:flex-end;justify-content:space-between">
+                <div style="display:flex;flex-direction:column;gap:7px"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">8 月累计提成</span><span style="font:700 34px/1 ui-monospace,monospace;color:#17211D">¥8,240</span></div>
+                <div style="display:flex;flex-direction:column;gap:7px;align-items:flex-end"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">钟数</span><span style="font:700 20px/1 ui-monospace,monospace">112</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:11px;border-top:1px solid #F0EDE7;padding-top:14px">
+                <div style="display:flex;justify-content:space-between"><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#4A544F">钟数提成</span><span style="font:500 15px/1 ui-monospace,monospace">¥5,880</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#4A544F">加钟提成</span><span style="font:500 15px/1 ui-monospace,monospace">¥760</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#4A544F">卡销提成</span><span style="font:500 15px/1 ui-monospace,monospace">¥1,200</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#4A544F">指定加成</span><span style="font:500 15px/1 ui-monospace,monospace">¥520</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 15px/1 'Noto Sans SC',sans-serif;color:#B3452F">退款回滚</span><span style="font:500 15px/1 ui-monospace,monospace;color:#B3452F">-¥120</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">明细</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">可下钻到单</span></div>
+              <div style="display:flex;flex-direction:column;gap:13px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:500 15px/1 'Noto Sans SC',sans-serif">头颈肩痛 60 分钟</span><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">08-12 19:30 · 指定 · #A8821</span></div>
+                  <span style="font:600 15px/1 ui-monospace,monospace;flex:none">+¥68</span>
+                </div>
+                <div style="height:1px;background:#F4F2EE"></div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:500 15px/1 'Noto Sans SC',sans-serif">加钟 30 分钟</span><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">08-12 20:30 · #A8821</span></div>
+                  <span style="font:600 15px/1 ui-monospace,monospace;flex:none">+¥40</span>
+                </div>
+                <div style="height:1px;background:#F4F2EE"></div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:500 15px/1 'Noto Sans SC',sans-serif">储值卡销售 ¥2,000</span><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">08-11 · 卡销 4% · #C1092</span></div>
+                  <span style="font:600 15px/1 ui-monospace,monospace;flex:none">+¥80</span>
+                </div>
+                <div style="height:1px;background:#F4F2EE"></div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:500 15px/1 'Noto Sans SC',sans-serif;color:#B3452F">退款回滚 · 腰背 60 分钟</span><span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">08-10 · 跨月退款本月扣回</span></div>
+                  <span style="font:600 15px/1 ui-monospace,monospace;color:#B3452F;flex:none">-¥60</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <div style="flex:1;display:flex;flex-direction:column;gap:5px"><span style="font:500 15px/1 'Noto Sans SC',sans-serif">数据有疑问？</span><span style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#8B948F">提成 T+1 生成，昨日 04:00 前完成</span></div>
+              <span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:9px 16px;font:500 14px/1 'Noto Sans SC',sans-serif;flex:none">申诉</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ showSpec }}" hint-placeholder-val="{{ true }}">
+        <div style="width:420px;background:#fff;border:1px solid #E7E3DC;border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:18px;align-self:flex-start">
+          <div style="font:500 13px/1 'Noto Sans SC',sans-serif;letter-spacing:.1em;color:#C0803A">技师端 · 实现要点</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">空档营销由技师发起</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">首页那张特惠卡片的最佳生产方式不是运营手配，而是技师自己点「填满它」。折扣区间由总部锁定，每周次数上限、48 小时窗口、同客户 30 天一次三重风控。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">提成按实收计，T+1 出账</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">折扣订单的提成基数是实收而非原价，否则技师会滥发折扣。实时计算会在退款、改单、加钟场景下产生对不上的账，日终批处理可重算、可审计。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">退款回滚要看得见</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">扣回项在明细里独立成行并标注原单，跨月退款写明「本月扣回」。提成算错会直接引发信任崩塌，申诉入口常驻。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">权限最容易出事的一端</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">只能看到自己服务过的客户；手机号默认脱敏，联系走平台中转；业绩仅本人可见，店长可见全店；理疗记录只可增不可删，修改留痕。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">无障碍是硬要求</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">下一单信息支持语音播报，理疗记录支持语音填写，无纯图形按钮，所有图标带文字 label。</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:32px">
+    <div style="display:flex;align-items:baseline;gap:14px">
+      <span style="font:400 13px/1 ui-monospace,monospace;color:#C0803A">03</span>
+      <h2 style="margin:0;font:600 28px/1.3 'Noto Serif SC',serif">管理后台</h2>
+      <span style="font:400 14px/1 'Noto Sans SC',sans-serif;color:#8B948F">PC Web 4 屏 + 小程序端 2 屏</span>
+    </div>
+    <p style="margin:0;font:400 15px/1.8 'Noto Sans SC',sans-serif;color:#4A544F;max-width:860px">后台一套账号、两种形态。PC 负责「配置与处置」——排班、券规则、退款、结算，需要宽表格和多列对照；小程序端只负责「看与批」——店长和区域经理在路上看满班率、批请假与退款，不做任何配置类操作。两端共用同一套权限（功能权限 × 数据域），小程序端只是功能权限的子集。</p>
+
+    <div style="display:flex;flex-direction:column;gap:28px">
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">A1 数据看板 · PC</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">admin/dashboard</span></sc-if></div>
+        <div style="width:1280px;border-radius:14px;border:1px solid #E0DCD4;overflow:hidden;display:flex;background:#F7F6F3;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="width:196px;flex:none;background:#143F34;display:flex;flex-direction:column;gap:2px;padding:18px 12px">
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 8px 18px">
+              <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#fff;font:600 14px/1 'Noto Serif SC',serif">松</div>
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1 'Noto Sans SC',sans-serif;color:#fff;letter-spacing:.08em">肌松大师</span><span style="font:400 10px/1 ui-monospace,monospace;color:rgba(255,255,255,.55)">运营管理后台</span></div>
+            </div>
+            <div style="background:rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;font:500 13px/1 'Noto Sans SC',sans-serif;color:#fff">数据看板</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">排班中心</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">订单中心</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">会员中心</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">技师管理</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">项目 SKU</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">营销中心</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">礼卡与储值</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">财务结算</div>
+            <div style="padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.7)">系统管理</div>
+            <div style="margin-top:auto;border-top:1px solid rgba(255,255,255,.14);padding:14px 12px 4px;display:flex;flex-direction:column;gap:5px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#fff">陈敏 · 区域经理</span><span style="font:400 10px/1.5 ui-monospace,monospace;color:rgba(255,255,255,.55)">数据域：华东 8 店</span></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+            <div style="background:#fff;border-bottom:1px solid #EDEAE4;padding:14px 24px;display:flex;align-items:center;gap:14px">
+              <span style="font:600 17px/1 'Noto Serif SC',serif;flex:1">数据看板</span>
+              <span style="border:1px solid #E7E3DC;border-radius:8px;padding:8px 14px;font:400 13px/1 'Noto Sans SC',sans-serif;color:#4A544F">华东区 · 全部门店 ⌄</span>
+              <span style="border:1px solid #E7E3DC;border-radius:8px;padding:8px 14px;font:400 13px/1 ui-monospace,monospace;color:#4A544F">2026-08-07 – 08-13 ⌄</span>
+              <span style="background:#1E5C4A;color:#fff;border-radius:8px;padding:9px 16px;font:500 13px/1 'Noto Sans SC',sans-serif">导出</span>
+            </div>
+            <div style="padding:20px 24px;display:flex;flex-direction:column;gap:18px">
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+                <div style="background:#1E5C4A;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+                  <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.75)">满班率</span>
+                  <span style="font:700 30px/1 ui-monospace,monospace;color:#fff">71.4%</span>
+                  <span style="font:400 11px/1 ui-monospace,monospace;color:rgba(255,255,255,.75)">环比 +3.2pt · 目标 78%</span>
+                </div>
+                <div style="background:#fff;border:1px solid #EDEAE4;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">订单量</span><span style="font:700 30px/1 ui-monospace,monospace">4,812</span><span style="font:400 11px/1 ui-monospace,monospace;color:#1E5C4A">+8.1%</span></div>
+                <div style="background:#fff;border:1px solid #EDEAE4;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">客单价</span><span style="font:700 30px/1 ui-monospace,monospace">¥213</span><span style="font:400 11px/1 ui-monospace,monospace;color:#B3452F">−2.4%</span></div>
+                <div style="background:#fff;border:1px solid #EDEAE4;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">30 日复购率</span><span style="font:700 30px/1 ui-monospace,monospace">38.6%</span><span style="font:400 11px/1 ui-monospace,monospace;color:#1E5C4A">+1.9pt</span></div>
+                <div style="background:#fff;border:1px solid #EDEAE4;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">储值余额池</span><span style="font:700 30px/1 ui-monospace,monospace">¥1.84M</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">负债 · 本金 ¥1.62M</span></div>
+              </div>
+              <div style="display:flex;gap:14px">
+                <div style="flex:1;background:#fff;border:1px solid #EDEAE4;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:600 15px/1 'Noto Serif SC',serif">分时满班率 · 本周</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">低谷集中在 13:00–16:00</span></div>
+                  <div style="display:flex;align-items:flex-end;gap:9px;height:132px">
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:38%;background:#CFE0D7;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">10</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:46%;background:#CFE0D7;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">11</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:58%;background:#9FC1AF;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">12</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:31%;background:#C0803A;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#C0803A">13</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:27%;background:#C0803A;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#C0803A">14</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:34%;background:#C0803A;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#C0803A">15</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:52%;background:#9FC1AF;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">16</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:66%;background:#9FC1AF;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">17</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:82%;background:#1E5C4A;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">18</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:96%;background:#1E5C4A;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">19</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:91%;background:#1E5C4A;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">20</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px"><div style="width:100%;height:63%;background:#9FC1AF;border-radius:4px 4px 0 0"></div><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">21</span></div>
+                  </div>
+                  <div style="background:#FAF1E4;border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px"><span style="font:400 12px/1.6 'Noto Sans SC',sans-serif;color:#8A5F24;flex:1">午后三小时空置 214 个 slot，折合损失约 ¥45,600。建议开启午间特惠时段规则。</span><span style="background:#C0803A;color:#fff;border-radius:999px;padding:7px 14px;font:500 12px/1 'Noto Sans SC',sans-serif;flex:none">去配置</span></div>
+                </div>
+                <div style="width:352px;flex:none;background:#fff;border:1px solid #EDEAE4;border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:600 15px/1 'Noto Serif SC',serif">门店满班率排行</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">8 店</span></div>
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <div style="display:flex;align-items:center;gap:12px"><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F;width:14px">1</span><span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">西溪天街店</span><div style="width:96px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:86%;height:100%;background:#1E5C4A"></div></div><span style="font:500 12px/1 ui-monospace,monospace;width:44px;text-align:right">86.2%</span></div>
+                    <div style="display:flex;align-items:center;gap:12px"><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F;width:14px">2</span><span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">城西银泰店</span><div style="width:96px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:79%;height:100%;background:#1E5C4A"></div></div><span style="font:500 12px/1 ui-monospace,monospace;width:44px;text-align:right">79.4%</span></div>
+                    <div style="display:flex;align-items:center;gap:12px"><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F;width:14px">3</span><span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">滨江宝龙店</span><div style="width:96px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:74%;height:100%;background:#1E5C4A"></div></div><span style="font:500 12px/1 ui-monospace,monospace;width:44px;text-align:right">74.1%</span></div>
+                    <div style="display:flex;align-items:center;gap:12px"><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F;width:14px">7</span><span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">下沙龙湖店</span><div style="width:96px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:54%;height:100%;background:#C0803A"></div></div><span style="font:500 12px/1 ui-monospace,monospace;width:44px;text-align:right">54.0%</span></div>
+                    <div style="display:flex;align-items:center;gap:12px"><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F;width:14px">8</span><span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">临平银泰店</span><div style="width:96px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:47%;height:100%;background:#B3452F"></div></div><span style="font:500 12px/1 ui-monospace,monospace;width:44px;text-align:right">47.3%</span></div>
+                  </div>
+                  <div style="height:1px;background:#F0EDE7"></div>
+                  <div style="display:flex;flex-direction:column;gap:11px">
+                    <span style="font:600 15px/1 'Noto Serif SC',serif">待我处理</span>
+                    <div style="display:flex;align-items:center;gap:10px"><span style="background:#B3452F;color:#fff;border-radius:5px;padding:3px 7px;font:500 11px/1 ui-monospace,monospace;flex:none">6</span><span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">退款审批（&gt;¥500 需复核）</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+                    <div style="display:flex;align-items:center;gap:10px"><span style="background:#C0803A;color:#fff;border-radius:5px;padding:3px 7px;font:500 11px/1 ui-monospace,monospace;flex:none">3</span><span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">技师请假申请（含已有订单）</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+                    <div style="display:flex;align-items:center;gap:10px"><span style="background:#8B948F;color:#fff;border-radius:5px;padding:3px 7px;font:500 11px/1 ui-monospace,monospace;flex:none">2</span><span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">异常单人工干预</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#C9CFCB">›</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">A2 排班中心 · 拖拽改单</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">admin/schedule</span></sc-if></div>
+        <div style="width:1280px;border-radius:14px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F7F6F3;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+          <div style="background:#fff;border-bottom:1px solid #EDEAE4;padding:14px 24px;display:flex;align-items:center;gap:14px">
+            <span style="font:600 17px/1 'Noto Serif SC',serif;flex:none">排班中心</span>
+            <span style="border:1px solid #E7E3DC;border-radius:8px;padding:8px 14px;font:400 13px/1 'Noto Sans SC',sans-serif;color:#4A544F">西溪天街店 ⌄</span>
+            <span style="border:1px solid #E7E3DC;border-radius:8px;padding:8px 14px;font:400 13px/1 ui-monospace,monospace;color:#4A544F">2026-08-13 周四</span>
+            <span style="display:flex;border:1px solid #E7E3DC;border-radius:8px;overflow:hidden;font:500 13px/1 'Noto Sans SC',sans-serif"><span style="background:#1E5C4A;color:#fff;padding:8px 14px">技师视图</span><span style="color:#4A544F;padding:8px 14px">床位视图</span></span>
+            <span style="flex:1"></span>
+            <span style="display:flex;gap:14px;align-items:center">
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#1E5C4A"></span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">已预约</span></span>
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#FAF1E4;border:1px solid #E8D3B2"></span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">锁定中</span></span>
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:#F4F2EE;border:1px dashed #C9CFCB"></span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">休息/请假</span></span>
+              <span style="background:#1E5C4A;color:#fff;border-radius:8px;padding:9px 16px;font:500 13px/1 'Noto Sans SC',sans-serif">散客开单</span>
+            </span>
+          </div>
+          <div style="padding:18px 24px 22px;display:flex;gap:16px">
+            <div style="flex:1;background:#fff;border:1px solid #EDEAE4;border-radius:12px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:0;padding-left:104px">
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">13:00</span>
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">14:00</span>
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">15:00</span>
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">16:00</span>
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">17:00</span>
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">18:00</span>
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">19:00</span>
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">20:00</span>
+                <span style="flex:1;font:400 11px/1 ui-monospace,monospace;color:#8B948F">21:00</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:96px;flex:none;display:flex;flex-direction:column;gap:3px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif">郑世明</span><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">资深 · 6.5 钟</span></div>
+                <div style="flex:1;display:flex;gap:3px;height:38px">
+                  <div style="flex:2;background:#1E5C4A;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff">13:00 头颈肩 60′ 3床</div>
+                  <div style="flex:1;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px"></div>
+                  <div style="flex:2;background:#1E5C4A;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff">16:00 腰背 60′ 3床</div>
+                  <div style="flex:1;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px"></div>
+                  <div style="flex:1;background:#FAF1E4;border:1px solid #E8D3B2;border-radius:6px;display:flex;align-items:center;justify-content:center;font:500 11px/1 ui-monospace,monospace;color:#A9752F">18:30 锁</div>
+                  <div style="flex:2;background:#1E5C4A;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff;outline:2px solid #C0803A;outline-offset:1px">19:30 头颈肩 60′ 3床</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:96px;flex:none;display:flex;flex-direction:column;gap:3px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif">胡泽侠</span><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">高级 · 4 钟</span></div>
+                <div style="flex:1;display:flex;gap:3px;height:38px">
+                  <div style="flex:1;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px"></div>
+                  <div style="flex:3;background:#1E5C4A;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff">14:00 肩颈通络 90′ 5床</div>
+                  <div style="flex:2;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px;display:flex;align-items:center;justify-content:center;font:400 11px/1 ui-monospace,monospace;color:#B6BDB8">空档 2h</div>
+                  <div style="flex:2;background:#1E5C4A;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff">19:00 睡眠 60′ 5床</div>
+                  <div style="flex:2;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px"></div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:96px;flex:none;display:flex;flex-direction:column;gap:3px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif">束兴业</span><span style="font:400 10px/1 ui-monospace,monospace;color:#B3452F">请假待批</span></div>
+                <div style="flex:1;display:flex;gap:3px;height:38px">
+                  <div style="flex:4;background:#F4F2EE;border:1px dashed #C9CFCB;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:400 11px/1 ui-monospace,monospace;color:#8B948F">请假申请 13:00–17:00</div>
+                  <div style="flex:2;background:#B3452F;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff">冲突：2 单待改约</div>
+                  <div style="flex:4;background:#1E5C4A;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff">18:00 腰背 60′ · 20:00 加钟 30′</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:96px;flex:none;display:flex;flex-direction:column;gap:3px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif">李文秀</span><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">初级 · 2 钟</span></div>
+                <div style="flex:1;display:flex;gap:3px;height:38px">
+                  <div style="flex:5;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px;display:flex;align-items:center;justify-content:center;font:400 11px/1 ui-monospace,monospace;color:#B6BDB8">空档 5h · 可发起特惠</div>
+                  <div style="flex:2;background:#1E5C4A;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff">18:00 足底 45′ 7床</div>
+                  <div style="flex:3;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px"></div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:96px;flex:none;display:flex;flex-direction:column;gap:3px"><span style="font:500 13px/1 'Noto Sans SC',sans-serif">周雅</span><span style="font:400 10px/1 ui-monospace,monospace;color:#8B948F">跨店支援 · 城西</span></div>
+                <div style="flex:1;display:flex;gap:3px;height:38px">
+                  <div style="flex:3;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px"></div>
+                  <div style="flex:3;background:#1E5C4A;border-radius:6px;display:flex;align-items:center;padding:0 9px;font:500 11px/1 ui-monospace,monospace;color:#fff">16:00 产后调理 90′ 2床</div>
+                  <div style="flex:4;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:6px"></div>
+                </div>
+              </div>
+              <div style="height:1px;background:#F0EDE7;margin:4px 0"></div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:96px;flex:none;font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">床位占用</div>
+                <div style="flex:1;display:flex;gap:3px;height:16px">
+                  <div style="flex:2;background:#9FC1AF;border-radius:3px"></div>
+                  <div style="flex:1;background:#CFE0D7;border-radius:3px"></div>
+                  <div style="flex:2;background:#9FC1AF;border-radius:3px"></div>
+                  <div style="flex:1;background:#CFE0D7;border-radius:3px"></div>
+                  <div style="flex:1;background:#9FC1AF;border-radius:3px"></div>
+                  <div style="flex:2;background:#1E5C4A;border-radius:3px"></div>
+                </div>
+                <span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F;flex:none">8 张床 · 19:30 全满</span>
+              </div>
+            </div>
+            <div style="width:300px;flex:none;background:#fff;border:1px solid #EDEAE4;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 15px/1 'Noto Serif SC',serif">订单详情</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">✕</span></div>
+              <div style="background:#F8FBF9;border:1px solid #E8F0EC;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 14px/1 'Noto Sans SC',sans-serif">头颈肩痛调理 60′</span><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">待到店</span></div>
+                <span style="font:400 11px/1.6 ui-monospace,monospace;color:#8B948F">SO20260813001472</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">客户</span><span style="font:500 13px/1 ui-monospace,monospace">186****7752</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">标签</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#C0803A">新客第 3 次</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">时段</span><span style="font:500 13px/1 ui-monospace,monospace">19:30–20:30</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">技师 / 床</span><span style="font:500 13px/1 'Noto Sans SC',sans-serif">郑世明 / 3 号</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">实收</span><span style="font:700 14px/1 ui-monospace,monospace;color:#C0803A">¥178.55</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">优惠</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif">新客券 20 + 时段 9.5 折</span></div>
+              </div>
+              <div style="background:#FAF1E4;border-radius:10px;padding:11px;font:400 12px/1.7 'Noto Sans SC',sans-serif;color:#8A5F24">拖动卡片可改约或换技师，系统会同时校验技师与床位 slot，并按实收重算双方提成。</div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto">
+                <span style="background:#1E5C4A;color:#fff;border-radius:8px;padding:11px 0;text-align:center;font:500 13px/1 'Noto Sans SC',sans-serif">改约 / 换技师</span>
+                <div style="display:flex;gap:8px"><span style="flex:1;border:1px solid #E7E3DC;color:#4A544F;border-radius:8px;padding:10px 0;text-align:center;font:500 13px/1 'Noto Sans SC',sans-serif">加钟</span><span style="flex:1;border:1px solid #E7E3DC;color:#B3452F;border-radius:8px;padding:10px 0;text-align:center;font:500 13px/1 'Noto Sans SC',sans-serif">取消退款</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">A3 订单中心</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">admin/orders</span></sc-if></div>
+          <div style="width:784px;border-radius:14px;border:1px solid #E0DCD4;overflow:hidden;background:#fff;box-shadow:0 14px 36px rgba(23,33,29,.08);display:flex;flex-direction:column">
+            <div style="border-bottom:1px solid #EDEAE4;padding:14px 20px;display:flex;align-items:center;gap:12px">
+              <span style="font:600 16px/1 'Noto Serif SC',serif;flex:1">订单中心</span>
+              <span style="border:1px solid #E7E3DC;border-radius:8px;padding:7px 12px;font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">手机号 / 订单号</span>
+              <span style="background:#1E5C4A;color:#fff;border-radius:8px;padding:8px 14px;font:500 12px/1 'Noto Sans SC',sans-serif">异步导出</span>
+            </div>
+            <div style="padding:12px 20px;display:flex;gap:8px;border-bottom:1px solid #F4F2EE">
+              <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:7px 14px;font:500 12px/1 'Noto Sans SC',sans-serif">全部 4,812</span>
+              <span style="color:#4A544F;border:1px solid #E7E3DC;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">待支付 37</span>
+              <span style="color:#4A544F;border:1px solid #E7E3DC;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">已预约 216</span>
+              <span style="color:#4A544F;border:1px solid #E7E3DC;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">服务中 12</span>
+              <span style="color:#4A544F;border:1px solid #E7E3DC;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">爽约 24</span>
+              <span style="color:#B3452F;border:1px solid #EBC7BF;background:#FCF3F1;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">异常单 2</span>
+            </div>
+            <div style="padding:4px 20px 18px">
+              <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #F4F2EE;font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F;letter-spacing:.05em">
+                <span style="width:152px">订单号 / 门店</span><span style="width:120px">客户</span><span style="flex:1">项目 · 技师</span><span style="width:104px">到店时间</span><span style="width:78px;text-align:right">实收</span><span style="width:88px">状态</span><span style="width:56px;text-align:right">操作</span>
+              </div>
+              <div style="display:flex;gap:12px;padding:13px 0;border-bottom:1px solid #F8F7F4;align-items:center">
+                <div style="width:152px;display:flex;flex-direction:column;gap:3px"><span style="font:400 12px/1 ui-monospace,monospace">SO...001472</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">西溪天街店</span></div>
+                <span style="width:120px;font:400 12px/1 ui-monospace,monospace">186****7752</span>
+                <span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">头颈肩痛 60′ · 郑世明</span>
+                <span style="width:104px;font:400 12px/1 ui-monospace,monospace">08-13 19:30</span>
+                <span style="width:78px;text-align:right;font:500 13px/1 ui-monospace,monospace">178.55</span>
+                <span style="width:88px"><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:4px 8px;font:500 11px/1 'Noto Sans SC',sans-serif">待到店</span></span>
+                <span style="width:56px;text-align:right;font:400 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">详情</span>
+              </div>
+              <div style="display:flex;gap:12px;padding:13px 0;border-bottom:1px solid #F8F7F4;align-items:center;background:#FCF3F1;margin:0 -20px;padding-left:20px;padding-right:20px">
+                <div style="width:152px;display:flex;flex-direction:column;gap:3px"><span style="font:400 12px/1 ui-monospace,monospace">SO...001408</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">临平银泰店</span></div>
+                <span style="width:120px;font:400 12px/1 ui-monospace,monospace">139****2210</span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:400 13px/1 'Noto Sans SC',sans-serif">腰背调理 60′ · 束兴业</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#B3452F">已支付但 slot 释放 · 需人工重排</span></span>
+                <span style="width:104px;font:400 12px/1 ui-monospace,monospace">08-13 20:00</span>
+                <span style="width:78px;text-align:right;font:500 13px/1 ui-monospace,monospace">209.00</span>
+                <span style="width:88px"><span style="background:#B3452F;color:#fff;border-radius:5px;padding:4px 8px;font:500 11px/1 'Noto Sans SC',sans-serif">异常单</span></span>
+                <span style="width:56px;text-align:right;font:400 12px/1 'Noto Sans SC',sans-serif;color:#B3452F">干预</span>
+              </div>
+              <div style="display:flex;gap:12px;padding:13px 0;border-bottom:1px solid #F8F7F4;align-items:center">
+                <div style="width:152px;display:flex;flex-direction:column;gap:3px"><span style="font:400 12px/1 ui-monospace,monospace">SO...001395</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">城西银泰店</span></div>
+                <span style="width:120px;font:400 12px/1 ui-monospace,monospace">137****6641</span>
+                <span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">肩颈通络 90′ · 胡泽侠</span>
+                <span style="width:104px;font:400 12px/1 ui-monospace,monospace">08-13 14:00</span>
+                <span style="width:78px;text-align:right;font:500 13px/1 ui-monospace,monospace">299.00</span>
+                <span style="width:88px"><span style="background:#E8F0EC;color:#1E5C4A;border-radius:5px;padding:4px 8px;font:500 11px/1 'Noto Sans SC',sans-serif">服务中</span></span>
+                <span style="width:56px;text-align:right;font:400 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">详情</span>
+              </div>
+              <div style="display:flex;gap:12px;padding:13px 0;border-bottom:1px solid #F8F7F4;align-items:center">
+                <div style="width:152px;display:flex;flex-direction:column;gap:3px"><span style="font:400 12px/1 ui-monospace,monospace">SO...001322</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">滨江宝龙店</span></div>
+                <span style="width:120px;font:400 12px/1 ui-monospace,monospace">158****0093</span>
+                <span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">足底疲劳 45′ · 李文秀</span>
+                <span style="width:104px;font:400 12px/1 ui-monospace,monospace">08-12 21:15</span>
+                <span style="width:78px;text-align:right;font:500 13px/1 ui-monospace,monospace">0.00</span>
+                <span style="width:88px"><span style="background:#F4F2EE;color:#8B948F;border-radius:5px;padding:4px 8px;font:500 11px/1 'Noto Sans SC',sans-serif">爽约</span></span>
+                <span style="width:56px;text-align:right;font:400 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">详情</span>
+              </div>
+              <div style="display:flex;gap:12px;padding:13px 0;align-items:center">
+                <div style="width:152px;display:flex;flex-direction:column;gap:3px"><span style="font:400 12px/1 ui-monospace,monospace">SO...001280</span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">西溪天街店</span></div>
+                <span style="width:120px;font:400 12px/1 ui-monospace,monospace">131****8830</span>
+                <span style="flex:1;font:400 13px/1 'Noto Sans SC',sans-serif">头颈肩痛 60′ + 加钟 30′ · 周雅</span>
+                <span style="width:104px;font:400 12px/1 ui-monospace,monospace">08-12 18:00</span>
+                <span style="width:78px;text-align:right;font:500 13px/1 ui-monospace,monospace">308.00</span>
+                <span style="width:88px"><span style="background:#F4F2EE;color:#4A544F;border-radius:5px;padding:4px 8px;font:500 11px/1 'Noto Sans SC',sans-serif">已完成</span></span>
+                <span style="width:56px;text-align:right;font:400 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">详情</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-top:14px">
+                <span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">游标分页，不支持跳页；导出走异步任务</span>
+                <span style="display:flex;gap:6px"><span style="border:1px solid #E7E3DC;border-radius:6px;padding:6px 12px;font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">上一页</span><span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:6px;padding:6px 12px;font:500 12px/1 'Noto Sans SC',sans-serif">下一页</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">A4 券规则配置</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">admin/coupon/template</span></sc-if></div>
+          <div style="width:472px;border-radius:14px;border:1px solid #E0DCD4;overflow:hidden;background:#fff;box-shadow:0 14px 36px rgba(23,33,29,.08);display:flex;flex-direction:column">
+            <div style="border-bottom:1px solid #EDEAE4;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">新建券模板</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">规则引擎 · 三处共用求值器</span></div>
+            <div style="padding:18px 20px;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">券类型</span>
+                <div style="display:flex;gap:8px"><span style="background:#1E5C4A;color:#fff;border-radius:8px;padding:9px 16px;font:500 13px/1 'Noto Sans SC',sans-serif">满减</span><span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:8px;padding:8px 15px;font:500 13px/1 'Noto Sans SC',sans-serif">折扣</span><span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:8px;padding:8px 15px;font:500 13px/1 'Noto Sans SC',sans-serif">兑换</span></div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">面额（元）</span><div style="border:1px solid #E7E3DC;border-radius:8px;padding:10px 12px;font:500 14px/1 ui-monospace,monospace">20.00</div></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">门槛</span><div style="border:1px solid #E7E3DC;border-radius:8px;padding:10px 12px;font:400 14px/1 'Noto Sans SC',sans-serif;color:#8B948F">无门槛</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">可用星期</span>
+                <div style="display:flex;gap:6px">
+                  <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:7px;padding:9px 0;text-align:center;font:500 12px/1 'Noto Sans SC',sans-serif">一</span>
+                  <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:7px;padding:9px 0;text-align:center;font:500 12px/1 'Noto Sans SC',sans-serif">二</span>
+                  <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:7px;padding:9px 0;text-align:center;font:500 12px/1 'Noto Sans SC',sans-serif">三</span>
+                  <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:7px;padding:9px 0;text-align:center;font:500 12px/1 'Noto Sans SC',sans-serif">四</span>
+                  <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:7px;padding:9px 0;text-align:center;font:500 12px/1 'Noto Sans SC',sans-serif">五</span>
+                  <span style="flex:1;background:#F4F2EE;color:#B6BDB8;border-radius:7px;padding:9px 0;text-align:center;font:500 12px/1 'Noto Sans SC',sans-serif">六</span>
+                  <span style="flex:1;background:#F4F2EE;color:#B6BDB8;border-radius:7px;padding:9px 0;text-align:center;font:500 12px/1 'Noto Sans SC',sans-serif">日</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">可用时段</span>
+                <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;border:1px solid #E7E3DC;border-radius:8px;padding:10px 12px;font:500 14px/1 ui-monospace,monospace">10:00</div><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#8B948F">至</span><div style="flex:1;border:1px solid #E7E3DC;border-radius:8px;padding:10px 12px;font:500 14px/1 ui-monospace,monospace">17:00</div><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A;flex:none">+ 时段</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">范围与叠加</span>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif">门店范围</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">全部门店 · 修改</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif">项目排除</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">90′ 及以上 3 项</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif">技师职级</span><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">初级 · 资深</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif">可叠加会员价</span><span style="width:38px;height:22px;border-radius:999px;background:#F4F2EE;border:1px solid #E7E3DC;display:flex;align-items:center;padding:2px"><span style="width:16px;height:16px;border-radius:50%;background:#C9CFCB"></span></span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif">法定节假日不可用</span><span style="width:38px;height:22px;border-radius:999px;background:#1E5C4A;display:flex;align-items:center;justify-content:flex-end;padding:2px"><span style="width:16px;height:16px;border-radius:50%;background:#fff"></span></span></div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">有效期</span><div style="border:1px solid #E7E3DC;border-radius:8px;padding:10px 12px;font:400 13px/1 'Noto Sans SC',sans-serif">领取后 60 天</div></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">每人限领</span><div style="border:1px solid #E7E3DC;border-radius:8px;padding:10px 12px;font:500 13px/1 ui-monospace,monospace">3 张</div></div>
+              </div>
+              <div style="background:#F8FBF9;border:1px solid #E8F0EC;border-radius:10px;padding:13px;display:flex;flex-direction:column;gap:7px">
+                <span style="font:500 12px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">规则预览（C 端展示文案）</span>
+                <span style="font:400 12px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">周一至周五 10:00–17:00 · 全门店通用 · 不可与会员价叠加 · 90 分钟以上项目不可用 · 法定节假日不可用</span>
+              </div>
+              <div style="display:flex;gap:10px">
+                <span style="flex:1;background:#1E5C4A;color:#fff;border-radius:8px;padding:12px 0;text-align:center;font:500 14px/1 'Noto Sans SC',sans-serif">提交审批</span>
+                <span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:8px;padding:11px 18px;font:500 14px/1 'Noto Sans SC',sans-serif">试算</span>
+              </div>
+              <span style="font:400 11px/1.7 'Noto Sans SC',sans-serif;color:#8B948F">发放量 &gt; 1000 张需财务复核；提交后规则不可编辑，只能停发。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">M1 后台小程序 · 经营概览</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">mp-admin/overview</span></sc-if></div>
+          <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+            <div style="background:#143F34;padding:14px 22px 0;display:flex;align-items:center;justify-content:space-between;font:500 12px/1 ui-monospace,monospace;color:#fff"><span>17:46</span><span style="width:17px;height:9px;border:1px solid #fff;border-radius:2px"></span></div>
+            <div style="background:#143F34;padding:8px 14px 18px;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font:500 16px/1 'Noto Sans SC',sans-serif;color:#fff">经营概览</span>
+                <span style="width:78px;height:30px;border-radius:999px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#fff"></span><span style="width:3px;height:3px;border-radius:50%;background:#fff"></span><span style="width:3px;height:3px;border-radius:50%;background:#fff"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #fff"></span></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="background:rgba(255,255,255,.16);color:#fff;border-radius:999px;padding:7px 14px;font:500 12px/1 'Noto Sans SC',sans-serif">华东区 · 8 店 ⌄</span>
+                <span style="font:400 12px/1 ui-monospace,monospace;color:rgba(255,255,255,.6)">今日 · 实时</span>
+              </div>
+              <div style="display:flex;align-items:flex-end;justify-content:space-between">
+                <div style="display:flex;flex-direction:column;gap:8px"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.72)">今日满班率</span><span style="font:700 40px/1 ui-monospace,monospace;color:#fff">68.2%</span></div>
+                <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.72)">今日营收</span><span style="font:700 24px/1 ui-monospace,monospace;color:#fff">¥68,420</span></div>
+              </div>
+              <div style="display:flex;gap:3px;height:8px">
+                <div style="flex:68;background:#C0803A;border-radius:4px 0 0 4px"></div>
+                <div style="flex:32;background:rgba(255,255,255,.2);border-radius:0 4px 4px 0"></div>
+              </div>
+              <span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:rgba(255,255,255,.6)">剩余 312 个可售 slot，19:00 后仅余 24 个</span>
+            </div>
+            <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:12px">
+              <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">待我审批</span><span style="background:#B3452F;color:#fff;border-radius:999px;padding:3px 9px;font:500 11px/1 ui-monospace,monospace">9</span></div>
+                <div style="border:1px solid #EDEAE4;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:9px">
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 14px/1 'Noto Sans SC',sans-serif">退款 ¥598 · 临平银泰店</span><span style="font:400 11px/1 ui-monospace,monospace;color:#8B948F">08-13 16:20</span></div>
+                  <span style="font:400 12px/1.6 'Noto Sans SC',sans-serif;color:#4A544F">客户投诉手法不适，店长已同意全额退。超 ¥500 需复核。</span>
+                  <div style="display:flex;gap:8px"><span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:8px 18px;font:500 13px/1 'Noto Sans SC',sans-serif">同意</span><span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:999px;padding:7px 17px;font:500 13px/1 'Noto Sans SC',sans-serif">驳回</span><span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:999px;padding:7px 17px;font:500 13px/1 'Noto Sans SC',sans-serif">详情</span></div>
+                </div>
+                <div style="border:1px solid #EDEAE4;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:9px">
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 14px/1 'Noto Sans SC',sans-serif">束兴业 请假 08-13 下午</span><span style="background:#FAF1E4;color:#8A5F24;border-radius:5px;padding:3px 7px;font:500 11px/1 'Noto Sans SC',sans-serif">冲突 2 单</span></div>
+                  <span style="font:400 12px/1.6 'Noto Sans SC',sans-serif;color:#4A544F">批准前需先处理 2 张已支付订单：改约同店周雅或全额退。</span>
+                  <div style="display:flex;gap:8px"><span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:8px 18px;font:500 13px/1 'Noto Sans SC',sans-serif">去处理</span><span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:999px;padding:7px 17px;font:500 13px/1 'Noto Sans SC',sans-serif">驳回</span></div>
+                </div>
+              </div>
+              <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">门店实时</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">按满班率排 ›</span></div>
+                <div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font:400 14px/1 'Noto Sans SC',sans-serif">西溪天街店</span><div style="width:88px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:86%;height:100%;background:#1E5C4A"></div></div><span style="font:500 13px/1 ui-monospace,monospace;width:46px;text-align:right">86%</span></div>
+                <div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font:400 14px/1 'Noto Sans SC',sans-serif">城西银泰店</span><div style="width:88px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:79%;height:100%;background:#1E5C4A"></div></div><span style="font:500 13px/1 ui-monospace,monospace;width:46px;text-align:right">79%</span></div>
+                <div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font:400 14px/1 'Noto Sans SC',sans-serif">下沙龙湖店</span><div style="width:88px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:54%;height:100%;background:#C0803A"></div></div><span style="font:500 13px/1 ui-monospace,monospace;width:46px;text-align:right">54%</span></div>
+                <div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font:400 14px/1 'Noto Sans SC',sans-serif">临平银泰店</span><div style="width:88px;height:6px;border-radius:3px;background:#F0EDE7;overflow:hidden"><div style="width:47%;height:100%;background:#B3452F"></div></div><span style="font:500 13px/1 ui-monospace,monospace;width:46px;text-align:right">47%</span></div>
+                <div style="background:#FCF3F1;border-radius:10px;padding:11px;font:400 12px/1.6 'Noto Sans SC',sans-serif;color:#9E3D2A">临平银泰店 2 小时无新单，建议核查前台设备与网络。</div>
+              </div>
+            </div>
+            <div style="display:flex;background:#fff;border-top:1px solid #EDEAE4;padding:9px 0 22px">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E5C4A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.3"></rect><rect x="13" y="4" width="7" height="7" rx="1.3"></rect><rect x="4" y="13" width="7" height="7" rx="1.3"></rect><rect x="13" y="13" width="7" height="7" rx="1.3"></rect></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#1E5C4A">概览</span></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.3 12.3l2.4 2.4 5-5.4"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">审批</span></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"></rect><path d="M4 9.5h16"></path><path d="M8 3v3M16 3v3"></path><path d="M8 13.5h3M8 17h3M14 13.5h2M14 17h2"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">排班</span></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B948F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.3" r="3.3"></circle><path d="M5.5 20c.8-3.6 3.8-5.6 6.5-5.6s5.7 2 6.5 5.6"></path></svg><span style="font:500 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">我的</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 14px/1 'Noto Sans SC',sans-serif">M2 后台小程序 · 门店排班（只读）</span><sc-if value="{{ showRouteLabels }}" hint-placeholder-val="{{ true }}"><span style="font:400 11px/1 ui-monospace,monospace;color:#9AA39E">mp-admin/schedule</span></sc-if></div>
+          <div style="width:375px;height:812px;border-radius:26px;border:1px solid #E0DCD4;overflow:hidden;display:flex;flex-direction:column;background:#F4F2EE;box-shadow:0 14px 36px rgba(23,33,29,.08)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;font:500 12px/1 ui-monospace,monospace;color:#17211D"><span>17:47</span><span style="width:17px;height:9px;border:1px solid #17211D;border-radius:2px"></span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;background:#fff">
+              <span style="font:400 20px/1 'Noto Sans SC',sans-serif;color:#17211D">‹</span>
+              <span style="font:500 16px/1 'Noto Sans SC',sans-serif">西溪天街店 · 今日</span>
+              <span style="width:78px;height:30px;border-radius:999px;background:#F8F7F4;border:1px solid #E7E3DC;display:flex;align-items:center;justify-content:center;gap:14px"><span style="display:flex;gap:3px"><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span><span style="width:3px;height:3px;border-radius:50%;background:#17211D"></span></span><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid #17211D"></span></span>
+            </div>
+            <div style="background:#fff;border-bottom:1px solid #EDEAE4;padding:10px 14px;display:flex;align-items:center;gap:10px">
+              <span style="background:#1E5C4A;color:#fff;border-radius:999px;padding:7px 14px;font:500 12px/1 'Noto Sans SC',sans-serif">今天</span>
+              <span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">明天</span>
+              <span style="border:1px solid #E7E3DC;color:#4A544F;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif">周六</span>
+              <span style="flex:1"></span>
+              <span style="font:400 12px/1 ui-monospace,monospace;color:#8B948F">18 人在岗</span>
+            </div>
+            <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:12px">
+              <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">技师占用</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#8B948F">横向滑动查看全天 →</span></div>
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span style="width:52px;flex:none;font:500 13px/1 'Noto Sans SC',sans-serif">郑世明</span>
+                    <div style="flex:1;display:flex;gap:2px;height:26px">
+                      <div style="flex:2;background:#1E5C4A;border-radius:4px"></div><div style="flex:1;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:4px"></div><div style="flex:2;background:#1E5C4A;border-radius:4px"></div><div style="flex:1;background:#FAF1E4;border:1px solid #E8D3B2;border-radius:4px"></div><div style="flex:2;background:#1E5C4A;border-radius:4px"></div>
+                    </div>
+                    <span style="width:34px;flex:none;text-align:right;font:500 12px/1 ui-monospace,monospace">6.5</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span style="width:52px;flex:none;font:500 13px/1 'Noto Sans SC',sans-serif">胡泽侠</span>
+                    <div style="flex:1;display:flex;gap:2px;height:26px">
+                      <div style="flex:1;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:4px"></div><div style="flex:3;background:#1E5C4A;border-radius:4px"></div><div style="flex:2;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:4px"></div><div style="flex:2;background:#1E5C4A;border-radius:4px"></div>
+                    </div>
+                    <span style="width:34px;flex:none;text-align:right;font:500 12px/1 ui-monospace,monospace">4.0</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span style="width:52px;flex:none;font:500 13px/1 'Noto Sans SC',sans-serif">束兴业</span>
+                    <div style="flex:1;display:flex;gap:2px;height:26px">
+                      <div style="flex:4;background:#F4F2EE;border:1px dashed #C9CFCB;border-radius:4px"></div><div style="flex:1;background:#B3452F;border-radius:4px"></div><div style="flex:3;background:#1E5C4A;border-radius:4px"></div>
+                    </div>
+                    <span style="width:34px;flex:none;text-align:right;font:500 12px/1 ui-monospace,monospace">3.5</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span style="width:52px;flex:none;font:500 13px/1 'Noto Sans SC',sans-serif">李文秀</span>
+                    <div style="flex:1;display:flex;gap:2px;height:26px">
+                      <div style="flex:5;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:4px"></div><div style="flex:2;background:#1E5C4A;border-radius:4px"></div><div style="flex:2;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:4px"></div>
+                    </div>
+                    <span style="width:34px;flex:none;text-align:right;font:500 12px/1 ui-monospace,monospace">1.5</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span style="width:52px;flex:none;font:500 13px/1 'Noto Sans SC',sans-serif">周雅</span>
+                    <div style="flex:1;display:flex;gap:2px;height:26px">
+                      <div style="flex:3;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:4px"></div><div style="flex:3;background:#1E5C4A;border-radius:4px"></div><div style="flex:3;background:#F4F2EE;border:1px dashed #D8DCD8;border-radius:4px"></div>
+                    </div>
+                    <span style="width:34px;flex:none;text-align:right;font:500 12px/1 ui-monospace,monospace">3.0</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:2px">
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:3px;background:#1E5C4A"></span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">已预约</span></span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:3px;background:#FAF1E4;border:1px solid #E8D3B2"></span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">锁定中</span></span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:3px;background:#B3452F"></span><span style="font:400 11px/1 'Noto Sans SC',sans-serif;color:#8B948F">冲突</span></span>
+                </div>
+              </div>
+              <div style="background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 16px/1 'Noto Serif SC',serif">今晚空档</span><span style="font:400 12px/1 'Noto Sans SC',sans-serif;color:#C0803A">24 个 slot</span></div>
+                <div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font:400 13px/1.5 'Noto Sans SC',sans-serif">李文秀 19:00–21:00 · 初级</span><span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif;flex:none">通知技师</span></div>
+                <div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font:400 13px/1.5 'Noto Sans SC',sans-serif">周雅 20:00–22:00 · 跨店支援</span><span style="border:1px solid #1E5C4A;color:#1E5C4A;border-radius:999px;padding:6px 13px;font:500 12px/1 'Noto Sans SC',sans-serif;flex:none">通知技师</span></div>
+                <div style="background:#F8FBF9;border-radius:10px;padding:11px;font:400 12px/1.6 'Noto Sans SC',sans-serif;color:#1E5C4A">小程序端不提供改约、加钟、退款执行与任何配置操作，仅可查看与审批。需要动库存请回 PC 后台。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="width:420px;background:#fff;border-radius:16px;border:1px solid #E7E3DC;padding:28px;display:flex;flex-direction:column;gap:18px">
+          <div style="font:500 13px/1 'Noto Sans SC',sans-serif;letter-spacing:.1em;color:#8B948F">两端分工</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">同一套权限，两份功能清单</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">功能权限 × 数据域在服务端统一判定，小程序端只是功能权限的子集，不做前端裁剪。区域经理在两端看到的都是名下 8 家店。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">配置类操作只在 PC</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">券规则、提成规则、排班模板、退款执行留在 PC。小程序端误触成本太高，且这些表单需要宽度做多列对照。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">审批是小程序端的主场</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">退款复核、请假审批、券批量发放复核走订阅消息推送到小程序，卡片上直接给出决策所需的全部上下文与冲突提示。</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 14px/1.4 'Noto Sans SC',sans-serif">大屏另算一端</span><span style="font:400 13px/1.7 'Noto Sans SC',sans-serif;color:#4A544F">门店前台的排班大屏与收银是独立的 PAD/收银机形态，不复用后台布局——它需要离线查单和外设支持。</span></div>
+          </div>
+          <div style="height:1px;background:#F0EDE7"></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <span style="font:500 13px/1 'Noto Sans SC',sans-serif;letter-spacing:.1em;color:#8B948F">屏数汇总</span>
+            <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#4A544F">客户端小程序</span><span style="font:500 13px/1 ui-monospace,monospace">7 屏</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#4A544F">技师端小程序</span><span style="font:500 13px/1 ui-monospace,monospace">4 屏</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#4A544F">管理后台 PC</span><span style="font:500 13px/1 ui-monospace,monospace">4 屏</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font:400 13px/1 'Noto Sans SC',sans-serif;color:#4A544F">管理后台小程序</span><span style="font:500 13px/1 ui-monospace,monospace">2 屏</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;showSpec&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;展示控制&quot;},&quot;showFlows&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;展示控制&quot;},&quot;showRouteLabels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;展示控制&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props || {};
+    return {
+      showSpec: p.showSpec ?? true,
+      showFlows: p.showFlows ?? true,
+      showRouteLabels: p.showRouteLabels ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

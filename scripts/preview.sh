@@ -2,7 +2,7 @@
 # 真机预览：把 apiBase 对到当前局域网 IP，然后让开发者工具出二维码。
 #
 #   scripts/preview.sh                  # 预览 mini-customer
-#   scripts/preview.sh mini-staff       # 预览 mini-staff
+#   （员工端已并入 mini-customer，无需单独预览）
 #   scripts/preview.sh mini-customer wxAAAA...   # 顺手写入真实 AppID
 #
 # 前置：开发者工具 设置 → 安全设置 → 服务端口 已开启，且账号已登录。

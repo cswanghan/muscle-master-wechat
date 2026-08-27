@@ -6,7 +6,7 @@
 
 ```
 apps/mini-customer   C 端微信原生小程序
-apps/mini-staff      员工端（技师 / 前台 / 店长）
+apps/mini-customer/pages/staff   员工端（技师 / 前台 / 店长），与顾客端同一 AppID
 apps/admin-web       Vue 3 + Vite + TS + Element Plus
 server/              Spring Boot 3.3 / Java 21 单 JAR
 deploy/              docker-compose（MySQL 8 + Redis 7 + server + admin）
