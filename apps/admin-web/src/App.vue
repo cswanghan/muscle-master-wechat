@@ -49,6 +49,7 @@ function logout() {
         <router-link to="/schedule">排班中心</router-link>
         <router-link to="/orders">订单中心</router-link>
         <router-link to="/catalog">项目 SKU</router-link>
+        <router-link to="/levels">等级待确认</router-link>
         <router-link to="/frontdesk">前台收银</router-link>
         <router-link to="/mini">小程序预览</router-link>
         <a href="/phone/index.html">真机 Demo</a>

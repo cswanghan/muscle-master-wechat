@@ -52,4 +52,20 @@ public class InMemoryReviewStore implements ReviewStore {
                 .limit(Math.max(1, limit))
                 .toList();
     }
+
+    @Override
+    public Lifetime lifetimeOf(long therapistId) {
+        int count = 0;
+        int positive = 0;
+        for (OrderReview r : reviews) {
+            if (r.therapistId() != therapistId || r.status() != 1) {
+                continue;
+            }
+            count++;
+            if (ReviewPolicy.positive(r.score())) {
+                positive++;
+            }
+        }
+        return new Lifetime(count, positive);
+    }
 }

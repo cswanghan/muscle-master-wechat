@@ -71,4 +71,19 @@ public class JdbcReviewStore implements ReviewStore {
                 therapistId,
                 Math.max(1, limit));
     }
+
+    @Override
+    public Lifetime lifetimeOf(long therapistId) {
+        return jdbc.query(
+                """
+                SELECT COUNT(*) AS c,
+                       SUM(CASE WHEN score >= ? THEN 1 ELSE 0 END) AS p
+                  FROM order_review
+                 WHERE therapist_id = ? AND status = 1 AND deleted_at IS NULL
+                """,
+                rs -> rs.next()
+                        ? new Lifetime(rs.getInt("c"), rs.getInt("p"))
+                        : Lifetime.NONE,
+                ReviewPolicy.POSITIVE_SCORE, therapistId);
+    }
 }

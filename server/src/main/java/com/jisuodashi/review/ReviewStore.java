@@ -16,4 +16,14 @@ public interface ReviewStore {
 
     /** 某技师的评价列表，新的在前。 */
     List<OrderReview> listByTherapist(long therapistId, int limit);
+
+    /**
+     * 累计口径（不设窗口），等级晋升用。展示走 30 天反映近况，晋升走累计反映资历 ——
+     * 30 天门槛会让技师休一次长假就掉档。
+     */
+    Lifetime lifetimeOf(long therapistId);
+
+    record Lifetime(int reviewCount, int positiveCount) {
+        public static final Lifetime NONE = new Lifetime(0, 0);
+    }
 }
