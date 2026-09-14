@@ -34,6 +34,9 @@ public class GrowthService {
     private static final DateTimeFormatter HM = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter YMD_HM = DateTimeFormatter.ofPattern("MM-dd HH:mm");
 
+    /** 待办列表默认往后看几天。 */
+    private static final int UPCOMING_DAYS = 7;
+
     private final GrowthStore store;
     private final MembershipService membership;
     private final CustomerRepository customers;
@@ -65,7 +68,9 @@ public class GrowthService {
         JwtPrincipal me = AuthContext.requireStaff();
         LocalDate today = clock.today();
         LocalDate from = parseDate(fromRaw, today.withDayOfMonth(1));
-        LocalDate to = parseDate(toRaw, today);
+        // 默认窗口要盖住**未来一周**：课后回访是次日到期的，
+        // 窗口收在今天的话，明天该打的电话在待办列表里根本看不见。
+        LocalDate to = parseDate(toRaw, today.plusDays(UPCOMING_DAYS));
         List<GrowthModels.FollowUp> rows = store.listFollowUpsByStaff(me.staffId(), from, to);
         return toFollowUpList(rows, today);
     }

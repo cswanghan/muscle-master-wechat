@@ -21,14 +21,17 @@ public class BookedNotifyHooks implements BookingHooks {
     private final GrowthService growth;
     private final MembershipService membership;
     private final SlotOccupyStore orders;
+    private final com.jisuodashi.staff.StaffTherapistLookup therapists;
 
     public BookedNotifyHooks(
             NotifyService notify, GrowthService growth,
-            MembershipService membership, SlotOccupyStore orders) {
+            MembershipService membership, SlotOccupyStore orders,
+            com.jisuodashi.staff.StaffTherapistLookup therapists) {
         this.notify = notify;
         this.growth = growth;
         this.membership = membership;
         this.orders = orders;
+        this.therapists = therapists;
     }
 
     @Override
@@ -38,8 +41,12 @@ public class BookedNotifyHooks implements BookingHooks {
             return;
         }
         notify.scheduleBeforeClass(order);
+        // follow_up.staff_id 存的是 **staff_user 的 id**，而档案里的 ownerTherapistId
+        // 是 therapist 的 id —— 两个 id 空间。直接传 therapistId 的话，
+        // 待办写进去了但老师端永远查不出来（回访完成度也会一直是 0）。
         membership.profile(order.customerId())
                 .map(MembershipModels.Profile::ownerTherapistId)
+                .flatMap(therapists::staffUserIdOf)
                 .ifPresent(staffId ->
                         growth.scheduleAfterClass(order.customerId(), order.storeId(), staffId));
     }

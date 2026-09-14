@@ -105,6 +105,34 @@ class GrowthApiTest {
         assertThat(closed.get("pending")).isEqualTo(false);
     }
 
+    @Test
+    void bookingAutoSchedulesAFollowUpVisibleToTheOwningTeacher() {
+        // 先建档（散客单 → 档案，归属老师落到 T1），此时才有"归属"可言。
+        String customerId = member();
+        Map<String, Object> before = get("/api/v1/t/follow-ups", tToken());
+        int was = ((Number) before.get("pending")).intValue();
+
+        // 再约一单：钩子应当排一条课后回访待办。
+        Map<String, Object> m = new LinkedHashMap<>();
+        int n = SEQ.incrementAndGet();
+        m.put("requestId", "fu-book-" + n);
+        m.put("phone", phoneOf(customerId));
+        m.put("customerName", "回访会员");
+        m.put("therapistId", String.valueOf(DemoCatalogIds.THERAPIST_LIN));
+        m.put("projectId", String.valueOf(DemoCatalogIds.PROJECT_P60));
+        m.put("date", "2026-08-14");
+        m.put("startSlotNo", 76);
+        m.put("alreadyInStore", true);
+        m.put("payChannel", "CASH");
+        data(rest.exchange("/api/v1/f/walk-ins", HttpMethod.POST,
+                new HttpEntity<>(m, headers(fToken())), MAP));
+
+        Map<String, Object> after = get("/api/v1/t/follow-ups", tToken());
+        // 档案里存的是 therapist id，而 follow_up.staff_id 是 staff_user id ——
+        // 两个 id 空间。写入时不转换的话待办进了库但老师端永远查不出来。
+        assertThat(((Number) after.get("pending")).intValue()).isGreaterThan(was);
+    }
+
     // ── 课后打卡 ──
 
     @Test
@@ -246,9 +274,10 @@ class GrowthApiTest {
 
     private String member() {
         int n = SEQ.incrementAndGet();
+        String phone = "1881000" + String.format("%04d", n);
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("requestId", "wi-g-" + n);
-        m.put("phone", "1881000" + String.format("%04d", n));
+        m.put("phone", phone);
         m.put("customerName", "成长会员" + n);
         m.put("therapistId", String.valueOf(DemoCatalogIds.THERAPIST_LIN));
         m.put("projectId", String.valueOf(DemoCatalogIds.PROJECT_P60));
@@ -262,7 +291,15 @@ class GrowthApiTest {
         // 建档，否则回访和打卡都找不到这个人。
         data(post("/api/v1/t/members/" + customerId + "/profile",
                 Map.of("coreIssue", "肩颈劳损", "channel", "XIAOHONGSHU"), tToken()));
+        phones.put(customerId, phone);
         return customerId;
+    }
+
+    /** 散客开单要手机号，而 member() 只回 customerId，这里留一份映射。 */
+    private final Map<String, String> phones = new LinkedHashMap<>();
+
+    private String phoneOf(String customerId) {
+        return phones.get(customerId);
     }
 
     private ResponseEntity<Map<String, Object>> post(String path, Map<String, ?> body, String token) {

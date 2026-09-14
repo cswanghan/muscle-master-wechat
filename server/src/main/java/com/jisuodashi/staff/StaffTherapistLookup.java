@@ -31,4 +31,17 @@ public class StaffTherapistLookup {
                 .findFirst()
                 .orElse(String.valueOf(therapistId));
     }
+
+    /**
+     * therapist id → staff_user id。
+     *
+     * <p>两个 id 空间很容易混：档案里存的是 therapist，而回访、考勤、审计存的都是
+     * staff_user。跨过来必须显式转一次。
+     */
+    public java.util.Optional<Long> staffUserIdOf(long therapistId) {
+        return catalog.listTherapists().stream()
+                .filter(t -> t.id() == therapistId)
+                .map(CatalogModels.Therapist::staffUserId)
+                .findFirst();
+    }
 }

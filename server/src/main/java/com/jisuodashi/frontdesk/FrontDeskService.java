@@ -47,6 +47,9 @@ import java.util.Locale;
 @Service
 public class FrontDeskService {
 
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(FrontDeskService.class);
+
     /** {@code human_task.task_type} opened by ABORT and closed by {@code /resolve}. */
     public static final String TASK_ORDER_ABNORMAL = "ORDER_ABNORMAL";
     public static final String ABNORMAL_BIZ_PREFIX = "abnormal:";
@@ -210,15 +213,40 @@ public class FrontDeskService {
                 status = after == null ? status : after.status();
             }
             BookingOrderRef latest = orders.findOrderById(locked.orderId());
+            afterBooked(locked.orderId());
             return toWalkIn(latest == null ? order : latest, customer, channel, cash.paymentNo(),
                     null, already, locked.replay(), status);
         }
         PaymentDtos.NativePayResponse nativePay = payments.nativePrepay(
                 customer.getId(), locked.orderId(), req.requestId() + ":native");
         BookingOrderRef latest = orders.findOrderById(locked.orderId());
+        afterBooked(locked.orderId());
         return toWalkIn(latest == null ? order : latest, customer, channel, nativePay.paymentNo(),
                 nativePay.codeUrl(), already, locked.replay() || nativePay.reused(),
                 latest == null ? locked.status() : latest.status());
+    }
+
+    private com.jisuodashi.order.BookingHooks hooks;
+
+    /**
+     * 约成之后的动作（课前提醒、课后回访待办）。散客也要走 ——
+     * 体验客大多是散客进来的，而体验后回访恰恰是最该做的那一通电话。
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setHooks(com.jisuodashi.order.BookingHooks hooks) {
+        this.hooks = hooks;
+    }
+
+    /** 钩子失败不该把开单打回去：单已经成了，提醒没排上是次要的。 */
+    private void afterBooked(long orderId) {
+        if (hooks == null) {
+            return;
+        }
+        try {
+            hooks.onBooked(orderId);
+        } catch (RuntimeException ex) {
+            log.warn("post-walkin hooks failed order={}", orderId, ex);
+        }
     }
 
     private String checkInAfterPay(long orderId) {
