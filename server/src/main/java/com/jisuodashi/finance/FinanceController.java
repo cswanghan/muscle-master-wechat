@@ -23,13 +23,26 @@ public class FinanceController {
 
     private final ExpenseService expenses;
     private final FinanceReportService reports;
+    private final com.jisuodashi.rbac.ScopedStoreResolver stores;
     private final AppClock clock;
 
     public FinanceController(
-            ExpenseService expenses, FinanceReportService reports, AppClock clock) {
+            ExpenseService expenses, FinanceReportService reports,
+            com.jisuodashi.rbac.ScopedStoreResolver stores, AppClock clock) {
         this.expenses = expenses;
         this.reports = reports;
+        this.stores = stores;
         this.clock = clock;
+    }
+
+    /** 门店切换器的数据源：超管拿全部，其余拿自己数据域内的。 */
+    @GetMapping("/stores")
+    @StoreScoped
+    @RequirePerm("finance:report")
+    public ApiResponse<java.util.List<java.util.Map<String, String>>> stores() {
+        return ApiResponse.ok(stores.visibleStores().stream()
+                .map(s -> java.util.Map.of("storeId", String.valueOf(s.id()), "name", s.name()))
+                .toList());
     }
 
     // ── 支出 ──
@@ -85,53 +98,59 @@ public class FinanceController {
     @StoreScoped
     @RequirePerm("finance:report")
     public ApiResponse<FinanceDtos.ConsumeReport> consume(
-            @RequestParam(value = "month", required = false) String month) {
+            @RequestParam(value = "month", required = false) String month,
+            @RequestParam(value = "storeId", required = false) String storeId) {
         LocalDate from = monthStart(month);
-        return ApiResponse.ok(reports.consumeReport(ExpenseService.storeId(), from, monthEnd(from)));
+        return ApiResponse.ok(reports.consumeReport(stores.resolve(storeId), from, monthEnd(from)));
     }
 
     @GetMapping("/reports/trial")
     @StoreScoped
     @RequirePerm("finance:report")
     public ApiResponse<FinanceDtos.TrialReport> trial(
-            @RequestParam(value = "month", required = false) String month) {
+            @RequestParam(value = "month", required = false) String month,
+            @RequestParam(value = "storeId", required = false) String storeId) {
         LocalDate from = monthStart(month);
-        return ApiResponse.ok(reports.trialReport(ExpenseService.storeId(), from, monthEnd(from)));
+        return ApiResponse.ok(reports.trialReport(stores.resolve(storeId), from, monthEnd(from)));
     }
 
     @GetMapping("/reports/refund")
     @StoreScoped
     @RequirePerm("finance:report")
     public ApiResponse<FinanceDtos.RefundReport> refund(
-            @RequestParam(value = "month", required = false) String month) {
+            @RequestParam(value = "month", required = false) String month,
+            @RequestParam(value = "storeId", required = false) String storeId) {
         LocalDate from = monthStart(month);
-        return ApiResponse.ok(reports.refundReport(ExpenseService.storeId(), from, monthEnd(from)));
+        return ApiResponse.ok(reports.refundReport(stores.resolve(storeId), from, monthEnd(from)));
     }
 
     @GetMapping("/reports/payroll")
     @StoreScoped
     @RequirePerm("finance:report")
     public ApiResponse<FinanceDtos.PayrollReport> payroll(
-            @RequestParam(value = "month", required = false) String month) {
+            @RequestParam(value = "month", required = false) String month,
+            @RequestParam(value = "storeId", required = false) String storeId) {
         LocalDate from = monthStart(month);
-        return ApiResponse.ok(reports.payrollReport(ExpenseService.storeId(), from, monthEnd(from)));
+        return ApiResponse.ok(reports.payrollReport(stores.resolve(storeId), from, monthEnd(from)));
     }
 
     /** 库存课 = 卖出去还没上完的课时价值。这是负债，不是资产。 */
     @GetMapping("/reports/inventory")
     @StoreScoped
     @RequirePerm("finance:report")
-    public ApiResponse<FinanceDtos.InventoryReport> inventory() {
-        return ApiResponse.ok(reports.inventoryReport(ExpenseService.storeId()));
+    public ApiResponse<FinanceDtos.InventoryReport> inventory(
+            @RequestParam(value = "storeId", required = false) String storeId) {
+        return ApiResponse.ok(reports.inventoryReport(stores.resolve(storeId)));
     }
 
     @GetMapping("/reports/store")
     @StoreScoped
     @RequirePerm("finance:report")
     public ApiResponse<FinanceDtos.StoreReport> store(
-            @RequestParam(value = "month", required = false) String month) {
+            @RequestParam(value = "month", required = false) String month,
+            @RequestParam(value = "storeId", required = false) String storeId) {
         LocalDate from = monthStart(month);
-        return ApiResponse.ok(reports.storeReport(ExpenseService.storeId(), from, monthEnd(from)));
+        return ApiResponse.ok(reports.storeReport(stores.resolve(storeId), from, monthEnd(from)));
     }
 
     /** 客户报表：{@code kind} 取 renew / expired / dormant。 */
@@ -139,8 +158,9 @@ public class FinanceController {
     @StoreScoped
     @RequirePerm("finance:report")
     public ApiResponse<FinanceDtos.CustomerReport> customers(
-            @RequestParam(value = "kind", required = false) String kind) {
-        return ApiResponse.ok(reports.customerReport(ExpenseService.storeId(), kind));
+            @RequestParam(value = "kind", required = false) String kind,
+            @RequestParam(value = "storeId", required = false) String storeId) {
+        return ApiResponse.ok(reports.customerReport(stores.resolve(storeId), kind));
     }
 
     private LocalDate monthStart(String raw) {

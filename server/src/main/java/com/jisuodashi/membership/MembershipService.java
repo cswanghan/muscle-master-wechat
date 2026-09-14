@@ -10,8 +10,6 @@ import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.PhoneCrypto;
 import com.jisuodashi.common.SnowflakeIdGenerator;
-import com.jisuodashi.rbac.StoreScope;
-import com.jisuodashi.rbac.StoreScopeContext;
 import com.jisuodashi.staff.StaffTherapistLookup;
 import com.jisuodashi.inventory.SlotTimes;
 import com.jisuodashi.order.BookingDtos;
@@ -44,6 +42,7 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
     private final CustomerRepository customers;
     private final PhoneCrypto crypto;
     private final StaffTherapistLookup therapists;
+    private final com.jisuodashi.rbac.ScopedStoreResolver stores;
     private final SnowflakeIdGenerator ids;
     private final AppClock clock;
     private BookingService booking;
@@ -62,6 +61,7 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
             CustomerRepository customers,
             PhoneCrypto crypto,
             StaffTherapistLookup therapists,
+            com.jisuodashi.rbac.ScopedStoreResolver stores,
             SnowflakeIdGenerator ids,
             AppClock clock) {
         this.store = store;
@@ -70,6 +70,7 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
         this.customers = customers;
         this.crypto = crypto;
         this.therapists = therapists;
+        this.stores = stores;
         this.ids = ids;
         this.clock = clock;
     }
@@ -166,13 +167,9 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
                         ErrorCodes.NOT_FOUND, "该手机号还不是会员，先让顾客在小程序登录一次"));
     }
 
-    /** 发卡门店取操作人的数据域；超管没有"自己的店"，得显式给。 */
-    private static long operatorStoreId() {
-        StoreScope scope = StoreScopeContext.get();
-        if (scope == null || scope.storeIds().isEmpty()) {
-            throw new ApiException(ErrorCodes.BAD_REQUEST, "请指定门店");
-        }
-        return scope.storeIds().getFirst();
+    /** 发卡门店：显式传 → 数据域首家 → 第一家营业门店。见 ScopedStoreResolver。 */
+    private long operatorStoreId() {
+        return stores.resolve();
     }
 
     private static long parseId(String raw) {
@@ -332,7 +329,7 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
                 ? "refund-pkg:" + packageId : requestId;
         if (store.txnExists(rid)) {
             return new MembershipDtos.RefundPackageResponse(
-                    packageIdRaw, 0, "0.00", pkg.usedSessions(), true);
+                    packageIdRaw, 0, "0.00", pkg.usedSessions(), true, "0.00");
         }
         Instant now = Instant.now(clock.clock());
         // 只停用，**不动 used_sessions** —— 把剩余次数记成"已用"等于伪造上课记录，
@@ -343,12 +340,17 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
                 pkg.totalSessions(), pkg.usedSessions(), pkg.priceFen(), pkg.unitPriceFen(),
                 pkg.sellerTherapistId(), pkg.effectiveOn(), pkg.expireOn(),
                 MembershipModels.STATUS_DISABLED, pkg.createdAt(), now));
+        long clawback = MembershipPolicy.saleCommissionClawbackFen(
+                pkg.priceFen(), pkg.totalSessions(), pkg.usedSessions());
         store.insertTxn(new MembershipModels.Txn(
                 ids.nextId(), pkg.id(), pkg.customerId(), pkg.storeId(),
-                MembershipModels.TYPE_REFUND, -remaining, null, null, rid,
-                reason == null || reason.isBlank() ? "退课销卡" : reason, now));
+                MembershipModels.TYPE_REFUND, -remaining, null, pkg.sellerTherapistId(), rid,
+                (reason == null || reason.isBlank() ? "退课销卡" : reason)
+                        + "；扣回卖课提成 " + yuan(clawback),
+                now));
         return new MembershipDtos.RefundPackageResponse(
-                packageIdRaw, remaining, yuan(refundFen), pkg.usedSessions(), false);
+                packageIdRaw, remaining, yuan(refundFen), pkg.usedSessions(), false,
+                yuan(clawback));
     }
 
     // ---------- 查询 ----------
@@ -447,8 +449,7 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
     }
 
     private long operatorStoreIdOrZero() {
-        StoreScope scope = StoreScopeContext.get();
-        return scope == null || scope.storeIds().isEmpty() ? 0L : scope.storeIds().getFirst();
+        return stores.resolve();
     }
 
     private static LocalDate parseDateOr(String raw, LocalDate fallback) {

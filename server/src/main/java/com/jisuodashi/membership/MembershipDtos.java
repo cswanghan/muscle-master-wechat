@@ -139,7 +139,9 @@ public final class MembershipDtos {
             int refundedSessions,
             String refundYuan,
             int usedSessions,
-            boolean replay
+            boolean replay,
+            /** 按未耗比例扣回的卖课提成；工资表当月据此扣减。 */
+            String clawbackYuan
     ) {
     }
 

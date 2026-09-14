@@ -179,6 +179,23 @@ class FinanceApiTest {
         assertThat(((Number) r.get("totalLessons")).intValue()).isGreaterThanOrEqualTo(0);
     }
 
+    @Test
+    void superAdminWithNoStoreScopeStillSeesReports() {
+        // 超管数据域是 ALL，storeIds 是**空的** —— 直接取 getFirst() 会让
+        // 权限最大的人在每张按门店的报表上撞到"请指定门店"。
+        String superAdmin = jwt.issue(JwtPrincipal.staff(
+                DemoStaffIds.ADMIN, TokenType.A, "ALL", List.of())).token();
+        Map<String, Object> r = get("/api/v1/f/finance/reports/store", superAdmin);
+        assertThat(r.get("month")).isNotNull();
+        assertThat(r.get("incomeTotalYuan")).isNotNull();
+
+        // 门店切换器也要给得出候选，否则超管只能永远看第一家。
+        ResponseEntity<Map<String, Object>> stores = rest.exchange(
+                "/api/v1/f/finance/stores", HttpMethod.GET,
+                new HttpEntity<>(headers(superAdmin)), MAP);
+        assertThat(stores.getBody().get("code")).isEqualTo(0);
+    }
+
     // ── helpers ──
 
     private ResponseEntity<Map<String, Object>> sell(String phone, int sessions, long priceFen) {

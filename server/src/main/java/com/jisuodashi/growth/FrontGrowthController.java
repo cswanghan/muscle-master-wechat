@@ -3,8 +3,6 @@ package com.jisuodashi.growth;
 import com.jisuodashi.common.ApiResponse;
 import com.jisuodashi.rbac.Audited;
 import com.jisuodashi.rbac.RequirePerm;
-import com.jisuodashi.rbac.StoreScope;
-import com.jisuodashi.rbac.StoreScopeContext;
 import com.jisuodashi.rbac.StoreScoped;
 import com.jisuodashi.scoreboard.ScoreboardService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,13 +24,16 @@ public class FrontGrowthController {
     private final GrowthService growth;
     private final ScoreboardService scoreboard;
     private final com.jisuodashi.common.AppClock clock;
+    private final com.jisuodashi.rbac.ScopedStoreResolver stores;
 
     public FrontGrowthController(
             GrowthService growth, ScoreboardService scoreboard,
-            com.jisuodashi.common.AppClock clock) {
+            com.jisuodashi.common.AppClock clock,
+            com.jisuodashi.rbac.ScopedStoreResolver stores) {
         this.growth = growth;
         this.scoreboard = scoreboard;
         this.clock = clock;
+        this.stores = stores;
     }
 
     @GetMapping("/review-claims")
@@ -46,7 +47,7 @@ public class FrontGrowthController {
         // 用真实系统时间会让查询窗口跟数据整个错开。
         LocalDate f = GrowthService.parseDate(from, clock.today().withDayOfMonth(1));
         return ApiResponse.ok(growth.listClaims(
-                storeId(), status == null || status.isBlank() ? null : status,
+                stores.resolve(), status == null || status.isBlank() ? null : status,
                 f, GrowthService.parseDate(to, f.withDayOfMonth(f.lengthOfMonth()))));
     }
 
@@ -72,15 +73,8 @@ public class FrontGrowthController {
     @RequirePerm("order:list")
     public ApiResponse<List<GrowthDtos.ScoreboardResponse>> therapistBoard(
             @RequestParam(value = "month", required = false) String month) {
-        return ApiResponse.ok(scoreboard.storeBoard(storeId(), month));
+        return ApiResponse.ok(scoreboard.storeBoard(stores.resolve(), month));
     }
 
-    private static long storeId() {
-        StoreScope scope = StoreScopeContext.get();
-        if (scope == null || scope.storeIds().isEmpty()) {
-            throw new com.jisuodashi.common.ApiException(
-                    com.jisuodashi.common.ErrorCodes.BAD_REQUEST, "请指定门店");
-        }
-        return scope.storeIds().getFirst();
-    }
+
 }

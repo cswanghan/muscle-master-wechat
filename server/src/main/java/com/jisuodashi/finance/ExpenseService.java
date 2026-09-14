@@ -9,8 +9,7 @@ import com.jisuodashi.common.AppClock;
 import com.jisuodashi.common.ErrorCodes;
 import com.jisuodashi.common.SnowflakeIdGenerator;
 import com.jisuodashi.growth.GrowthService;
-import com.jisuodashi.rbac.StoreScope;
-import com.jisuodashi.rbac.StoreScopeContext;
+import com.jisuodashi.rbac.ScopedStoreResolver;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -23,14 +22,16 @@ public class ExpenseService {
 
     private final FinanceStore store;
     private final StaffUserRepository staff;
+    private final ScopedStoreResolver stores;
     private final SnowflakeIdGenerator ids;
     private final AppClock clock;
 
     public ExpenseService(
-            FinanceStore store, StaffUserRepository staff,
+            FinanceStore store, StaffUserRepository staff, ScopedStoreResolver stores,
             SnowflakeIdGenerator ids, AppClock clock) {
         this.store = store;
         this.staff = staff;
+        this.stores = stores;
         this.ids = ids;
         this.clock = clock;
     }
@@ -46,7 +47,7 @@ public class ExpenseService {
         }
         Instant now = Instant.now(clock.clock());
         FinanceModels.Expense row = new FinanceModels.Expense(
-                ids.nextId(), storeId(), cat, req.amountFen(),
+                ids.nextId(), stores.resolve(), cat, req.amountFen(),
                 GrowthService.parseDate(req.happenedOn(), clock.today()),
                 req.vendor(), req.remark(), req.proofUrl(),
                 FinanceModels.STATUS_PENDING, me.staffId(), null, null, null, now, now);
@@ -83,7 +84,7 @@ public class ExpenseService {
         LocalDate from = GrowthService.parseDate(fromRaw, today.withDayOfMonth(1));
         LocalDate to = GrowthService.parseDate(toRaw, today);
         List<FinanceModels.Expense> rows = store.listExpenses(
-                storeId(), status == null || status.isBlank() ? null : status, from, to);
+                stores.resolve(), status == null || status.isBlank() ? null : status, from, to);
         long approved = rows.stream()
                 .filter(FinanceModels.Expense::approved)
                 .mapToLong(FinanceModels.Expense::amountFen).sum();
@@ -99,7 +100,7 @@ public class ExpenseService {
         Instant now = Instant.now(clock.clock());
         FinanceModels.Payroll cur = store.findPayroll(therapistId).orElse(null);
         store.upsertPayroll(new FinanceModels.Payroll(
-                cur == null ? ids.nextId() : cur.id(), therapistId, storeId(),
+                cur == null ? ids.nextId() : cur.id(), therapistId, stores.resolve(),
                 req.baseSalaryFen(), req.lessonFeeFen(), req.saleRateX100(),
                 cur == null ? clock.today() : cur.effectiveOn(),
                 cur == null ? now : cur.createdAt(), now));
@@ -123,11 +124,5 @@ public class ExpenseService {
         };
     }
 
-    static long storeId() {
-        StoreScope scope = StoreScopeContext.get();
-        if (scope == null || scope.storeIds().isEmpty()) {
-            throw new ApiException(ErrorCodes.BAD_REQUEST, "请指定门店");
-        }
-        return scope.storeIds().getFirst();
-    }
+
 }

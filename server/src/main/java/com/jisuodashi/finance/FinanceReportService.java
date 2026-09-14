@@ -10,6 +10,7 @@ import com.jisuodashi.inventory.SlotOccupyService;
 import com.jisuodashi.inventory.SlotOccupyStore;
 import com.jisuodashi.inventory.SlotOccupyStore.BookingOrderRef;
 import com.jisuodashi.membership.MembershipModels;
+import com.jisuodashi.membership.MembershipPolicy;
 import com.jisuodashi.membership.MembershipService;
 import com.jisuodashi.membership.MembershipStore;
 import com.jisuodashi.payment.Payment;
@@ -173,8 +174,11 @@ public class FinanceReportService {
                     .filter(o -> EARNED.contains(o.status())).count();
             long sales = membershipStore.listPackagesSold(storeId, t.id(), from, to).stream()
                     .mapToLong(MembershipModels.Package::priceFen).sum();
-            long saleComm = sales * rate / 10_000;
-            long pay = FinancePolicy.payrollFen(base, fee, lessons, rate, sales);
+            // 退课按未耗比例扣回卖课提成 —— 不扣的话"先卖后退"就是刷提成的口子。
+            // 耗课提成不回滚：已经上掉的那几节课是真服务过的。
+            long clawback = clawbackFen(storeId, t.id(), from, to);
+            long saleComm = Math.max(0, sales * rate / 10_000 - clawback);
+            long pay = base + fee * lessons + saleComm;
             grand += pay;
 
             rows.add(new FinanceDtos.PayrollRow(
@@ -185,6 +189,25 @@ public class FinanceReportService {
         }
         rows.sort(Comparator.comparing(FinanceDtos.PayrollRow::therapistName));
         return new FinanceDtos.PayrollReport(month(from), rows, yuan(grand));
+    }
+
+    /** 本月退课扣回的卖课提成合计。流水的 remark 里记着数，这里按未耗比例重算一遍。 */
+    private long clawbackFen(long storeId, long therapistId, LocalDate from, LocalDate to) {
+        long sum = 0;
+        for (MembershipModels.Package p : membershipStore.listPackagesSold(storeId, therapistId,
+                from.minusYears(2), to)) {
+            if (p.status() != MembershipModels.STATUS_DISABLED) {
+                continue;
+            }
+            // 只算这个月退的
+            LocalDate refundedOn = p.updatedAt().atZone(clock.clock().getZone()).toLocalDate();
+            if (refundedOn.isBefore(from) || refundedOn.isAfter(to)) {
+                continue;
+            }
+            sum += MembershipPolicy.saleCommissionClawbackFen(
+                    p.priceFen(), p.totalSessions(), p.usedSessions());
+        }
+        return sum;
     }
 
     // ── 45 库存课 ──
