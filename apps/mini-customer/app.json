@@ -9,14 +9,6 @@
     "pages/mine/mine",
     "pages/coupon/coupon",
     "pages/mall/mall",
-    "pages/staff/home/home",
-    "pages/staff/today/today",
-    "pages/staff/service/service",
-    "pages/staff/frontdesk/frontdesk",
-    "pages/staff/manager/manager",
-    "pages/staff/schedule/schedule",
-    "pages/staff/promotions/promotions",
-    "pages/staff/performance/performance",
     "pages/review/review"
   ],
   "window": {
@@ -27,5 +19,31 @@
     "backgroundTextStyle": "light"
   },
   "style": "v2",
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "subPackages": [
+    {
+      "root": "pages/staff",
+      "pages": [
+        "home/home",
+        "today/today",
+        "service/service",
+        "frontdesk/frontdesk",
+        "manager/manager",
+        "schedule/schedule",
+        "promotions/promotions",
+        "performance/performance",
+        "dayslots/dayslots",
+        "members/members",
+        "member/member"
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/mine/mine": {
+      "network": "all",
+      "packages": [
+        "pages/staff"
+      ]
+    }
+  }
 }

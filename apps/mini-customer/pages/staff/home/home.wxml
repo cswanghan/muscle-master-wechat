@@ -12,6 +12,8 @@
     url="/pages/staff/today/today?who={{item.who}}"
     class="go"
   >技师 · {{item.name}}（{{item.levelLabel}}）</navigator>
+  <navigator url="/pages/staff/members/members" class="go">我的会员 · 课时与计划</navigator>
+  <navigator url="/pages/staff/dayslots/dayslots" class="go">当日时间表 · 可约时段</navigator>
   <navigator url="/pages/staff/frontdesk/frontdesk" class="go">前台 · 核销与收银</navigator>
   <navigator url="/pages/staff/manager/manager" class="go">店长 · 经营概览</navigator>
   <navigator url="/pages/staff/schedule/schedule" class="go ghost">门店排班（只读）</navigator>

@@ -22,7 +22,9 @@ public final class BookingDtos {
             @NotNull(message = "startSlotNo 不能为空")
             @Min(value = 0, message = "startSlotNo 无效") Integer startSlotNo,
             /** 顾客点名这位技师（从技师详情进的日历）。缺省按非指定算。 */
-            Boolean designated
+            Boolean designated,
+            /** 用课包抵扣。留空=按金额付，两条路并存。 */
+            String memberPackageId
     ) {
     }
 

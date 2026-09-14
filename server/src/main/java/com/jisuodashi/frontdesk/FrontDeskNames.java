@@ -15,11 +15,7 @@ final class FrontDeskNames {
     }
 
     static String maskPhone(String raw) {
-        String digits = digits(raw);
-        if (digits.length() < 7) {
-            return digits.isEmpty() ? "****" : digits;
-        }
-        return digits.substring(0, 3) + "****" + digits.substring(digits.length() - 4);
+        return com.jisuodashi.common.PhoneCrypto.mask(raw);
     }
 
     static String digits(String raw) {

@@ -1,0 +1,68 @@
+<view class="page staff-page">
+  <view class="bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="bar-title">{{phoneMask}}</view>
+    <view wx:if="{{!editing}}" class="bar-act" bindtap="startEdit">编辑</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint pad">加载中…</view>
+  <view wx:if="{{error}}" class="hint pad">{{error}}</view>
+
+  <view class="card nums">
+    <view class="num-col">
+      <view class="num">{{remainingSessions}}</view>
+      <view class="cap">剩余课时</view>
+    </view>
+    <view class="num-col">
+      <view class="num">{{doneSessions}}</view>
+      <view class="cap">累计已完成</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="sec">核心问题</view>
+    <block wx:if="{{editing}}">
+      <input class="inp" value="{{draftIssue}}" bindinput="onIssue" placeholder="如 腰椎间盘突出 / 圆肩驼背" />
+      <textarea class="ta" value="{{draftRemark}}" bindinput="onRemark" placeholder="备注：禁忌动作、注意事项" />
+      <view class="acts">
+        <view class="btn ghost" bindtap="cancelEdit">取消</view>
+        <view class="btn" bindtap="save">{{saving?'保存中…':'保存'}}</view>
+      </view>
+    </block>
+    <block wx:else>
+      <view wx:if="{{coreIssue}}" class="issue">{{coreIssue}}</view>
+      <view wx:else class="hint">还没填，点右上角编辑</view>
+      <view wx:if="{{remark}}" class="remark">{{remark}}</view>
+    </block>
+  </view>
+
+  <view class="sec pad">训练计划</view>
+  <view wx:if="{{!plans.length}}" class="hint pad">还没有训练计划</view>
+  <view wx:for="{{plans}}" wx:key="planId" class="card">
+    <view class="row">
+      <view class="grow strong">{{item.title}}</view>
+      <view class="tag {{item.running?'on':''}}">{{item.statusLabel}}</view>
+    </view>
+    <view wx:if="{{item.goal}}" class="hint">{{item.goal}}</view>
+    <view class="row mt">
+      <view class="grow hint">{{item.doneSessions}} / {{item.totalSessions}} 次</view>
+      <view class="hint">{{item.pct}}%</view>
+    </view>
+    <view class="bar-bg"><view class="bar-fill" style="width:{{item.pct}}%"></view></view>
+  </view>
+
+  <view class="sec pad">课包</view>
+  <view wx:if="{{!packages.length}}" class="hint pad">还没有课包，前台可开卡</view>
+  <view wx:for="{{packages}}" wx:key="packageId" class="card">
+    <view class="row">
+      <view class="grow strong">{{item.title}}</view>
+      <view class="tag {{item.usable?'on':''}}">{{item.statusLabel}}</view>
+    </view>
+    <view class="row mt">
+      <view class="grow hint">已用 {{item.usedSessions}} / {{item.totalSessions}} · 单次 ¥{{item.unitPriceYuan}}</view>
+      <view class="strong">余 {{item.remainingSessions}}</view>
+    </view>
+    <view class="bar-bg"><view class="bar-fill" style="width:{{item.pct}}%"></view></view>
+    <view wx:if="{{item.expireOn}}" class="hint mt">有效期至 {{item.expireOn}}</view>
+  </view>
+</view>

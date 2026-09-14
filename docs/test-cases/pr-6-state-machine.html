@@ -97,8 +97,8 @@
       <thead><tr><th>类</th><th>检查</th><th>细节</th><th>结果</th></tr></thead>
       <tbody>
 <tr class='ok'><td>TABLE</td><td>PENDING_PAY + PAY_SUCCESS → BOOKED</td><td>[CONFIRM_PAID]</td><td>PASS</td></tr>
-<tr class='ok'><td>TABLE</td><td>PENDING_PAY + PAY_TIMEOUT → CLOSED</td><td>[RELEASE_LOCK]</td><td>PASS</td></tr>
-<tr class='ok'><td>TABLE</td><td>PENDING_PAY + USER_CANCEL → CLOSED</td><td>[RELEASE_LOCK]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>PENDING_PAY + PAY_TIMEOUT → CLOSED</td><td>[RELEASE_LOCK, RETURN_CARD]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>PENDING_PAY + USER_CANCEL → CLOSED</td><td>[RELEASE_LOCK, RETURN_CARD]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>BOOKED + CHECK_IN → CHECKED_IN</td><td>[CHECKED_IN_AT]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>BOOKED + CANCEL → CANCELLED</td><td>[REFUND, RELEASE_UNCONSUMED_START]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>BOOKED + REFUND → CANCELLED</td><td>[REFUND, RELEASE_UNCONSUMED_START]</td><td>PASS</td></tr>
@@ -107,7 +107,7 @@
 <tr class='ok'><td>TABLE</td><td>CHECKED_IN + START_SERVICE → IN_SERVICE</td><td>[SERVICE_RECORD]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>CHECKED_IN + SWAP_THERAPIST → CHECKED_IN</td><td>[SWAP_THERAPIST]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>CHECKED_IN + REFUND → CANCELLED</td><td>[REFUND, RELEASE_UNCONSUMED_START]</td><td>PASS</td></tr>
-<tr class='ok'><td>TABLE</td><td>IN_SERVICE + COMPLETE_SERVICE → COMPLETED</td><td>[ENDED_AT]</td><td>PASS</td></tr>
+<tr class='ok'><td>TABLE</td><td>IN_SERVICE + COMPLETE_SERVICE → COMPLETED</td><td>[ENDED_AT, CONSUME_SESSION]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>IN_SERVICE + ADD_ON → IN_SERVICE</td><td>[NONE]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>IN_SERVICE + ADD_ON_PAY_TIMEOUT → IN_SERVICE</td><td>[RELEASE_ADDON]</td><td>PASS</td></tr>
 <tr class='ok'><td>TABLE</td><td>IN_SERVICE + SWAP_THERAPIST → IN_SERVICE</td><td>[SWAP_THERAPIST]</td><td>PASS</td></tr>

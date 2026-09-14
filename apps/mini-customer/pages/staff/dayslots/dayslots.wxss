@@ -1,0 +1,131 @@
+/* 正文最小 30rpx(15px)，与店长台同一套无障碍下限。 */
+.page {
+  padding: 20rpx 0 170rpx;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 8rpx 24rpx 20rpx;
+}
+
+.back {
+  width: 60rpx;
+  height: 60rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 44rpx;
+  color: #17211d;
+}
+
+.bar-title {
+  flex: 1;
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.bar-extra {
+  font-size: 28rpx;
+  color: #8b948f;
+}
+
+.dates {
+  white-space: nowrap;
+  padding: 0 24rpx;
+}
+
+.date {
+  display: inline-block;
+  width: 108rpx;
+  margin-right: 12rpx;
+  padding: 14rpx 0;
+  text-align: center;
+  border-radius: 16rpx;
+  background: #f4f2ee;
+}
+
+.date.on {
+  background: #1e5c4a;
+}
+
+.date.on .d-label,
+.date.on .d-day {
+  color: #fff;
+}
+
+.d-label {
+  font-size: 26rpx;
+  color: #8b948f;
+}
+
+.d-day {
+  margin-top: 4rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #17211d;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.tally {
+  padding: 20rpx 24rpx 12rpx;
+  font-size: 30rpx;
+  color: #3d4d46;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding: 0 24rpx;
+}
+
+/* 三列铺满：一天的形状要一眼看完，不用滚动找空档。 */
+.slot {
+  width: calc((100% - 24rpx) / 3);
+  padding: 16rpx 8rpx;
+  border-radius: 16rpx;
+  text-align: center;
+  background: #f4f2ee;
+}
+
+.slot.free {
+  background: #e6f2ec;
+  border: 2rpx solid #1e5c4a;
+}
+
+.slot.booked {
+  background: #1e5c4a;
+}
+
+.slot.booked .s-time,
+.slot.booked .s-who {
+  color: #fff;
+}
+
+.slot.rest {
+  background: #f0eeea;
+  opacity: 0.5;
+}
+
+.s-time {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #17211d;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+.s-who {
+  margin-top: 4rpx;
+  font-size: 26rpx;
+  color: #8b948f;
+}
+
+.hint {
+  color: #8b948f;
+  font-size: 30rpx;
+}
+
+.pad {
+  padding: 20rpx 24rpx;
+}

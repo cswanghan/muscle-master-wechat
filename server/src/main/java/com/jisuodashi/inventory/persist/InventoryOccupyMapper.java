@@ -1250,4 +1250,10 @@ public interface InventoryOccupyMapper {
              WHERE store_id = #{storeId} AND created_at >= #{since}
             """)
     int countOrdersCreatedSince(@Param("storeId") long storeId, @Param("since") LocalDateTime since);
+
+    @Select("SELECT member_package_id FROM booking_order WHERE id = #{orderId}")
+    Long selectMemberPackageId(@Param("orderId") long orderId);
+
+    @Update("UPDATE booking_order SET member_package_id = #{packageId} WHERE id = #{orderId}")
+    void updateMemberPackageId(@Param("orderId") long orderId, @Param("packageId") long packageId);
 }

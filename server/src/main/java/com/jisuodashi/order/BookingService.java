@@ -51,6 +51,14 @@ public class BookingService {
         this.board = board;
     }
 
+    private PackageBookingPort sessions;
+
+    /** 课包抵扣；setter 注入是为了让 order 层不硬依赖会员域（上层实现下层声明的口）。 */
+    @Autowired(required = false)
+    public void setSessions(PackageBookingPort sessions) {
+        this.sessions = sessions;
+    }
+
     public BookingDtos.CreateBookingResponse create(long customerId, BookingDtos.CreateBookingRequest req) {
         LockNewResult locked = occupy.lockNew(new LockNewCommand(
                 req.requestId(),
@@ -62,6 +70,22 @@ public class BookingService {
                 req.startSlotNo(),
                 LockNewCommand.SOURCE_MINI_C,
                 Boolean.TRUE.equals(req.designated())));
+        // 课包抵扣：绑上之后这单不再走微信，完成服务时由 CONSUME_SESSION 扣一次课时。
+        // 校验放在锁成功之后 —— 先确保时段真拿到了，再决定这一单怎么结账。
+        if (sessions != null && req.memberPackageId() != null && !req.memberPackageId().isBlank()) {
+            sessions.bindToOrder(customerId, locked.orderId(), req.memberPackageId());
+            // 课已经买过了，没有支付这条腿，直接确认成已预约。
+            machine.fire(locked.orderId(), OrderEvent.PAY_SUCCESS,
+                    FireContext.system().withPaymentMatched(true));
+            return new BookingDtos.CreateBookingResponse(
+                    String.valueOf(locked.orderId()),
+                    locked.orderNo(),
+                    OrderStatus.BOOKED.name(),
+                    locked.lockExpireAt(),
+                    0L,
+                    null);
+        }
+
         Map<String, String> payParams = null;
         String status = locked.status();
         if (payments != null) {

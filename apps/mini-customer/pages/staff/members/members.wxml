@@ -1,0 +1,45 @@
+<view class="page staff-page">
+  <view class="bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="bar-title">我的会员</view>
+    <view class="bar-extra">{{total}} 人</view>
+  </view>
+
+  <view class="tabs">
+    <view
+      wx:for="{{scopes}}"
+      wx:key="key"
+      class="tab {{scope===item.key?'on':''}}"
+      data-key="{{item.key}}"
+      bindtap="pickScope"
+    >{{item.label}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint pad">加载中…</view>
+  <view wx:if="{{error}}" class="hint pad">{{error}}</view>
+
+  <view
+    wx:for="{{items}}"
+    wx:key="customerId"
+    class="card member"
+    data-id="{{item.customerId}}"
+    hover-class="tap"
+    bindtap="openMember"
+  >
+    <view class="m-top">
+      <view class="m-phone">{{item.phoneMask}}</view>
+      <view class="m-left {{item.empty?'empty':(item.low?'low':'')}}">
+        余 {{item.remainingSessions}} 次
+      </view>
+    </view>
+
+    <view wx:if="{{item.coreIssue}}" class="m-issue">{{item.coreIssue}}</view>
+
+    <view class="m-meta">已完成 {{item.doneSessions}} 次<block wx:if="{{item.nextLessonAt}}"> · 下次 {{item.nextLessonAt}}</block></view>
+
+    <view wx:if="{{item.planLine}}" class="m-plan">
+      <view class="plan-line">{{item.planLine}}</view>
+      <view class="plan-bar"><view class="plan-fill" style="width:{{item.planPct}}%"></view></view>
+    </view>
+  </view>
+</view>

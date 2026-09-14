@@ -1,0 +1,34 @@
+<view class="page staff-page">
+  <view class="bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="bar-title">当日时间表</view>
+    <view class="bar-extra">{{therapistName}}</view>
+  </view>
+
+  <scroll-view class="dates" scroll-x>
+    <view
+      wx:for="{{dates}}"
+      wx:key="iso"
+      class="date {{item.on?'on':''}}"
+      data-iso="{{item.iso}}"
+      bindtap="pickDate"
+    >
+      <view class="d-label">{{item.label}}</view>
+      <view class="d-day">{{item.day}}</view>
+    </view>
+  </scroll-view>
+
+  <view class="tally">可约 {{freeCount}} 段 · 已约 {{bookedCount}} 段</view>
+
+  <view wx:if="{{loading}}" class="hint pad">加载中…</view>
+  <view wx:if="{{error}}" class="hint pad">{{error}}</view>
+
+  <view class="grid">
+    <view wx:for="{{slots}}" wx:key="slotNo" class="slot {{item.tone}}">
+      <view class="s-time">{{item.start}}</view>
+      <view wx:if="{{item.customerName}}" class="s-who">{{item.customerName}}</view>
+      <view wx:elif="{{item.bookable}}" class="s-who">可约</view>
+      <view wx:else class="s-who">—</view>
+    </view>
+  </view>
+</view>

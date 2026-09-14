@@ -1,0 +1,135 @@
+/* 正文最小 30rpx(15px)，与店长台同一套无障碍下限。 */
+.page {
+  padding: 20rpx 0 170rpx;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 8rpx 24rpx 20rpx;
+}
+
+.back {
+  width: 60rpx;
+  height: 60rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 44rpx;
+  color: #17211d;
+}
+
+.bar-title {
+  flex: 1;
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.bar-extra {
+  font-size: 28rpx;
+  color: #8b948f;
+}
+
+.tabs {
+  display: flex;
+  gap: 12rpx;
+  margin: 0 24rpx 20rpx;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 18rpx 0;
+  border-radius: 16rpx;
+  background: #f4f2ee;
+  color: #17211d;
+  font-size: 30rpx;
+}
+
+.tab.on {
+  background: #1e5c4a;
+  color: #fff;
+}
+
+.card {
+  margin: 0 24rpx 20rpx;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 24rpx;
+}
+
+.m-top {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+}
+
+.m-phone {
+  flex: 1;
+  font-size: 34rpx;
+  font-weight: 600;
+  font-family: ui-monospace, Menlo, monospace;
+}
+
+/* 余次是这一屏最该被看见的数：快用完变橙，用完变红。 */
+.m-left {
+  font-size: 30rpx;
+  color: #1e5c4a;
+  font-weight: 600;
+}
+
+.m-left.low {
+  color: #c2760c;
+}
+
+.m-left.empty {
+  color: #b3261e;
+}
+
+.m-issue {
+  margin-top: 12rpx;
+  padding: 8rpx 16rpx;
+  display: inline-block;
+  background: #f4f2ee;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  color: #3d4d46;
+}
+
+.m-meta {
+  margin-top: 12rpx;
+  font-size: 28rpx;
+  color: #8b948f;
+}
+
+.m-plan {
+  margin-top: 16rpx;
+}
+
+.plan-line {
+  font-size: 28rpx;
+  color: #3d4d46;
+}
+
+.plan-bar {
+  margin-top: 10rpx;
+  height: 10rpx;
+  border-radius: 999rpx;
+  background: #eef2f0;
+  overflow: hidden;
+}
+
+.plan-fill {
+  height: 100%;
+  background: #1e5c4a;
+  border-radius: 999rpx;
+}
+
+.hint {
+  color: #8b948f;
+  font-size: 30rpx;
+}
+
+.pad {
+  padding: 20rpx 24rpx;
+}

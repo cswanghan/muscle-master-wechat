@@ -616,4 +616,14 @@ public class MybatisSlotOccupyStore implements SlotOccupyStore {
     public int updateTherapist(long orderId, long newTherapistId, long newHomeStoreId, LocalDateTime now) {
         return mapper.updateTherapist(orderId, newTherapistId, newHomeStoreId, now);
     }
+
+    @Override
+    public Long memberPackageIdOf(long orderId) {
+        return mapper.selectMemberPackageId(orderId);
+    }
+
+    @Override
+    public void bindMemberPackage(long orderId, long memberPackageId) {
+        mapper.updateMemberPackageId(orderId, memberPackageId);
+    }
 }

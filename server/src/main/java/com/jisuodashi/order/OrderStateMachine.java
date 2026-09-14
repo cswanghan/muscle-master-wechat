@@ -48,9 +48,10 @@ public class OrderStateMachine {
     private final ServiceRecordSide records;
     private final ReviewSide reviews;
     private final CardRefundSide cardRefunds;
+    private final SessionConsumeSide sessions;
 
     public OrderStateMachine() {
-        this(null, null, new AppClock(), new AppProperties(), null, null, null, null, null, null);
+        this(null, null, new AppClock(), new AppProperties(), null, null, null, null, null, null, null);
     }
 
     @Autowired
@@ -64,7 +65,8 @@ public class OrderStateMachine {
             @Autowired(required = false) SnowflakeIdGenerator ids,
             @Autowired(required = false) ServiceRecordSide records,
             @Autowired(required = false) ReviewSide reviews,
-            @Autowired(required = false) CardRefundSide cardRefunds
+            @Autowired(required = false) CardRefundSide cardRefunds,
+            @Autowired(required = false) SessionConsumeSide sessions
     ) {
         this.store = store;
         this.occupy = occupy;
@@ -76,10 +78,11 @@ public class OrderStateMachine {
         this.records = records;
         this.reviews = reviews;
         this.cardRefunds = cardRefunds;
+        this.sessions = sessions;
     }
 
     public OrderStateMachine(SlotOccupyStore store, SlotOccupyService occupy, AppClock clock) {
-        this(store, occupy, clock, new AppProperties(), null, null, null, null, null, null);
+        this(store, occupy, clock, new AppProperties(), null, null, null, null, null, null, null);
     }
 
     OrderStateMachine(
@@ -90,7 +93,7 @@ public class OrderStateMachine {
             AuditLogRepository audits,
             SnowflakeIdGenerator ids
     ) {
-        this(store, occupy, clock, properties, null, audits, ids, null, null, null);
+        this(store, occupy, clock, properties, null, audits, ids, null, null, null, null);
     }
 
     /** Table lookup. Unknown {@code (from,event)} → 40904. */
@@ -272,6 +275,11 @@ public class OrderStateMachine {
                         records.markEnded(order.id(), clock.instant());
                     }
                 }
+                case CONSUME_SESSION -> {
+                    if (sessions != null) {
+                        sessions.consume(order.id());
+                    }
+                }
                 case REVIEW_RECORD -> {
                     if (reviews != null && ctx.reviewDraft() != null) {
                         reviews.insertReview(order, ctx.reviewDraft(), clock.instant());
@@ -363,7 +371,7 @@ public class OrderStateMachine {
         rows.add(OrderTransition.of(OrderStatus.CHECKED_IN, OrderEvent.REFUND,
                 OrderStatus.CANCELLED, OrderSide.REFUND, OrderSide.RELEASE_UNCONSUMED_START));
         rows.add(OrderTransition.of(OrderStatus.IN_SERVICE, OrderEvent.COMPLETE_SERVICE,
-                OrderStatus.COMPLETED, OrderSide.ENDED_AT));
+                OrderStatus.COMPLETED, OrderSide.ENDED_AT, OrderSide.CONSUME_SESSION));
         rows.add(OrderTransition.of(OrderStatus.IN_SERVICE, OrderEvent.ADD_ON,
                 OrderStatus.IN_SERVICE, OrderSide.NONE));
         rows.add(OrderTransition.of(OrderStatus.IN_SERVICE, OrderEvent.ADD_ON_PAY_TIMEOUT,

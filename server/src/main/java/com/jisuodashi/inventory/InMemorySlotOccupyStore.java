@@ -168,6 +168,20 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         }
     }
 
+    /** 订单 → 课包的绑定。dev 侧单独放一张表，与 MySQL 的 booking_order 列一一对应。 */
+    private final java.util.concurrent.ConcurrentHashMap<Long, Long> memberPackages =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    @Override
+    public Long memberPackageIdOf(long orderId) {
+        return memberPackages.get(orderId);
+    }
+
+    @Override
+    public void bindMemberPackage(long orderId, long memberPackageId) {
+        memberPackages.put(orderId, memberPackageId);
+    }
+
     @Override
     public void beginWork() {
         Work w = work.get();

@@ -12,6 +12,7 @@ public enum OrderSide {
     CHECKED_IN_AT,
     SERVICE_RECORD,
     ENDED_AT,
+    CONSUME_SESSION,
     NO_SHOW_COUNT,
     REFUND,
     RESCHEDULE,

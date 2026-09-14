@@ -195,6 +195,20 @@ public interface SlotOccupyStore extends DelayedJobStore {
     ) {
     }
 
+    /**
+     * 这一单用的是哪张课包，没绑返回 null（按金额付的普通单）。
+     *
+     * <p>做成窄查询而不是塞进 {@link BookingOrderRef}：那个 record 是订单的**库存视角**
+     * （持有、床位、时段），课包属于会员域。塞进去等于把上层概念漏进库存层。
+     */
+    default Long memberPackageIdOf(long orderId) {
+        return null;
+    }
+
+    /** 下单时把订单和课包绑上。 */
+    default void bindMemberPackage(long orderId, long memberPackageId) {
+    }
+
     record BookingOrderRef(
             long id,
             String orderNo,

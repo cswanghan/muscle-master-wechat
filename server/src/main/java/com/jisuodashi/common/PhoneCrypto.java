@@ -119,4 +119,34 @@ public class PhoneCrypto {
 
     public record PhoneParts(String e164, String hash, byte[] cipher) {
     }
+
+    /**
+     * 展示用打码：{@code 186****1111}。位数不够就原样返回，不硬凑。
+     *
+     * <p>放在这里而不是各包自己写一份：前台和会员端都要用，两份实现迟早漂移成
+     * 同一个号在两个页面上显示不一样。
+     */
+    public static String mask(String raw) {
+        String digits = maskDigits(raw);
+        if (digits.length() < 7) {
+            return digits.isEmpty() ? "****" : digits;
+        }
+        return digits.substring(0, 3) + "****" + digits.substring(digits.length() - 4);
+    }
+
+    /**
+     * 取出用于展示的号码位。手机号在库里是 E164（{@code +8618600001111}），
+     * 打码要显示的是用户认得的 11 位，所以国内号要把 86 去掉 ——
+     * 不去的话会显示成 {@code 861****1111}，看着就不像自己的号。
+     */
+    private static String maskDigits(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String d = raw.replaceAll("\\D", "");
+        if (d.startsWith("86") && d.length() == 13) {
+            return d.substring(2);
+        }
+        return d;
+    }
 }
