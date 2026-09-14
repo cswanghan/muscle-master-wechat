@@ -66,7 +66,7 @@ public class CardCloseSide implements CardRefundSide {
             }
             payments.insertRefund(new Refund(
                     ids.nextId(), refundNo, pay.id(), orderId, pay.amountFen(),
-                    "订单关闭，储值原路退回", Refund.SUCCESS, "CARD", null, now, now));
+                    "订单关闭，储值原路退回", null, null, Refund.SUCCESS, "CARD", null, now, now));
         }
     }
 }

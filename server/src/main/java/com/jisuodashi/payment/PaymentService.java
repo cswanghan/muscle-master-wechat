@@ -632,6 +632,8 @@ public class PaymentService {
                 paid.orderId(),
                 paid.amountFen(),
                 REFUND_REASON_CLOSED_PAID,
+                null,
+                null,
                 Refund.PENDING,
                 null,
                 null,
@@ -808,6 +810,13 @@ public class PaymentService {
 
     public PaymentDtos.RefundOutcome refund(
             long orderId, String requestId, long amountFen, String reason, FireContext ctx) {
+        return refund(orderId, requestId, amountFen, reason, null, null, ctx);
+    }
+
+    /** 带原因分类与责任老师的重载；退费报表要这两个维度。 */
+    public PaymentDtos.RefundOutcome refund(
+            long orderId, String requestId, long amountFen, String reason,
+            String reasonCode, Long liableTherapistId, FireContext ctx) {
         if (requestId == null || requestId.isBlank()) {
             throw new ApiException(ErrorCodes.BAD_REQUEST, "requestId 不能为空");
         }
@@ -816,7 +825,8 @@ public class PaymentService {
         }
         FireContext fireCtx = enrichRefundContext(ctx);
         RefundPlan plan = retryDeadlock(
-                () -> inBothTx(() -> persistRefundsAndFire(orderId, requestId, amountFen, reason, fireCtx)));
+                () -> inBothTx(() -> persistRefundsAndFire(
+                        orderId, requestId, amountFen, reason, reasonCode, liableTherapistId, fireCtx)));
         if (needsChannelSettle(plan)) {
             settleChannelRefunds(pendingOf(plan.refunds()), plan.workflowId(), operatorId(fireCtx));
         }
@@ -844,7 +854,8 @@ public class PaymentService {
     }
 
     private RefundPlan persistRefundsAndFire(
-            long orderId, String requestId, long amountFen, String reason, FireContext ctx) {
+            long orderId, String requestId, long amountFen, String reason,
+            String reasonCode, Long liableTherapistId, FireContext ctx) {
         BookingOrderRef order = orders.lockOrderById(orderId);
         if (order == null) {
             throw new ApiException(ErrorCodes.NOT_FOUND, "订单不存在");
@@ -920,6 +931,8 @@ public class PaymentService {
                     orderId,
                     pay.amountFen(),
                     reason,
+                    reasonCode,
+                    liableTherapistId,
                     refundStatus,
                     null,
                     ctx.actorId(),
@@ -1097,7 +1110,8 @@ public class PaymentService {
             Refund base = latest == null ? row : latest;
             Refund next = new Refund(
                     base.id(), base.refundNo(), base.paymentId(), base.orderId(), base.amountFen(),
-                    base.reason(), Refund.SUCCESS, wxId,
+                    base.reason(), base.reasonCode(), base.liableTherapistId(),
+                    Refund.SUCCESS, wxId,
                     operatorId != null ? operatorId : base.operatorId(),
                     base.createdAt(), clock.now());
             payments.updateRefund(next);

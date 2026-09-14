@@ -13,6 +13,9 @@ import com.jisuodashi.common.SnowflakeIdGenerator;
 import com.jisuodashi.rbac.StoreScope;
 import com.jisuodashi.rbac.StoreScopeContext;
 import com.jisuodashi.staff.StaffTherapistLookup;
+import com.jisuodashi.inventory.SlotTimes;
+import com.jisuodashi.order.BookingDtos;
+import com.jisuodashi.order.BookingService;
 import com.jisuodashi.order.PackageBookingPort;
 import com.jisuodashi.order.SessionConsumeSide;
 import com.jisuodashi.inventory.SlotOccupyStore;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,6 +46,14 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
     private final StaffTherapistLookup therapists;
     private final SnowflakeIdGenerator ids;
     private final AppClock clock;
+    private BookingService booking;
+
+    /** setter 注入：BookingService 反过来也持有本类实现的 PackageBookingPort。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    public void setBooking(BookingService booking) {
+        this.booking = booking;
+    }
 
     public MembershipService(
             MembershipStore store,
@@ -107,6 +119,8 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
 
         // 顺手建档：没有档案的会员在老师端的"我的会员"里就是隐身的。
         ensureProfile(customerId, storeId, sellerTherapistId);
+        // 买了正课就算转化了，转成交率的分子看这个点。
+        markConverted(customerId);
         return pkg;
     }
 
@@ -137,6 +151,8 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
         Long owner = req.ownerTherapistId() == null || req.ownerTherapistId().isBlank()
                 ? me.id() : parseId(req.ownerTherapistId());
         saveProfile(customerId, me.homeStoreId(), owner, req.coreIssue(), req.remark());
+        saveAcquisition(customerId, me.homeStoreId(),
+                req.channel(), req.referrerCustomerId(), req.wxNickname());
     }
 
     private long requireCustomerId(String phone) {
@@ -169,6 +185,34 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
 
     private static String yuan(long fen) {
         return String.format("%.2f", fen / 100.0);
+    }
+
+    /**
+     * 代客预约。走的是和顾客自助完全同一条链路（锁时段 → 绑课包 → 推 BOOKED），
+     * 只是发起人换成了员工 —— 另起一条路会让两边的库存校验迟早走岔。
+     */
+    public MembershipDtos.ProxyBookResponse proxyBook(MembershipDtos.ProxyBookRequest req) {
+        long customerId = parseId(req.customerId());
+        MembershipModels.Profile p = store.findProfile(customerId)
+                .orElseThrow(() -> new ApiException(ErrorCodes.NOT_FOUND, "会员档案不存在"));
+        MembershipModels.Package pkg = store.findPackage(parseId(req.memberPackageId()))
+                .orElseThrow(() -> new ApiException(ErrorCodes.NOT_FOUND, "课包不存在"));
+        BookingDtos.CreateBookingRequest create = new BookingDtos.CreateBookingRequest(
+                req.requestId() == null || req.requestId().isBlank()
+                        ? "proxy-" + customerId + "-" + Instant.now(clock.clock()).toEpochMilli()
+                        : req.requestId(),
+                String.valueOf(p.storeId()),
+                String.valueOf(p.ownerTherapistId() == null ? 0L : p.ownerTherapistId()),
+                req.projectId() == null || req.projectId().isBlank()
+                        ? String.valueOf(pkg.projectId()) : req.projectId(),
+                java.time.LocalDate.parse(req.date()),
+                req.startSlotNo(),
+                Boolean.TRUE,
+                req.memberPackageId());
+        BookingDtos.CreateBookingResponse res = booking.create(customerId, create);
+        return new MembershipDtos.ProxyBookResponse(
+                res.orderId(), res.orderNo(), res.status(), req.date(),
+                SlotTimes.toTime(req.startSlotNo()).toString());
     }
 
     // ---------- 约课绑课包 ----------
@@ -264,6 +308,49 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
                 });
     }
 
+    // ---------- 销卡 / 退课 ----------
+
+    /**
+     * 退课销卡：按**剩余次数 × 单次价**退，不按"实收 − 已上课价值"算。
+     *
+     * <p>两种算法在整除时一样，除不尽时不一样。单价是向上取整落库的，
+     * 所以按单价退不会退超；反过来算会把取整的差额倒贴给顾客。
+     *
+     * <p>退完把课包停用，不是删除 —— 已上的课要留在耗课报表里，删了当月收入会凭空少一块。
+     */
+    public MembershipDtos.RefundPackageResponse refundPackage(
+            String packageIdRaw, String requestId, String reason) {
+        long packageId = parseId(packageIdRaw);
+        MembershipModels.Package pkg = store.findPackage(packageId)
+                .orElseThrow(() -> new ApiException(ErrorCodes.NOT_FOUND, "课包不存在"));
+        if (pkg.status() == MembershipModels.STATUS_DISABLED) {
+            throw new ApiException(ErrorCodes.ILLEGAL_TRANSITION, "该课包已停用");
+        }
+        int remaining = pkg.remainingSessions();
+        long refundFen = remaining * pkg.unitPriceFen();
+        String rid = requestId == null || requestId.isBlank()
+                ? "refund-pkg:" + packageId : requestId;
+        if (store.txnExists(rid)) {
+            return new MembershipDtos.RefundPackageResponse(
+                    packageIdRaw, 0, "0.00", pkg.usedSessions(), true);
+        }
+        Instant now = Instant.now(clock.clock());
+        // 只停用，**不动 used_sessions** —— 把剩余次数记成"已用"等于伪造上课记录，
+        // 当月耗课收入会凭空多出 9 节课的钱。停用后 usableOn() 为假，
+        // 余次自然不再计入可用课时与库存课负债，约课那一步也会被挡下。
+        store.updatePackage(new MembershipModels.Package(
+                pkg.id(), pkg.customerId(), pkg.storeId(), pkg.projectId(), pkg.title(),
+                pkg.totalSessions(), pkg.usedSessions(), pkg.priceFen(), pkg.unitPriceFen(),
+                pkg.sellerTherapistId(), pkg.effectiveOn(), pkg.expireOn(),
+                MembershipModels.STATUS_DISABLED, pkg.createdAt(), now));
+        store.insertTxn(new MembershipModels.Txn(
+                ids.nextId(), pkg.id(), pkg.customerId(), pkg.storeId(),
+                MembershipModels.TYPE_REFUND, -remaining, null, null, rid,
+                reason == null || reason.isBlank() ? "退课销卡" : reason, now));
+        return new MembershipDtos.RefundPackageResponse(
+                packageIdRaw, remaining, yuan(refundFen), pkg.usedSessions(), false);
+    }
+
     // ---------- 查询 ----------
 
     /** 可用于约课的课包：状态正常、有余次、没过期。 */
@@ -305,13 +392,84 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
                 .sum();
     }
 
+    // ---------- 训练计划 ----------
+
+    /** 新建或修改训练计划。done_sessions 不从请求取——进度只能由耗课累加。 */
+    public MembershipModels.Plan savePlan(long customerId, MembershipDtos.PlanRequest req) {
+        MembershipModels.Profile p = ensureProfile(customerId, operatorStoreIdOrZero(), null);
+        CatalogModels.Therapist me = therapists.requireTherapist(AuthContext.requireStaff());
+        Instant now = Instant.now(clock.clock());
+        MembershipModels.Plan cur = req.planId() == null || req.planId().isBlank()
+                ? null : store.findPlan(parseId(req.planId())).orElse(null);
+        MembershipModels.Plan next = new MembershipModels.Plan(
+                cur == null ? ids.nextId() : cur.id(),
+                customerId, p.storeId(), me.id(),
+                req.title() == null || req.title().isBlank() ? "训练计划" : req.title(),
+                req.goal(),
+                Math.max(1, req.totalSessions()),
+                cur == null ? 0 : cur.doneSessions(),
+                Math.max(0, req.weeklyFrequency()),
+                cur == null ? parseDateOr(req.startOn(), clock.today()) : cur.startOn(),
+                req.endOn() == null || req.endOn().isBlank()
+                        ? (cur == null ? null : cur.endOn()) : parseDateOr(req.endOn(), null),
+                req.status() == null ? (cur == null ? MembershipModels.PLAN_RUNNING : cur.status())
+                        : req.status(),
+                cur == null ? now : cur.createdAt(), now);
+        store.upsertPlan(next);
+        return next;
+    }
+
+    /**
+     * 按计划生成待约时间。**只生成建议，不占库存** ——
+     * 一次排 8 周出去那些时段就卖不掉了，而且到点人没来算不算耗课说不清。
+     * 老师或会员确认后才变成真预约。
+     */
+    public List<LocalDate> suggestLessonDates(long customerId) {
+        MembershipModels.Plan plan = store.listPlansByCustomer(customerId).stream()
+                .filter(x -> x.status() == MembershipModels.PLAN_RUNNING)
+                .findFirst().orElse(null);
+        if (plan == null || plan.weeklyFrequency() <= 0) {
+            return List.of();
+        }
+        int left = plan.totalSessions() - plan.doneSessions();
+        if (left <= 0) {
+            return List.of();
+        }
+        // 一周内均匀铺开：每周 2 次就是间隔 3 天，3 次就是隔 2 天。
+        int stepDays = Math.max(1, 7 / plan.weeklyFrequency());
+        List<LocalDate> out = new ArrayList<>();
+        LocalDate cursor = clock.today().plusDays(1);
+        for (int i = 0; i < left && i < 60; i++) {
+            out.add(cursor);
+            cursor = cursor.plusDays(stepDays);
+        }
+        return out;
+    }
+
+    private long operatorStoreIdOrZero() {
+        StoreScope scope = StoreScopeContext.get();
+        return scope == null || scope.storeIds().isEmpty() ? 0L : scope.storeIds().getFirst();
+    }
+
+    private static LocalDate parseDateOr(String raw, LocalDate fallback) {
+        if (raw == null || raw.isBlank()) {
+            return fallback;
+        }
+        try {
+            return LocalDate.parse(raw.trim());
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
     // ---------- 档案 ----------
 
     public MembershipModels.Profile ensureProfile(long customerId, long storeId, Long ownerTherapistId) {
         return store.findProfile(customerId).orElseGet(() -> {
             Instant now = Instant.now(clock.clock());
             MembershipModels.Profile fresh = new MembershipModels.Profile(
-                    ids.nextId(), customerId, storeId, ownerTherapistId, null, null, now, now);
+                    ids.nextId(), customerId, storeId, ownerTherapistId, null, null,
+                    null, null, null, clock.today(), null, now, now);
             store.upsertProfile(fresh);
             return fresh;
         });
@@ -325,9 +483,46 @@ public class MembershipService implements SessionConsumeSide, PackageBookingPort
                 ownerTherapistId != null ? ownerTherapistId : cur.ownerTherapistId(),
                 coreIssue != null ? coreIssue : cur.coreIssue(),
                 remark != null ? remark : cur.remark(),
+                cur.channel(), cur.referrerCustomerId(), cur.wxNickname(),
+                cur.firstVisitOn(), cur.convertedOn(),
                 cur.createdAt(), Instant.now(clock.clock()));
         store.upsertProfile(next);
         return next;
+    }
+
+    /** 改获客信息。渠道一旦填了就别随便覆盖成空——空值一律当"这次不改"。 */
+    public MembershipModels.Profile saveAcquisition(
+            long customerId, long storeId, String channel, String referrerId, String wxNickname) {
+        MembershipModels.Profile cur = ensureProfile(customerId, storeId, null);
+        MembershipModels.Profile next = new MembershipModels.Profile(
+                cur.id(), cur.customerId(), cur.storeId(), cur.ownerTherapistId(),
+                cur.coreIssue(), cur.remark(),
+                channel == null || channel.isBlank() ? cur.channel() : channel,
+                // 显式装箱：一支 Long 一支 long 会让整个三元表达式拆箱，
+                // cur 那边为 null 时直接 NPE。
+                referrerId == null || referrerId.isBlank()
+                        ? cur.referrerCustomerId() : Long.valueOf(parseId(referrerId)),
+                wxNickname == null || wxNickname.isBlank() ? cur.wxNickname() : wxNickname,
+                cur.firstVisitOn(), cur.convertedOn(),
+                cur.createdAt(), Instant.now(clock.clock()));
+        store.upsertProfile(next);
+        return next;
+    }
+
+    /**
+     * 标记体验转化。转成交率的分子就是它，所以只在**第一次买正课**时打点，
+     * 已经转化过的不覆盖 —— 覆盖了就变成"最近一次买课"，不是转化日了。
+     */
+    public void markConverted(long customerId) {
+        MembershipModels.Profile cur = store.findProfile(customerId).orElse(null);
+        if (cur == null || cur.convertedOn() != null) {
+            return;
+        }
+        store.upsertProfile(new MembershipModels.Profile(
+                cur.id(), cur.customerId(), cur.storeId(), cur.ownerTherapistId(),
+                cur.coreIssue(), cur.remark(), cur.channel(), cur.referrerCustomerId(),
+                cur.wxNickname(), cur.firstVisitOn(), clock.today(),
+                cur.createdAt(), Instant.now(clock.clock())));
     }
 
     private Long packageIdOf(BookingOrderRef order) {

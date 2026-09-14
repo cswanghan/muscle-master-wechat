@@ -354,4 +354,16 @@ public class InMemoryPaymentStore implements PaymentStore {
             }
         });
     }
+
+    @Override
+    public List<Refund> listRefundsBetween(java.time.LocalDate from, java.time.LocalDate to) {
+        return refunds.stream()
+                .filter(Refund::success)
+                .filter(r -> {
+                    java.time.LocalDate d = r.updatedAt().toLocalDate();
+                    return !d.isBefore(from) && !d.isAfter(to);
+                })
+                .sorted(java.util.Comparator.comparing(Refund::updatedAt).reversed())
+                .toList();
+    }
 }

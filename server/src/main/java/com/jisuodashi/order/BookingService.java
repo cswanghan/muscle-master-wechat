@@ -24,6 +24,9 @@ import java.util.Objects;
 @Service
 public class BookingService {
 
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(BookingService.class);
+
     private final SlotOccupyService occupy;
     private final OrderStateMachine machine;
     private final PaymentService payments;
@@ -59,6 +62,14 @@ public class BookingService {
         this.sessions = sessions;
     }
 
+    private BookingHooks hooks;
+
+    /** 约课后的动作（课前提醒、课后回访待办）。上层实现，order 只声明口。 */
+    @Autowired(required = false)
+    public void setHooks(BookingHooks hooks) {
+        this.hooks = hooks;
+    }
+
     public BookingDtos.CreateBookingResponse create(long customerId, BookingDtos.CreateBookingRequest req) {
         LockNewResult locked = occupy.lockNew(new LockNewCommand(
                 req.requestId(),
@@ -77,6 +88,7 @@ public class BookingService {
             // 课已经买过了，没有支付这条腿，直接确认成已预约。
             machine.fire(locked.orderId(), OrderEvent.PAY_SUCCESS,
                     FireContext.system().withPaymentMatched(true));
+            afterBooked(locked.orderId());
             return new BookingDtos.CreateBookingResponse(
                     String.valueOf(locked.orderId()),
                     locked.orderNo(),
@@ -97,6 +109,7 @@ public class BookingService {
                 // 照抄会让客户端拿到一个"待支付"的已付单，用户再点一次支付就是 409。
                 if (PaymentDtos.PayResponse.PAID.equals(prepay.status())) {
                     status = OrderStatus.BOOKED.name();
+                    afterBooked(locked.orderId());
                 }
             }
         }
@@ -107,6 +120,18 @@ public class BookingService {
                 locked.lockExpireAt(),
                 locked.payableFen(),
                 payParams);
+    }
+
+    /** 约成之后的钩子失败不该把下单打回去 —— 单已经成了，提醒没排上是次要的。 */
+    private void afterBooked(long orderId) {
+        if (hooks == null) {
+            return;
+        }
+        try {
+            hooks.onBooked(orderId);
+        } catch (RuntimeException ex) {
+            log.warn("post-booking hooks failed order={}", orderId, ex);
+        }
     }
 
     public PaymentDtos.PayResponse pay(long customerId, long orderId, BookingDtos.PayRequest req) {

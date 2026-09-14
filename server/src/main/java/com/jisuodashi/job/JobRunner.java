@@ -338,4 +338,27 @@ public class JobRunner {
         }
         return lastError.length() <= LAST_ERROR_MAX ? lastError : lastError.substring(0, LAST_ERROR_MAX);
     }
+
+    private com.jisuodashi.notify.NotifyService notify;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setNotify(com.jisuodashi.notify.NotifyService notify) {
+        this.notify = notify;
+    }
+
+    /**
+     * 课前提醒。每 5 分钟扫一次就够 —— 提醒提前 3 小时发，几分钟的抖动没人在意。
+     */
+    @Scheduled(cron = "0 */5 * * * *", zone = "Asia/Shanghai")
+    public void fireDueReminders() {
+        if (notify == null) {
+            return;
+        }
+        try {
+            notify.fireDue(200);
+        } catch (RuntimeException ex) {
+            // 提醒发不出去不该把调度线程打死，下一轮还会再来。
+            log.warn("reminder sweep failed", ex);
+        }
+    }
 }

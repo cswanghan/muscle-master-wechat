@@ -40,6 +40,15 @@ public interface PaymentStore {
 
     List<Refund> listRefundsByOrderId(long orderId);
 
+    /**
+     * 退费报表用：一段时间内的成功退款。
+     *
+     * <p>默认空实现，让不关心报表的测试替身不必跟着改。
+     */
+    default List<Refund> listRefundsBetween(java.time.LocalDate from, java.time.LocalDate to) {
+        return List.of();
+    }
+
     List<WorkflowInstance> listWorkflowsByOrderId(long orderId);
 
     List<HumanTask> listHumanTasks();

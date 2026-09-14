@@ -9,7 +9,9 @@
     "pages/mine/mine",
     "pages/coupon/coupon",
     "pages/mall/mall",
-    "pages/review/review"
+    "pages/review/review",
+    "pages/mycard/mycard",
+    "pages/checkin/checkin"
   ],
   "window": {
     "navigationBarBackgroundColor": "#F4F2EE",
@@ -34,7 +36,9 @@
         "performance/performance",
         "dayslots/dayslots",
         "members/members",
-        "member/member"
+        "member/member",
+        "followups/followups",
+        "board/board"
       ]
     }
   ],

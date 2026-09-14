@@ -110,11 +110,55 @@ public final class MembershipDtos {
     ) {
     }
 
+    /** 客户端「我的」：档案 + 计划 + 课包，一次给全。 */
+    public record MyMembershipResponse(
+            String coreIssue,
+            int remainingSessions,
+            int doneSessions,
+            int complianceX100,
+            List<PackageItem> packages,
+            List<PlanItem> plans
+    ) {
+        public static MyMembershipResponse empty() {
+            return new MyMembershipResponse(null, 0, 0, 0, List.of(), List.of());
+        }
+    }
+
+    /** 老师代会员约课：会员自己不会用小程序时前台/老师代劳。 */
+    public record ProxyBookRequest(
+            String requestId, String customerId, String memberPackageId,
+            String date, int startSlotNo, String projectId) {
+    }
+
+    public record ProxyBookResponse(
+            String orderId, String orderNo, String status, String date, String start) {
+    }
+
+    public record RefundPackageResponse(
+            String packageId,
+            int refundedSessions,
+            String refundYuan,
+            int usedSessions,
+            boolean replay
+    ) {
+    }
+
     public record ProfileRequest(
             String requestId,
             String coreIssue,
             String remark,
-            String ownerTherapistId
+            String ownerTherapistId,
+            /** 获客渠道；空表示这次不改。 */
+            String channel,
+            String referrerCustomerId,
+            String wxNickname
     ) {
+    }
+
+    /** 训练计划编辑。 */
+    public record PlanRequest(
+            String requestId, String planId, String title, String goal,
+            int totalSessions, int weeklyFrequency,
+            String startOn, String endOn, Integer status) {
     }
 }

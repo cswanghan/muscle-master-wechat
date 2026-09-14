@@ -1,0 +1,50 @@
+<view class="page staff-page">
+  <view class="bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="bar-title">我的成果</view>
+    <view class="bar-extra">{{month}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint pad">加载中…</view>
+  <view wx:if="{{error}}" class="hint pad">{{error}}</view>
+
+  <view class="card clock">
+    <view class="row">
+      <view class="grow">
+        <view class="clock-t">{{clockedIn ? '在岗中' : (clockOutAt ? '今日已下班' : '未打卡')}}</view>
+        <view class="hint">
+          <block wx:if="{{clockInAt}}">上班 {{clockInAt}}</block>
+          <block wx:if="{{clockOutAt}}"> · 下班 {{clockOutAt}}</block>
+          <block wx:if="{{!clockInAt}}">本月出勤 {{attendanceDays}} 天</block>
+        </view>
+      </view>
+      <view wx:if="{{!clockedIn}}" class="btn sm" hover-class="tap" bindtap="clockIn">上班打卡</view>
+      <view wx:else class="btn sm ghost" hover-class="tap" bindtap="clockOut">下班打卡</view>
+    </view>
+  </view>
+
+  <view class="card nums">
+    <view class="col"><view class="n">{{lessons}}</view><view class="c">本月上课</view></view>
+    <view class="col"><view class="n">¥{{salesYuan}}</view><view class="c">销售额</view></view>
+    <view class="col"><view class="n">{{attendanceDays}}</view><view class="c">出勤天</view></view>
+  </view>
+
+  <view class="sec pad">全国排名</view>
+  <view wx:for="{{ranks}}" wx:key="metric" class="card rank">
+    <view class="row">
+      <view class="grow">{{item.metricLabel}}</view>
+      <view class="val">{{item.value}}</view>
+      <view class="pos {{item.top?'top':''}}">第 {{item.rank}} / {{item.total}}</view>
+    </view>
+  </view>
+
+  <view class="sec pad">过程指标</view>
+  <view class="card">
+    <view wx:for="{{rates}}" wx:key="label" class="rate-row">
+      <view class="grow">{{item.label}}</view>
+      <view class="val">{{item.value}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{encouragement}}" class="card note">{{encouragement}}</view>
+</view>

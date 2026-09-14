@@ -209,6 +209,21 @@ public interface SlotOccupyStore extends DelayedJobStore {
     default void bindMemberPackage(long orderId, long memberPackageId) {
     }
 
+    /** 标记为体验课。 */
+    default void markTrial(long orderId) {
+    }
+
+    /** 体验课报表用。 */
+    default List<BookingOrderRef> listTrialOrders(long storeId, LocalDate from, LocalDate to) {
+        return List.of();
+    }
+
+    /** 门店整体业绩用。 */
+    default List<BookingOrderRef> listOrdersByStore(long storeId, LocalDate from, LocalDate to) {
+        return List.of();
+    }
+
+
     record BookingOrderRef(
             long id,
             String orderNo,
@@ -226,7 +241,9 @@ public interface SlotOccupyStore extends DelayedJobStore {
             LocalDate serviceDate,
             long customerId,
             long therapistId,
-            boolean designated
+            boolean designated,
+            /** 体验课。与正课的唯一区别就是这个标记，转成交率和体验课报表靠它分流。 */
+            boolean trial
     ) {
     }
 

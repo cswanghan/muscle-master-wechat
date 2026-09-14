@@ -21,6 +21,11 @@ public class JdbcMembershipStore implements MembershipStore {
                     rs.getLong("id"), rs.getLong("customer_id"), rs.getLong("store_id"),
                     (Long) rs.getObject("owner_therapist_id"),
                     rs.getString("core_issue"), rs.getString("remark"),
+                    rs.getString("channel"),
+                    (Long) rs.getObject("referrer_customer_id"),
+                    rs.getString("wx_nickname"),
+                    rs.getObject("first_visit_on", LocalDate.class),
+                    rs.getObject("converted_on", LocalDate.class),
                     JdbcTimes.instant(rs.getTimestamp("created_at")),
                     JdbcTimes.instant(rs.getTimestamp("updated_at")));
 
@@ -86,18 +91,27 @@ public class JdbcMembershipStore implements MembershipStore {
     public void upsertProfile(MembershipModels.Profile p) {
         jdbc.update("""
                 INSERT INTO member_profile
-                  (id, customer_id, store_id, owner_therapist_id, core_issue, remark,
+                  (id, customer_id, store_id, channel, referrer_customer_id, wx_nickname,
+                   first_visit_on, converted_on, owner_therapist_id, core_issue, remark,
                    created_at, updated_at)
-                VALUES (?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON DUPLICATE KEY UPDATE
                   store_id = VALUES(store_id),
+                  channel = VALUES(channel),
+                  referrer_customer_id = VALUES(referrer_customer_id),
+                  wx_nickname = VALUES(wx_nickname),
+                  first_visit_on = VALUES(first_visit_on),
+                  converted_on = VALUES(converted_on),
                   owner_therapist_id = VALUES(owner_therapist_id),
                   core_issue = VALUES(core_issue),
                   remark = VALUES(remark),
                   updated_at = VALUES(updated_at)
                 """,
-                p.id(), p.customerId(), p.storeId(), p.ownerTherapistId(),
-                p.coreIssue(), p.remark(),
+                p.id(), p.customerId(), p.storeId(), p.channel(), p.referrerCustomerId(),
+                p.wxNickname(),
+                p.firstVisitOn() == null ? null : Date.valueOf(p.firstVisitOn()),
+                p.convertedOn() == null ? null : Date.valueOf(p.convertedOn()),
+                p.ownerTherapistId(), p.coreIssue(), p.remark(),
                 JdbcTimes.ts(p.createdAt()), JdbcTimes.ts(p.updatedAt()));
     }
 
@@ -145,6 +159,18 @@ public class JdbcMembershipStore implements MembershipStore {
     public List<MembershipModels.Package> listPackagesByCustomer(long customerId) {
         return jdbc.query("SELECT " + PKG_COLS + " FROM member_package WHERE customer_id = ?"
                 + " ORDER BY id DESC", PKG, customerId);
+    }
+
+    @Override
+    public List<MembershipModels.Package> listPackagesEnding(long storeId, LocalDate from, LocalDate to) {
+        // 到期或用完都算"该续了"，两种都进分母。
+        return jdbc.query("SELECT " + PKG_COLS + " FROM member_package WHERE store_id = ?"
+                        + " AND ((expire_on BETWEEN ? AND ?)"
+                        + "   OR (used_sessions >= total_sessions AND updated_at >= ? AND updated_at < ?))"
+                        + " ORDER BY id DESC",
+                PKG, storeId, Date.valueOf(from), Date.valueOf(to),
+                Timestamp.valueOf(from.atStartOfDay()),
+                Timestamp.valueOf(to.plusDays(1).atStartOfDay()));
     }
 
     @Override

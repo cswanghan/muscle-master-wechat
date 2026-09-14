@@ -134,9 +134,10 @@ public class JdbcPaymentStore implements PaymentStore {
         jdbc.update(
                 """
                 INSERT INTO refund
-                  (id, refund_no, payment_id, order_id, amount_fen, reason, status,
+                  (id, refund_no, payment_id, order_id, amount_fen, reason,
+                   reason_code, liable_therapist_id, status,
                    wx_refund_id, operator_id, created_at, updated_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 refund.id(),
                 refund.refundNo(),
@@ -144,6 +145,8 @@ public class JdbcPaymentStore implements PaymentStore {
                 refund.orderId(),
                 refund.amountFen(),
                 refund.reason(),
+                refund.reasonCode(),
+                refund.liableTherapistId(),
                 refund.status(),
                 refund.wxRefundId(),
                 refund.operatorId(),
@@ -238,6 +241,8 @@ public class JdbcPaymentStore implements PaymentStore {
             rs.getLong("order_id"),
             rs.getLong("amount_fen"),
             rs.getString("reason"),
+            rs.getString("reason_code"),
+            rs.getObject("liable_therapist_id") == null ? null : rs.getLong("liable_therapist_id"),
             rs.getString("status"),
             rs.getString("wx_refund_id"),
             rs.getObject("operator_id") == null ? null : rs.getLong("operator_id"),
@@ -389,5 +394,15 @@ public class JdbcPaymentStore implements PaymentStore {
                 JdbcTimes.ts(task.getResolvedAt()),
                 task.getResolvedBy(),
                 task.getId());
+    }
+
+    @Override
+    public List<Refund> listRefundsBetween(java.time.LocalDate from, java.time.LocalDate to) {
+        return jdbc.query(
+                "SELECT * FROM refund WHERE status = 'SUCCESS'"
+                        + " AND updated_at >= ? AND updated_at < ? ORDER BY updated_at DESC",
+                REFUND,
+                java.sql.Timestamp.valueOf(from.atStartOfDay()),
+                java.sql.Timestamp.valueOf(to.plusDays(1).atStartOfDay()));
     }
 }

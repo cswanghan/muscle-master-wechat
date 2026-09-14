@@ -160,7 +160,7 @@ class RefundReportTest {
                 PaymentService.refundContextJson("rpt-resume-req", 19800L), null, resumeNow, resumeNow));
         resume.payments.insertRefund(new Refund(
                 resume.ids.nextId(), PaymentService.refundNoOf(resumePay.id()), resumePay.id(),
-                resume.locked.orderId(), 19800, "中断", Refund.PENDING, null, null, resumeNow, resumeNow));
+                resume.locked.orderId(), 19800, "中断", null, null, Refund.PENDING, null, null, resumeNow, resumeNow));
         resume.payments.commitWork();
         PaymentDtos.RefundOutcome resumed = resume.svc.refund(
                 resume.locked.orderId(), "rpt-resume-req", 19800, "中断", desk());

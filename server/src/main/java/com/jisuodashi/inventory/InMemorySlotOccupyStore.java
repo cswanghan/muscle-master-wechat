@@ -120,6 +120,10 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
         occupancies.clear();
         orders.clear();
         ordersByRequest.clear();
+        // 这两张是课包与体验课的映射，漏清的话上一个用例的订单会以
+        // "还绑着课包"的形态残留到下一个用例。
+        memberPackages.clear();
+        trials.clear();
         orderItems.clear();
         delayedJobs.clear();
         jobs.clear();
@@ -171,6 +175,35 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
     /** 订单 → 课包的绑定。dev 侧单独放一张表，与 MySQL 的 booking_order 列一一对应。 */
     private final java.util.concurrent.ConcurrentHashMap<Long, Long> memberPackages =
             new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** 体验课标记，同上。 */
+    private final java.util.concurrent.ConcurrentHashMap<Long, Boolean> trials =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    @Override
+    public void markTrial(long orderId) {
+        trials.put(orderId, Boolean.TRUE);
+    }
+
+    @Override
+    public java.util.List<BookingOrderRef> listTrialOrders(
+            long storeId, java.time.LocalDate from, java.time.LocalDate to) {
+        return listOrdersByStore(storeId, from, to).stream()
+                .filter(BookingOrderRef::trial)
+                .toList();
+    }
+
+    @Override
+    public java.util.List<BookingOrderRef> listOrdersByStore(
+            long storeId, java.time.LocalDate from, java.time.LocalDate to) {
+        return orders.values().stream()
+                .map(this::toRef)
+                .filter(o -> o.storeId() == storeId)
+                .filter(o -> !o.serviceDate().isBefore(from) && !o.serviceDate().isAfter(to))
+                .sorted(java.util.Comparator.comparing(BookingOrderRef::serviceDate)
+                        .thenComparingInt(BookingOrderRef::startSlotNo))
+                .toList();
+    }
 
     @Override
     public Long memberPackageIdOf(long orderId) {
@@ -1345,7 +1378,8 @@ public class InMemorySlotOccupyStore implements SlotOccupyStore {
                 row.lockExpireAt(), payableFens.getOrDefault(row.id(), row.payableFen()),
                 row.startSlotNo(), endSlotNos.getOrDefault(row.id(), row.endSlotNo()), row.bufferSlots(),
                 addOnHolds.get(row.id()), row.storeId(), row.serviceDate(),
-                row.customerId(), row.therapistId(), row.designated());
+                row.customerId(), row.therapistId(), row.designated(),
+                Boolean.TRUE.equals(trials.get(row.id())));
     }
 
     private MutableSlot slotFor(OccupancyInsert row) {

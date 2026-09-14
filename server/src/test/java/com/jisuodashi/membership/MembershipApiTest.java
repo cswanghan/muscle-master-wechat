@@ -122,6 +122,47 @@ class MembershipApiTest {
     }
 
     @Test
+    void refundingAPackageRefundsRemainingTimesUnitPriceAndKeepsHistory() {
+        String phone = member(44);
+        Map<String, Object> pkg = data(sell(phone, 10, 300_000, null));
+        String customerId = String.valueOf(pkg.get("customerId"));
+        String packageId = String.valueOf(pkg.get("packageId"));
+
+        // 先上掉一节，剩 9 节。
+        checkInStartComplete(bookWithPackage(customerId, packageId, 64));
+
+        ResponseEntity<Map<String, Object>> res = rest.exchange(
+                "/api/v1/f/packages/" + packageId + "/refund?reason=" + java.net.URLEncoder.encode(
+                        "搬家", java.nio.charset.StandardCharsets.UTF_8),
+                HttpMethod.POST, new HttpEntity<>(Map.of(), headers(frontToken())), MAP);
+        Map<String, Object> out = data(res);
+
+        // 9 节 × 300 元：按单价退，不按"实收 − 已上课价值"算。
+        assertThat(((Number) out.get("refundedSessions")).intValue()).isEqualTo(9);
+        assertThat(out.get("refundYuan")).isEqualTo("2700.00");
+        // 已上的那节留在账上 —— 删了当月耗课收入会凭空少一块。
+        assertThat(((Number) out.get("usedSessions")).intValue()).isEqualTo(1);
+
+        Map<String, Object> detail = get("/api/v1/t/members/" + customerId);
+        assertThat(((Number) detail.get("remainingSessions")).intValue()).isZero();
+        assertThat(((Number) detail.get("doneSessions")).intValue()).isEqualTo(1);
+    }
+
+    @Test
+    void aRefundedPackageCannotBeBookedAgain() {
+        String phone = member(50);
+        Map<String, Object> pkg = data(sell(phone, 5, 150_000, null));
+        String customerId = String.valueOf(pkg.get("customerId"));
+        String packageId = String.valueOf(pkg.get("packageId"));
+
+        rest.exchange("/api/v1/f/packages/" + packageId + "/refund", HttpMethod.POST,
+                new HttpEntity<>(Map.of(), headers(frontToken())), MAP);
+
+        ResponseEntity<Map<String, Object>> booked = bookRaw(customerId, packageId, 70);
+        assertThat((Integer) booked.getBody().get("code")).isNotZero();
+    }
+
+    @Test
     void memberListShowsRemainingDoneAndPlanProgress() {
         String phone = member(68);
         Map<String, Object> pkg = data(sell(phone, 10, 300_000,

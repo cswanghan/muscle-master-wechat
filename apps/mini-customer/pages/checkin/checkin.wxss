@@ -1,0 +1,22 @@
+.page { padding: 20rpx 0 170rpx; }
+.bar { display: flex; align-items: center; gap: 16rpx; padding: 8rpx 24rpx 20rpx; }
+.back { width: 60rpx; height: 60rpx; line-height: 56rpx; text-align: center; font-size: 44rpx; color: #17211d; }
+.bar-title { flex: 1; font-size: 34rpx; font-weight: 600; }
+
+.card { margin: 0 24rpx 20rpx; padding: 24rpx; background: #fff; border-radius: 24rpx; }
+.ta { width: 100%; box-sizing: border-box; height: 160rpx; padding: 18rpx; background: #f4f2ee; border-radius: 14rpx; font-size: 30rpx; margin-bottom: 16rpx; }
+/* 主操作 96rpx(48px) tap target。 */
+.btn { height: 96rpx; line-height: 96rpx; text-align: center; border-radius: 16rpx; background: #1e5c4a; color: #fff; font-size: 30rpx; }
+
+.tabs { display: flex; gap: 12rpx; margin: 0 24rpx 20rpx; }
+.tab { flex: 1; text-align: center; padding: 18rpx 0; border-radius: 16rpx; background: #f4f2ee; font-size: 30rpx; }
+.tab.on { background: #1e5c4a; color: #fff; }
+
+.row { display: flex; align-items: baseline; gap: 12rpx; }
+.grow { flex: 1; }
+.who { font-size: 30rpx; font-weight: 600; font-family: ui-monospace, Menlo, monospace; }
+.body { margin-top: 12rpx; font-size: 30rpx; line-height: 1.7; color: #17211d; }
+.foot { margin-top: 16rpx; display: flex; justify-content: flex-end; }
+.like { padding: 10rpx 24rpx; border-radius: 999rpx; background: #f4f2ee; font-size: 28rpx; color: #3d4d46; }
+.hint { color: #8b948f; font-size: 28rpx; }
+.pad { padding: 20rpx 24rpx; }

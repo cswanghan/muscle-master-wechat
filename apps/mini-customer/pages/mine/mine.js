@@ -37,6 +37,7 @@ Page({
     transport: config.transport,
     staffEntry: false,
     wallet: { principalYuan: '0.00', bonusYuan: '0.00', balanceYuan: '0.00', txns: [] },
+    remainingSessions: 0,
   },
   onShow() {
     this.reload()
@@ -52,9 +53,10 @@ Page({
           request({ path: '/api/v1/c/stores' }),
           // 钱包挂了不该把整页拖垮：余额看不到是小事，订单看不到是大事。
           request({ path: '/api/v1/c/card', auth: true }).catch(() => null),
+          request({ path: '/api/v1/c/membership', auth: true }).catch(() => null),
         ])
       })
-      .then(([page, tPage, sPage, card]) => {
+      .then(([page, tPage, sPage, card, mem]) => {
         const therapistNames = {}
         const therapistLabels = {}
         ;((tPage && tPage.items) || []).forEach((t) => {
@@ -82,6 +84,7 @@ Page({
           therapists: therapistNames,
           stores,
           wallet: toWallet(card),
+          remainingSessions: (mem && mem.remainingSessions) || 0,
           loading: false,
         })
       })
@@ -128,6 +131,12 @@ Page({
       showCancel: false,
       confirmText: '知道了',
     })
+  },
+  goMyCard() {
+    wx.navigateTo({ url: '/pages/mycard/mycard' })
+  },
+  goCheckin() {
+    wx.navigateTo({ url: '/pages/checkin/checkin' })
   },
   goStaff() {
     wx.navigateTo({ url: '/pages/staff/home/home' })

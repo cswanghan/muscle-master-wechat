@@ -1,0 +1,29 @@
+/* 正文最小 30rpx(15px)，与店长台同一套无障碍下限。 */
+.page { padding: 20rpx 0 170rpx; }
+.bar { display: flex; align-items: center; gap: 16rpx; padding: 8rpx 24rpx 20rpx; }
+.back { width: 60rpx; height: 60rpx; line-height: 56rpx; text-align: center; font-size: 44rpx; color: #17211d; }
+.bar-title { flex: 1; font-size: 34rpx; font-weight: 600; }
+.bar-extra { font-size: 28rpx; color: #8b948f; }
+
+.stats { display: flex; gap: 12rpx; margin: 0 24rpx 20rpx; }
+.stat { flex: 1; padding: 20rpx 0; background: #fff; border-radius: 20rpx; text-align: center; }
+.n { font-size: 44rpx; font-weight: 700; color: #1e5c4a; font-family: ui-monospace, Menlo, monospace; }
+.n.warn { color: #b3261e; }
+.c { margin-top: 4rpx; font-size: 26rpx; color: #8b948f; }
+
+.card { margin: 0 24rpx 20rpx; padding: 24rpx; background: #fff; border-radius: 24rpx; }
+/* 逾期的用左侧色条标出来，一眼看见该先打哪几个。 */
+.fu.overdue { border-left: 6rpx solid #b3261e; }
+.fu.pending { border-left: 6rpx solid #c2760c; }
+.fu.done { opacity: .72; }
+
+.row { display: flex; align-items: baseline; gap: 12rpx; }
+.grow { flex: 1; }
+.who { font-size: 32rpx; font-weight: 600; }
+.tag { font-size: 26rpx; padding: 4rpx 14rpx; border-radius: 999rpx; background: #f4f2ee; color: #3d4d46; }
+.hint { margin-top: 10rpx; color: #8b948f; font-size: 28rpx; line-height: 1.6; }
+.pad { padding: 20rpx 24rpx; }
+.acts { margin-top: 16rpx; }
+/* 主操作 96rpx(48px) tap target。 */
+.btn { height: 96rpx; line-height: 96rpx; text-align: center; border-radius: 16rpx; background: #1e5c4a; color: #fff; font-size: 30rpx; }
+.btn.sm { height: 72rpx; line-height: 72rpx; font-size: 28rpx; }

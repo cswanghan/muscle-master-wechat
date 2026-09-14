@@ -30,7 +30,8 @@ public class JdbcStaffBoardStore implements StaffBoardStore {
             rs.getObject("service_date", LocalDate.class),
             rs.getLong("customer_id"),
             rs.getLong("therapist_id"),
-            rs.getBoolean("designated"));
+            rs.getBoolean("designated"),
+            rs.getBoolean("trial"));
 
     private final JdbcTemplate jdbc;
 

@@ -1,0 +1,35 @@
+/* 正文最小 30rpx(15px)，与店长台同一套无障碍下限。 */
+.page { padding: 20rpx 0 170rpx; }
+.bar { display: flex; align-items: center; gap: 16rpx; padding: 8rpx 24rpx 20rpx; }
+.back { width: 60rpx; height: 60rpx; line-height: 56rpx; text-align: center; font-size: 44rpx; color: #17211d; }
+.bar-title { flex: 1; font-size: 34rpx; font-weight: 600; }
+.bar-extra { font-size: 28rpx; color: #8b948f; font-family: ui-monospace, Menlo, monospace; }
+
+.card { margin: 0 24rpx 20rpx; padding: 24rpx; background: #fff; border-radius: 24rpx; }
+.row { display: flex; align-items: center; gap: 16rpx; }
+.grow { flex: 1; }
+.clock-t { font-size: 32rpx; font-weight: 600; }
+
+.nums { display: flex; gap: 20rpx; }
+.col { flex: 1; text-align: center; }
+.n { font-size: 44rpx; font-weight: 700; color: #1e5c4a; font-family: ui-monospace, Menlo, monospace; }
+.c { margin-top: 4rpx; font-size: 26rpx; color: #8b948f; }
+
+.sec { font-size: 30rpx; font-weight: 600; }
+.pad { padding: 8rpx 24rpx 12rpx; }
+
+.rank .val { font-size: 30rpx; font-family: ui-monospace, Menlo, monospace; }
+.pos { font-size: 28rpx; color: #8b948f; }
+/* 前三名才高亮，否则每一行都亮就等于没亮。 */
+.pos.top { color: #1e5c4a; font-weight: 600; }
+
+.rate-row { display: flex; padding: 14rpx 0; border-bottom: 2rpx solid #f0f4f2; font-size: 30rpx; }
+.rate-row:last-child { border-bottom: none; }
+.val { font-family: ui-monospace, Menlo, monospace; }
+
+.note { background: #e6f2ec; color: #1e5c4a; font-size: 30rpx; line-height: 1.7; }
+.hint { color: #8b948f; font-size: 28rpx; margin-top: 6rpx; }
+/* 主操作 96rpx(48px) tap target。 */
+.btn { height: 96rpx; line-height: 96rpx; padding: 0 32rpx; border-radius: 16rpx; background: #1e5c4a; color: #fff; font-size: 30rpx; text-align: center; }
+.btn.sm { height: 76rpx; line-height: 76rpx; font-size: 28rpx; }
+.btn.ghost { background: #f4f2ee; color: #17211d; }

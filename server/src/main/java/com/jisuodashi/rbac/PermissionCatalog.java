@@ -26,6 +26,14 @@ public final class PermissionCatalog {
             "inventory:force_release",
             "staff:manage",
             "member:manage",
+            "followup:write",
+            "attendance:self",
+            "ranking:national",
+            "review:claim",
+            "expense:write",
+            "expense:approve",
+            "finance:report",
+            "payroll:config",
             "staff:self");
 
     private PermissionCatalog() {
@@ -50,27 +58,36 @@ public final class PermissionCatalog {
             case "SUPER_ADMIN" -> ALL_CODES;
             case "FINANCE" -> List.of(
                     "order:list", "order:view", "order:refund",
-                    "refund:create", "refund:after_start", "refund:approve");
+                    "refund:create", "refund:after_start", "refund:approve",
+                    "expense:approve", "finance:report", "payroll:config");
             case "OPS" -> List.of(
                     "catalog:store", "catalog:therapist", "catalog:project", "catalog:write",
                     "schedule:write", "schedule:approve",
                     "order:list", "order:view", "inventory:force_release",
-                    "staff:manage", "member:manage");
+                    "staff:manage", "member:manage",
+                    "followup:write", "attendance:self", "ranking:national",
+                    "review:claim", "finance:report");
             case "REGION_MANAGER" -> List.of(
                     "catalog:store", "catalog:therapist", "catalog:project", "catalog:write",
                     "schedule:write", "schedule:approve",
                     "order:list", "order:view", "order:resolve", "refund:approve",
-                    "staff:manage", "member:manage");
+                    "staff:manage", "member:manage",
+                    "followup:write", "attendance:self", "ranking:national", "review:claim",
+                    "expense:write", "expense:approve", "finance:report", "payroll:config");
             case "STORE_MANAGER" -> List.of(
                     "catalog:therapist", "catalog:project",
                     "schedule:write", "schedule:approve",
                     "order:list", "order:view", "order:refund", "order:resolve",
                     "frontdesk:order:*", "refund:create", "refund:approve",
-                    "staff:manage", "member:manage");
+                    "staff:manage", "member:manage",
+                    "followup:write", "attendance:self", "ranking:national", "review:claim",
+                    "expense:write", "expense:approve", "finance:report");
             case "FRONTDESK" -> List.of(
                     "order:list", "order:view", "frontdesk:order:*", "refund:create",
-                    "member:manage");
-            case "THERAPIST" -> List.of("staff:self");
+                    "member:manage", "followup:write", "attendance:self", "expense:write");
+            case "THERAPIST" -> List.of(
+                    "staff:self", "followup:write", "attendance:self",
+                    "ranking:national", "review:claim");
             default -> List.of();
         };
     }

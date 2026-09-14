@@ -1,0 +1,32 @@
+<view class="page">
+  <view class="bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="bar-title">课后打卡</view>
+  </view>
+
+  <view class="card">
+    <textarea class="ta" value="{{content}}" bindinput="onContent" placeholder="今天练了什么？感觉如何？" />
+    <view class="btn" hover-class="tap" bindtap="submit">{{saving?'提交中…':'打卡'}}</view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{scope==='store'?'on':''}}" data-key="store" bindtap="pickScope">大家的</view>
+    <view class="tab {{scope==='mine'?'on':''}}" data-key="mine" bindtap="pickScope">我的</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint pad">加载中…</view>
+  <view wx:if="{{error}}" class="hint pad">{{error}}</view>
+
+  <view wx:for="{{items}}" wx:key="checkinId" class="card post">
+    <view class="row">
+      <view class="grow who">{{item.mine ? '我' : item.customerMask}}</view>
+      <view class="hint">{{item.checkDay}}</view>
+    </view>
+    <view class="body">{{item.content}}</view>
+    <view class="foot">
+      <view class="like" data-id="{{item.checkinId}}" hover-class="tap" bindtap="like">
+        赞 {{item.likeCount}}
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,54 @@
+<view class="page">
+  <view class="bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="bar-title">我的课程</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint pad">加载中…</view>
+  <view wx:if="{{error}}" class="hint pad">{{error}}</view>
+
+  <view class="card nums">
+    <view class="col"><view class="n">{{remaining}}</view><view class="c">剩余课时</view></view>
+    <view class="col"><view class="n">{{done}}</view><view class="c">已完成</view></view>
+  </view>
+
+  <view wx:if="{{coreIssue}}" class="card">
+    <view class="sec">我的核心问题</view>
+    <view class="issue">{{coreIssue}}</view>
+  </view>
+
+  <view class="sec pad">训练计划</view>
+  <view wx:if="{{!plans.length}}" class="hint pad">老师还没为你制定计划</view>
+  <view wx:for="{{plans}}" wx:key="planId" class="card">
+    <view class="row">
+      <view class="grow strong">{{item.title}}</view>
+      <view class="tag">{{item.statusLabel}}</view>
+    </view>
+    <view wx:if="{{item.goal}}" class="hint">{{item.goal}}</view>
+    <view class="row mt">
+      <view class="grow hint">{{item.doneSessions}} / {{item.totalSessions}} 次</view>
+      <view class="hint">{{item.pct}}%</view>
+    </view>
+    <view class="bar-bg"><view class="bar-fill" style="width:{{item.pct}}%"></view></view>
+  </view>
+
+  <view class="sec pad">我的课包</view>
+  <view wx:if="{{!packages.length}}" class="hint pad">还没有课包</view>
+  <view wx:for="{{packages}}" wx:key="packageId" class="card">
+    <view class="row">
+      <view class="grow strong">{{item.title}}</view>
+      <view class="tag {{item.usable?'on':''}}">{{item.statusLabel}}</view>
+    </view>
+    <view class="row mt">
+      <view class="grow hint">已用 {{item.usedSessions}} / {{item.totalSessions}}</view>
+      <view class="strong">余 {{item.remainingSessions}}</view>
+    </view>
+    <view class="bar-bg"><view class="bar-fill" style="width:{{item.pct}}%"></view></view>
+    <view wx:if="{{item.expireOn}}" class="hint mt">有效期至 {{item.expireOn}}</view>
+  </view>
+
+  <view class="acts pad">
+    <view class="btn ghost" hover-class="tap" bindtap="onRenew">续课</view>
+    <view class="btn" hover-class="tap" bindtap="goCheckin">课后打卡</view>
+  </view>
+</view>

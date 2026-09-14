@@ -9,6 +9,10 @@ public record Refund(
         long orderId,
         long amountFen,
         String reason,
+        /** 退费原因编码；报表按它分组，自由文本的 reason 归不了类。 */
+        String reasonCode,
+        /** 责任老师；无责可空。自动扣钱不合适，由店长人工判定。 */
+        Long liableTherapistId,
         String status,
         String wxRefundId,
         Long operatorId,
@@ -42,13 +46,13 @@ public record Refund(
 
     public Refund withStatus(String next, LocalDateTime now) {
         return new Refund(
-                id, refundNo, paymentId, orderId, amountFen, reason, next,
+                id, refundNo, paymentId, orderId, amountFen, reason, reasonCode, liableTherapistId, next,
                 wxRefundId, operatorId, createdAt, now);
     }
 
     public Refund succeeded(String wxId, LocalDateTime now) {
         return new Refund(
-                id, refundNo, paymentId, orderId, amountFen, reason, SUCCESS,
+                id, refundNo, paymentId, orderId, amountFen, reason, reasonCode, liableTherapistId, SUCCESS,
                 wxId, operatorId, createdAt, now);
     }
 

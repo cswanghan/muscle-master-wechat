@@ -195,6 +195,31 @@ public class MembershipQueryService {
                 packages, plans);
     }
 
+    /** 客户端「我的」：不带手机号打码，本人看自己的东西。 */
+    public MembershipDtos.MyMembershipResponse mine(long customerId) {
+        LocalDate today = clock.today();
+        MembershipModels.Profile p = membership.profile(customerId).orElse(null);
+        if (p == null) {
+            return MembershipDtos.MyMembershipResponse.empty();
+        }
+        List<MembershipDtos.PackageItem> packages = membership.allPackages(customerId).stream()
+                .map(x -> new MembershipDtos.PackageItem(
+                        String.valueOf(x.id()), x.title(),
+                        x.totalSessions(), x.usedSessions(), x.remainingSessions(),
+                        yuan(x.unitPriceFen()),
+                        x.expireOn() == null ? null : x.expireOn().toString(),
+                        x.usableOn(today), packageStatus(x, today)))
+                .toList();
+        List<MembershipDtos.PlanItem> plans = membership.plans(customerId).stream()
+                .map(MembershipQueryService::toPlanItem).toList();
+        return new MembershipDtos.MyMembershipResponse(
+                p.coreIssue(),
+                membership.totalRemainingSessions(customerId),
+                membership.totalDoneSessions(customerId),
+                0,
+                packages, plans);
+    }
+
     static MembershipDtos.PlanItem toPlanItem(MembershipModels.Plan x) {
         return new MembershipDtos.PlanItem(
                 String.valueOf(x.id()), x.title(), x.goal(),

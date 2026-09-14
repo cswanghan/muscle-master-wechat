@@ -50,6 +50,24 @@ public class StaffMemberController {
         return ApiResponse.ok(query.daySlots(date, projectId));
     }
 
+    /** 按计划生成的建议上课日。只是建议，确认后才占库存。 */
+    @GetMapping("/members/{customerId}/suggested-dates")
+    @RequirePerm("staff:self")
+    public ApiResponse<java.util.List<String>> suggestedDates(
+            @PathVariable("customerId") String customerId) {
+        return ApiResponse.ok(membership.suggestLessonDates(Long.parseLong(customerId))
+                .stream().map(Object::toString).toList());
+    }
+
+    @PostMapping("/members/{customerId}/plans")
+    @RequirePerm("staff:self")
+    public ApiResponse<MembershipDtos.MemberDetail> savePlan(
+            @PathVariable("customerId") String customerId,
+            @RequestBody MembershipDtos.PlanRequest request) {
+        membership.savePlan(Long.parseLong(customerId), request);
+        return ApiResponse.ok(query.detail(customerId));
+    }
+
     /** 档案编辑。核心问题由带课的老师填最准，所以这条开在老师端而不是只给前台。 */
     @PostMapping("/members/{customerId}/profile")
     @RequirePerm("staff:self")

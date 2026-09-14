@@ -64,6 +64,17 @@ public class InMemoryMembershipStore implements MembershipStore {
     }
 
     @Override
+    public List<MembershipModels.Package> listPackagesEnding(long storeId, LocalDate from, LocalDate to) {
+        return packages.values().stream()
+                .filter(p -> p.storeId() == storeId)
+                // 到期或用完都算"该续了"，两种都进分母。
+                .filter(p -> (p.expireOn() != null && inRange(p.expireOn(), from, to))
+                        || (p.remainingSessions() <= 0 && inRange(day(p.updatedAt()), from, to)))
+                .sorted(Comparator.comparingLong(MembershipModels.Package::id).reversed())
+                .toList();
+    }
+
+    @Override
     public List<MembershipModels.Package> listPackagesSold(
             long storeId, Long therapistId, LocalDate from, LocalDate to) {
         return packages.values().stream()

@@ -1,0 +1,31 @@
+<view class="page staff-page">
+  <view class="bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <view class="bar-title">回访</view>
+    <view class="bar-extra">完成 {{doneRate}}%</view>
+  </view>
+
+  <view class="stats">
+    <view class="stat"><view class="n">{{pending}}</view><view class="c">待办</view></view>
+    <view class="stat"><view class="n warn">{{overdue}}</view><view class="c">已逾期</view></view>
+    <view class="stat"><view class="n">{{doneRate}}%</view><view class="c">完成度</view></view>
+  </view>
+
+  <view wx:if="{{loading}}" class="hint pad">加载中…</view>
+  <view wx:if="{{error}}" class="hint pad">{{error}}</view>
+  <view wx:if="{{!loading && !items.length}}" class="hint pad">本月还没有回访任务</view>
+
+  <view wx:for="{{items}}" wx:key="followUpId" class="card fu {{item.tone}}">
+    <view class="row">
+      <view class="grow who">{{item.wxNickname || item.customerMask}}</view>
+      <view class="tag">{{item.kindLabel}}</view>
+    </view>
+    <view class="hint">
+      <block wx:if="{{item.pending}}">应回访 {{item.dueOn}}<block wx:if="{{item.overdue}}"> · 已逾期</block></block>
+      <block wx:else>{{item.doneAt}} · {{item.content}}</block>
+    </view>
+    <view wx:if="{{item.pending}}" class="acts">
+      <view class="btn sm" data-id="{{item.followUpId}}" hover-class="tap" bindtap="markDone">标记已回访</view>
+    </view>
+  </view>
+</view>

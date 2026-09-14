@@ -16,9 +16,20 @@ public final class MembershipModels {
             Long ownerTherapistId,
             String coreIssue,
             String remark,
+            /** 获客渠道；与订单的 source（下单入口）是两个维度。 */
+            String channel,
+            Long referrerCustomerId,
+            String wxNickname,
+            LocalDate firstVisitOn,
+            /** 体验转正课之日；空=还没转化。转成交率的分子就看它。 */
+            LocalDate convertedOn,
             Instant createdAt,
             Instant updatedAt
     ) {
+        /** 只上过体验课、还没买正课的人。 */
+        public boolean isTrialOnly() {
+            return convertedOn == null;
+        }
     }
 
     public record Package(

@@ -174,7 +174,7 @@ class RefundTest {
                 PaymentService.refundContextJson("req-resume", 19800L), null, now, now));
         f.payments.insertRefund(new Refund(
                 f.ids.nextId(), PaymentService.refundNoOf(pay.id()), pay.id(), f.locked.orderId(),
-                19800, "中断", Refund.PENDING, null, null, now, now));
+                19800, "中断", null, null, Refund.PENDING, null, null, now, now));
         f.payments.commitWork();
 
         PaymentDtos.RefundOutcome out = f.svc.refund(

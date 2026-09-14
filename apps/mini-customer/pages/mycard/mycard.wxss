@@ -1,0 +1,29 @@
+.page { padding: 20rpx 0 170rpx; }
+.bar { display: flex; align-items: center; gap: 16rpx; padding: 8rpx 24rpx 20rpx; }
+.back { width: 60rpx; height: 60rpx; line-height: 56rpx; text-align: center; font-size: 44rpx; color: #17211d; }
+.bar-title { flex: 1; font-size: 34rpx; font-weight: 600; }
+
+.card { margin: 0 24rpx 20rpx; padding: 24rpx; background: #fff; border-radius: 24rpx; }
+.nums { display: flex; gap: 24rpx; }
+.col { flex: 1; text-align: center; }
+.n { font-size: 56rpx; font-weight: 700; color: #1e5c4a; font-family: ui-monospace, Menlo, monospace; }
+.c { margin-top: 6rpx; font-size: 28rpx; color: #8b948f; }
+
+.sec { font-size: 30rpx; font-weight: 600; margin-bottom: 12rpx; }
+.pad { padding: 8rpx 24rpx 12rpx; }
+.issue { display: inline-block; padding: 10rpx 18rpx; background: #f4f2ee; border-radius: 12rpx; font-size: 30rpx; color: #3d4d46; }
+
+.row { display: flex; align-items: baseline; gap: 12rpx; }
+.mt { margin-top: 12rpx; }
+.grow { flex: 1; }
+.strong { font-size: 30rpx; font-weight: 600; }
+.tag { font-size: 26rpx; padding: 4rpx 14rpx; border-radius: 999rpx; background: #f0eeea; color: #8b948f; }
+.tag.on { background: #e6f2ec; color: #1e5c4a; }
+.bar-bg { margin-top: 12rpx; height: 10rpx; border-radius: 999rpx; background: #eef2f0; overflow: hidden; }
+.bar-fill { height: 100%; background: #1e5c4a; border-radius: 999rpx; }
+.hint { color: #8b948f; font-size: 28rpx; }
+
+.acts { display: flex; gap: 16rpx; }
+/* 主操作 96rpx(48px) tap target。 */
+.btn { flex: 1; height: 96rpx; line-height: 96rpx; text-align: center; border-radius: 16rpx; background: #1e5c4a; color: #fff; font-size: 30rpx; }
+.btn.ghost { background: #f4f2ee; color: #17211d; }

@@ -22,4 +22,13 @@ public class StaffTherapistLookup {
                 .findFirst()
                 .orElseThrow(() -> new ApiException(ErrorCodes.FORBIDDEN, "无功能权限"));
     }
+
+    /** 展示用姓名。查不到时返回 id 而不是空，免得界面上出现一片空白。 */
+    public String nameOf(long therapistId) {
+        return catalog.listTherapists().stream()
+                .filter(t -> t.id() == therapistId)
+                .map(CatalogModels.Therapist::name)
+                .findFirst()
+                .orElse(String.valueOf(therapistId));
+    }
 }

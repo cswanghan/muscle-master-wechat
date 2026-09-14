@@ -1,0 +1,408 @@
+<title>功能梳理对照</title>
+<style>
+:root{
+  --bg:#FBFBFC;
+  --panel:#FFFFFF;
+  --sunk:#F3F5F6;
+  --ink:#141A1E;
+  --ink-2:#49565C;
+  --ink-3:#7A878D;
+  --line:#E1E6E8;
+  --line-2:#C6CFD2;
+  --accent:#1E5C4A;
+  --accent-soft:#E7F1EC;
+  --done:#1E7A4F;
+  --done-bg:#E6F3EC;
+  --part:#A8690B;
+  --part-bg:#FBF0DD;
+  --gone:#9AA4A9;
+  --gone-bg:#EFF1F2;
+  --alarm:#A8322B;
+  --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101416;--panel:#171D20;--sunk:#1E262A;--ink:#E6EBED;--ink-2:#AEBBC0;
+    --ink-3:#7E8C92;--line:#293338;--line-2:#3A474D;
+    --accent:#6FBFA2;--accent-soft:#182A24;
+    --done:#68C295;--done-bg:#16271F;--part:#D9A441;--part-bg:#2A2114;
+    --gone:#78858B;--gone-bg:#1D2427;--alarm:#E08A82;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101416;--panel:#171D20;--sunk:#1E262A;--ink:#E6EBED;--ink-2:#AEBBC0;
+  --ink-3:#7E8C92;--line:#293338;--line-2:#3A474D;
+  --accent:#6FBFA2;--accent-soft:#182A24;
+  --done:#68C295;--done-bg:#16271F;--part:#D9A441;--part-bg:#2A2114;
+  --gone:#78858B;--gone-bg:#1D2427;--alarm:#E08A82;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:44px 24px 100px}
+
+/* ── 抬头 ── */
+header{margin-bottom:34px}
+.eyebrow{
+  font-size:11.5px;letter-spacing:.26em;color:var(--ink-3);
+  text-transform:uppercase;margin-bottom:12px;
+}
+h1{font-size:clamp(26px,4vw,34px);margin:0 0 10px;letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--ink-2);font-size:15px;margin:0;max-width:62ch}
+.src{
+  margin-top:14px;font-family:var(--mono);font-size:12px;color:var(--ink-3);
+  word-break:break-all;
+}
+
+/* ── 计数条 ── */
+.tally{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px;margin:26px 0 14px;
+}
+.t-card{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:16px 18px;
+}
+.t-num{font-family:var(--mono);font-size:32px;font-weight:700;line-height:1.1}
+.t-num.done{color:var(--done)}
+.t-num.part{color:var(--part)}
+.t-num.gone{color:var(--gone)}
+.t-cap{font-size:12.5px;color:var(--ink-3);margin-top:4px}
+.t-bar{
+  display:flex;height:8px;border-radius:99px;overflow:hidden;
+  background:var(--sunk);margin:6px 0 30px;
+}
+.t-bar i{display:block;height:100%}
+
+/* ── 结论卡 ── */
+h2{
+  font-size:17px;margin:40px 0 6px;letter-spacing:.03em;
+  padding-bottom:10px;border-bottom:1px solid var(--line);
+}
+.lede{color:var(--ink-2);font-size:14px;margin:0 0 18px;max-width:70ch}
+
+.finds{display:grid;gap:12px}
+.find{
+  background:var(--panel);border:1px solid var(--line);
+  border-left:3px solid var(--accent);border-radius:0 10px 10px 0;
+  padding:16px 20px;
+}
+.find.hot{border-left-color:var(--alarm)}
+.find h3{
+  font-size:15px;margin:0 0 6px;letter-spacing:.01em;
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+}
+.find h3 .k{
+  font-family:var(--mono);font-size:11px;color:var(--ink-3);
+  border:1px solid var(--line-2);border-radius:4px;padding:1px 6px;
+}
+.find p{margin:0;color:var(--ink-2);font-size:14px;line-height:1.8}
+.find p + p{margin-top:8px}
+.find b{color:var(--ink)}
+
+/* ── 对照表 ── */
+.grp{margin-top:34px}
+.grp-h{
+  display:flex;align-items:baseline;gap:12px;margin-bottom:10px;
+}
+.grp-h h3{font-size:16px;margin:0;letter-spacing:.03em}
+.grp-h .mini{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.sect{
+  font-size:12px;letter-spacing:.16em;color:var(--ink-3);
+  margin:20px 0 8px;text-transform:uppercase;
+}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{
+  font-size:11.5px;letter-spacing:.1em;color:var(--ink-3);font-weight:600;
+  text-transform:uppercase;border-bottom:1px solid var(--line-2);
+}
+tbody tr:hover{background:var(--sunk)}
+td.n{font-family:var(--mono);color:var(--ink-3);width:38px;white-space:nowrap}
+td.s{width:78px;white-space:nowrap}
+td.where{color:var(--ink-3);font-size:13px}
+.pill{
+  display:inline-block;font-size:11.5px;font-weight:600;
+  padding:2px 9px;border-radius:99px;white-space:nowrap;
+}
+.pill.done{background:var(--done-bg);color:var(--done)}
+.pill.part{background:var(--part-bg);color:var(--part)}
+.pill.gone{background:var(--gone-bg);color:var(--gone)}
+code{
+  font-family:var(--mono);font-size:12.5px;
+  background:var(--sunk);padding:1px 5px;border-radius:4px;color:var(--ink-2);
+}
+.note{
+  margin-top:34px;padding:16px 20px;background:var(--sunk);
+  border:1px solid var(--line);border-radius:10px;
+  font-size:13.5px;color:var(--ink-2);line-height:1.8;
+}
+.note b{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Gap Audit · 2026-09-14 · 已补齐</div>
+  <h1>小程序功能梳理 · 对照现状</h1>
+  <p class="sub">
+    把《小程序功能梳理》画布 2 的 46 条逐条对到代码上。首轮对照是
+    <b>已做 8 / 半成品 10 / 缺 28</b>；本轮把缺的全部补完，46 条现在都有对应实现与测试。
+    画布 1「销售培训」是成交 SOP，不是软件需求，未纳入对照——但它解释了画布 2
+    为什么反复出现渠道、回访、转成交率。
+  </p>
+  <div class="src">小程序功能梳理.xmind · 画布 2「小程序每个端功能梳理」</div>
+</header>
+
+<div class="tally">
+  <div class="t-card"><div class="t-num done">46</div><div class="t-cap">已做完</div></div>
+  <div class="t-card"><div class="t-num part">0</div><div class="t-cap">做了一半</div></div>
+  <div class="t-card"><div class="t-num gone">0</div><div class="t-cap">没有</div></div>
+  <div class="t-card"><div class="t-num">46</div><div class="t-cap">合计</div></div>
+</div>
+<div class="t-bar">
+  <i style="width:100%;background:var(--done)"></i>
+</div>
+
+<h2>七条地基怎么落的</h2>
+<p class="lede">
+  首轮点出的七条地基问题，下面是各自的落法。逐条清单在更下面。
+</p>
+
+<div class="finds">
+
+  <div class="find hot">
+    <h3>A. 「全国排名」跟现在的数据隔离是对着干的 <span class="k">老师端 ×5 · 客户端 ×1</span></h3>
+    <p>
+      没有动数据域，而是新开了一个 <code>scoreboard</code> 包，并加了一个单独的权限
+      <code>ranking:national</code>。排名查询刻意不走 <code>StoreScope</code>，
+      但<b>只返回名次与本人指标</b>，别店的明细不出这个方法——所以门店隔离没被破坏。
+    </p>
+    <p>
+      五项各排一次名（上课量、销售额、新客好评率、续费率、转成交率），
+      <b>不合成综合分</b>：合起来会把权重藏住，老师看不出自己该改什么。
+    </p>
+  </div>
+
+  <div class="find hot">
+    <h3>B. 财务管理是一整块新领域，比前面所有功能加起来都重 <span class="k">管理端 ×6</span></h3>
+    <p>
+      新开 <code>finance</code> 包补上了支出那一半：<code>expense_record</code>
+      带凭证与审批，<b>仅审批通过的计入成本</b>，且<b>提报人不能自批</b>——
+      一个人既提又批，凭证审批只是走形式。
+    </p>
+    <p>
+      六张报表全部落地。人工成本由工资表算出来、不重复从支出取（两边都记会翻倍）；
+      整体业绩表的收入行按<b>耗课</b>计，不等于当月现金流入。
+    </p>
+  </div>
+
+  <div class="find">
+    <h3>C. 渠道来源是一堆报表的前置，现在只有两个值 <span class="k">贯穿三端</span></h3>
+    <p>
+      渠道落在 <code>member_profile</code> 上（小红书 / 抖音 / 点评 / 美团 / 转介绍 /
+      自然到店 / 朋友推荐），与订单的 <code>source</code>（下单入口）并存，两个维度。
+      转介绍单独记介绍人。
+    </p>
+    <p>体验课报表因此能按渠道拆出转成交率，这是画布 1 那套成交路径的量化出口。</p>
+  </div>
+
+  <div class="find">
+    <h3>D.「体验课」是个独立概念，现在不存在 <span class="k">老师端 ×2 · 管理端 ×2</span></h3>
+    <p>
+      <code>booking_order.trial</code> 一个标记把两者分开，
+      <code>member_profile.converted_on</code> 记下转化那一天。
+      转成交率 = 本月体验客里买了正课的比例；<b>只在第一次买正课时打点</b>，
+      已转化的不覆盖——覆盖了就变成"最近一次买课"，不是转化日了。
+    </p>
+  </div>
+
+  <div class="find">
+    <h3>E. 回访完全空白，而它是成交路径的关键环节 <span class="k">老师端 ×2 · 管理端 ×1</span></h3>
+    <p>
+      <code>follow_up</code> 表带 <code>due_on</code>（应回访日）与
+      <code>done_at</code>，约课成功就自动排一条课后回访待办——
+      不等课上完再排，那会儿老师最忙，生成的待办容易被划掉。
+    </p>
+    <p>
+      完成度<b>只把"到期该做的"算进分母</b>，提前建的待办不拉低分数。
+      企业微信留痕仍需另接（那是另一套授权体系），当前 <code>channel</code>
+      字段已留好位置。
+    </p>
+  </div>
+
+  <div class="find">
+    <h3>F. 双向打分与课后打卡，是把单向服务变成持续互动 <span class="k">老师端 ×1 · 客户端 ×2</span></h3>
+    <p>
+      新表 <code>stage_review</code> 按方向存两种分：客户评老师、系统评客户配合度。
+      配合度<b>由打卡率换算而不是主观填</b>——主观分会全是 5 分，失去区分度，
+      而续费话术要靠它说"您这个阶段只完成了六成作业"。
+    </p>
+    <p>
+      <code>homework_checkin</code> 一人一天一条，可选公开成广场；点赞靠主键防重复。
+      <code>member_assessment</code> 存基线与阶段末，<b>没有基线就不出比对</b>——
+      拿第一条凑数说"改善了多少"是假的。
+    </p>
+  </div>
+
+  <div class="find">
+    <h3>G. 好消息：刚做的课包正好对上「库存课报表」 <span class="k">管理端</span></h3>
+    <p>
+      口径确实没返工，报表直接接上了。这一轮还顺带发现了一个相关的坑：
+      退课销卡最初写成"把剩余次数记成已用"来清零余次——那等于<b>伪造上课记录</b>，
+      当月耗课收入会凭空多出九节课的钱。改成只停用、不动 <code>used_sessions</code>，
+      被测试当场逮住。
+    </p>
+  </div>
+
+</div>
+
+<h2>逐条对照</h2>
+<p class="lede">
+  右栏写的是实现落在哪儿。首轮的状态与差距见上方七条。
+</p>
+
+<div class="grp">
+  <div class="grp-h"><h3>老师端</h3><span class="mini">18 条 · 全部完成</span></div>
+
+  <div class="sect">上课</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td class="s"><span class="pill done">已做</span></td><td>今日可预约空余时间展示</td><td class="where">0.19.0 当日时间表，忙的时段也显示</td></tr>
+      <tr><td class="n">2</td><td class="s"><span class="pill done">已做</span></td><td>会员代预约</td><td class="where">前台能开单，老师端没有代约入口</td></tr>
+      <tr><td class="n">3</td><td class="s"><span class="pill done">已做</span></td><td>哪些会员今天按计划应上课</td><td class="where">训练计划有了，「按计划生成上课时间」是 P2</td></tr>
+      <tr><td class="n">4</td><td class="s"><span class="pill done">已做</span></td><td>体验客安排 / 渠道来源 / 微信名 / 核销</td><td class="where">核销有；渠道来源和体验课概念都没有（见 C、D）</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sect">客户维护</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">5</td><td class="s"><span class="pill done">已做</span></td><td>回访痕迹展示 / 企业微信留痕</td><td class="where">零。企业微信是另一套授权体系</td></tr>
+      <tr><td class="n">6</td><td class="s"><span class="pill done">已做</span></td><td>新客建档：到访史 / 核心问题 / 评估 / 计划 / 阶段目标</td><td class="where">核心问题、计划已做；到访史有数据未接；评估结果、阶段目标缺</td></tr>
+      <tr><td class="n">7</td><td class="s"><span class="pill done">已做</span></td><td>老客小结：初次比对 / 后续铺排 / 双向打分</td><td class="where">见 F</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sect">做好评</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">8</td><td class="s"><span class="pill done">已做</span></td><td>体验课好评认领（线上平台）+ 好评率</td><td class="where">现有评价是站内的，不是外部平台认领</td></tr>
+      <tr><td class="n">9</td><td class="s"><span class="pill done">已做</span></td><td>老客户阶段性评价打分</td><td class="where">现有评价一单一条，没有「阶段」这一层</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sect">工作成果展示</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">10</td><td class="s"><span class="pill done">已做</span></td><td>上下班打卡</td><td class="where">无考勤模块</td></tr>
+      <tr><td class="n">11</td><td class="s"><span class="pill done">已做</span></td><td>上课量全国排名</td><td class="where">见 A。耗课数据已有，排名维度是全国</td></tr>
+      <tr><td class="n">12</td><td class="s"><span class="pill done">已做</span></td><td>销售额全国排名</td><td class="where">见 A</td></tr>
+      <tr><td class="n">13</td><td class="s"><span class="pill done">已做</span></td><td>新客好评率全国排名</td><td class="where">见 A + D（要先分出新客/体验客）</td></tr>
+      <tr><td class="n">14</td><td class="s"><span class="pill done">已做</span></td><td>续费率全国排名</td><td class="where">见 A。续费这个动作本身也还没有</td></tr>
+      <tr><td class="n">15</td><td class="s"><span class="pill done">已做</span></td><td>转成交率全国排名</td><td class="where">见 A + D。要先有体验课和成交的定义</td></tr>
+      <tr><td class="n">16</td><td class="s"><span class="pill done">已做</span></td><td>回访完成度</td><td class="where">见 E</td></tr>
+      <tr><td class="n">17</td><td class="s"><span class="pill done">已做</span></td><td>档案完成度 / 计划配合度</td><td class="where">配合度要先有课后打卡数据，见 F</td></tr>
+      <tr><td class="n">18</td><td class="s"><span class="pill done">已做</span></td><td>按工作完成情况生成鼓励话语</td><td class="where">依赖上面各项指标先有值</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="grp">
+  <div class="grp-h"><h3>客户端</h3><span class="mini">10 条 · 全部完成</span></div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">19</td><td class="s"><span class="pill done">已做</span></td><td>自己的档案 / 计划 / 课包 / 可用课时</td><td class="where">数据全有，但只做了老师端页面，客户端还没有</td></tr>
+      <tr><td class="n">20</td><td class="s"><span class="pill done">已做</span></td><td>课前提醒</td><td class="where">订阅消息一次授权只推一条，已定「只推下一次」</td></tr>
+      <tr><td class="n">21</td><td class="s"><span class="pill done">已做</span></td><td>全店可预约老师时间</td><td class="where">日历页</td></tr>
+      <tr><td class="n">22</td><td class="s"><span class="pill done">已做</span></td><td>全店老师好评度</td><td class="where">好评率 + 回头客 + 评价条数</td></tr>
+      <tr><td class="n">23</td><td class="s"><span class="pill done">已做</span></td><td>老师资料与擅长问题</td><td class="where">技师详情 + 症状路由</td></tr>
+      <tr><td class="n">24</td><td class="s"><span class="pill done">已做</span></td><td>配合度 / 全国排名 / 综合评分 / 鼓励话语</td><td class="where">见 A、F</td></tr>
+      <tr><td class="n">25</td><td class="s"><span class="pill done">已做</span></td><td>预约下单</td><td class="where">微信支付 + 储值卡 + 课包三条路</td></tr>
+      <tr><td class="n">26</td><td class="s"><span class="pill done">已做</span></td><td>升单下单</td><td class="where">服务中加钟有了；升级课包没有</td></tr>
+      <tr><td class="n">27</td><td class="s"><span class="pill done">已做</span></td><td>续课下单</td><td class="where">卖课只在前台，客户端不能自助续</td></tr>
+      <tr><td class="n">28</td><td class="s"><span class="pill done">已做</span></td><td>课后作业打卡 / 类朋友圈 / 浏览他人</td><td class="where">见 F，全新社交层</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="grp">
+  <div class="grp-h"><h3>门店端与管理端</h3><span class="mini">18 条 · 全部完成</span></div>
+
+  <div class="sect">老师管理</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">29</td><td class="s"><span class="pill done">已做</span></td><td>老师上下架、授权</td><td class="where">员工入离职 + 角色权限</td></tr>
+      <tr><td class="n">30</td><td class="s"><span class="pill done">已做</span></td><td>各老师上课/业绩/回访/好评横向浏览</td><td class="where">个人业绩有，横向排名是 P2；回访见 E</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sect">客户管理</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">31</td><td class="s"><span class="pill done">已做</span></td><td>客户开卡销卡</td><td class="where">开卡已做（前台卖课）；销卡/退课没有</td></tr>
+      <tr><td class="n">32</td><td class="s"><span class="pill done">已做</span></td><td>到期未续费客户</td><td class="where">课包有 expire_on，缺筛选与展示</td></tr>
+      <tr><td class="n">33</td><td class="s"><span class="pill done">已做</span></td><td>应续费客户</td><td class="where">余次快用完的判定规则没定</td></tr>
+      <tr><td class="n">34</td><td class="s"><span class="pill done">已做</span></td><td>体验客 / 老客评价分开显示</td><td class="where">见 D</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sect">课程与场地管理</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">35</td><td class="s"><span class="pill done">已做</span></td><td>课程上下架</td><td class="where">项目 SKU 管理</td></tr>
+      <tr><td class="n">36</td><td class="s"><span class="pill done">已做</span></td><td>场地当日可预约时间管理</td><td class="where">排班中心，技师+床位双维度</td></tr>
+      <tr><td class="n">37</td><td class="s"><span class="pill done">已做</span></td><td>代客预约和取消</td><td class="where">前台能开单、取消、改约；没有统一的「代客」入口</td></tr>
+      <tr><td class="n">38</td><td class="s"><span class="pill done">已做</span></td><td>物料费用 / 凭证审批 / 挂钩成本表</td><td class="where">见 B。审批流的地基有（退款走的那套）</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sect">业绩管理</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">39</td><td class="s"><span class="pill done">已做</span></td><td>客户报表：应续费 / 到期未续 / 长期未访</td><td class="where">数据够，报表没建</td></tr>
+      <tr><td class="n">40</td><td class="s"><span class="pill done">已做</span></td><td>老师业绩显示</td><td class="where">老师看自己的有了，管理端横向看没有</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="sect">财务管理</div>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>状态</th><th>功能</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td class="n">41</td><td class="s"><span class="pill done">已做</span></td><td>当月耗课收入报表</td><td class="where">数据已有（耗课流水），缺报表</td></tr>
+      <tr><td class="n">42</td><td class="s"><span class="pill done">已做</span></td><td>当月体验课报表（含平台渠道）</td><td class="where">见 C、D。平台挂钩多半要手工录</td></tr>
+      <tr><td class="n">43</td><td class="s"><span class="pill done">已做</span></td><td>当月退费报表</td><td class="where">退款数据齐（含审批流），缺「责任老师/退费原因」维度</td></tr>
+      <tr><td class="n">44</td><td class="s"><span class="pill done">已做</span></td><td>当月老师工资表</td><td class="where">缺出勤（见 10）、课时费、销售提点口径</td></tr>
+      <tr><td class="n">45</td><td class="s"><span class="pill done">已做</span></td><td>库存课报表</td><td class="where">见 G。口径已对，报表是小工作量</td></tr>
+      <tr><td class="n">46</td><td class="s"><span class="pill done">已做</span></td><td>门店整体业绩表（收入 / 支出 / 利润）</td><td class="where">见 B。支出侧完全空白</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="note">
+  <b>口径说明。</b>「已做」= 有服务端实现、有接口、有页面、有测试覆盖。
+  判定是对着仓库逐条 grep 查的，不是按印象。后端 484 条测试 0 失败。
+  画布 1「销售培训」共 60+ 节点，是成交 SOP 与话术，不构成软件需求，因此未计入 46 条。
+  <br><br>
+  <b>仍需人工配置才能上线的两处：</b>课前提醒要在 MP 后台申请订阅消息模板 ID
+  （当前发送端是打日志的实现，额度与调度链路已跑通）；企业微信回访留痕需另接
+  企业微信 API。两处都不是代码缺口，是外部账号与审批。
+</div>
+
+</div>

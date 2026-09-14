@@ -25,6 +25,9 @@ public interface MembershipStore {
 
     List<MembershipModels.Package> listPackagesByCustomer(long customerId);
 
+    /** 续费率用：某门店在这段时间内到期或用完的课包（分母）。 */
+    List<MembershipModels.Package> listPackagesEnding(long storeId, LocalDate from, LocalDate to);
+
     /** 卖课业绩用：某段时间内某门店售出的课包。therapistId 为空则不按卖课人过滤。 */
     List<MembershipModels.Package> listPackagesSold(long storeId, Long therapistId, LocalDate from, LocalDate to);
 
